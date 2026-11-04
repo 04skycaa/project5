@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+{% set active_page = 'dashboard' %}
+
+{% block content %}
+<!-- Top Header Bar (Compact) -->
+<section class="top-header">
+  <div class="header-greeting">
+    <h1>Selamat Datang,</h1>
+    <p>Pantau kualitas jamur kancing secara real-time.</p>
+  </div>
+
+  <div class="header-actions">
+    <div class="icon-btn-glass" title="Pemberitahuan">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+      </svg>
+      <span class="notification-badge"></span>
+    </div>
+
+    <div class="date-badge" id="liveDateBadge">
+      Sen, 27 Okt 2025 • 10:24 WIB
+    </div>
+
+    <div class="status-badge-online">
+      <span class="pulse-dot"></span>
+      <span>Sistem Online</span>
+    </div>
+  </div>
+</section>
+
+<!-- 4 Key Stat Cards with Sparklines (Compact Single Screen) -->
+<section class="stats-grid">
+  <!-- Card 1: Total Jamur -->
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon green">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a8 8 0 0 0-8 8c0 2 1.5 3 2.5 3.5.5.3 1.5.5 2.5.5h6c1 0 2-.2 2.5-.5 1-.5 2.5-1.5 2.5-3.5a8 8 0 0 0-7.5-8z"/>
+          <path d="M10 14v6a2 2 0 0 0 4 0v-6"/>
+        </svg>
+      </div>
+      <div>
+        <span class="stat-info-title">Total Jamur</span>
+        <h2 class="stat-value">1.248</h2>
+      </div>
+    </div>
+    <div class="stat-footer">
+      <div class="stat-trend positive">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        <span>12% dibanding kemarin</span>
+      </div>
+      <svg class="stat-sparkline" viewBox="0 0 100 35" fill="none">
+        <path d="M0 28 Q 20 25, 40 18 T 75 12 T 100 6" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M0 28 Q 20 25, 40 18 T 75 12 T 100 6 L 100 35 L 0 35 Z" fill="rgba(16, 185, 129, 0.12)"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Card 2: Jamur Sehat -->
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon emerald">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <div>
+        <span class="stat-info-title">Jamur Sehat</span>
+        <h2 class="stat-value">892</h2>
+      </div>
+    </div>
+    <div class="stat-footer">
+      <div class="stat-trend positive">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        <span>15% dari total</span>
+      </div>
+      <svg class="stat-sparkline" viewBox="0 0 100 35" fill="none">
+        <path d="M0 29 Q 25 24, 45 16 T 80 10 T 100 4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M0 29 Q 25 24, 45 16 T 80 10 T 100 4 L 100 35 L 0 35 Z" fill="rgba(16, 185, 129, 0.12)"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Card 3a: BB Cacat (Purple) -->
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon purple">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+          <line x1="9" y1="9" x2="9.01" y2="9"></line>
+          <line x1="15" y1="9" x2="15.01" y2="9"></line>
+        </svg>
+      </div>
+      <div>
+        <span class="stat-info-title">BB Cacat</span>
+        <h2 class="stat-value">150</h2>
+      </div>
+    </div>
+    <div class="stat-footer">
+      <div class="stat-trend purple">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        <span>12% dari total</span>
+      </div>
+      <svg class="stat-sparkline" viewBox="0 0 100 35" fill="none">
+        <path d="M0 26 Q 25 23, 48 18 T 78 13 T 100 8" stroke="#8B5CF6" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M0 26 Q 25 23, 48 18 T 78 13 T 100 8 L 100 35 L 0 35 Z" fill="rgba(139, 92, 246, 0.12)"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Card 3b: BB Tidak Cacat (Blue) -->
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon blue">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+      <div>
+        <span class="stat-info-title">BB Tidak Cacat</span>
+        <h2 class="stat-value">91</h2>
+      </div>
+    </div>
+    <div class="stat-footer">
+      <div class="stat-trend blue">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        <span>7% dari total</span>
+      </div>
+      <svg class="stat-sparkline" viewBox="0 0 100 35" fill="none">
+        <path d="M0 24 Q 25 22, 50 16 T 80 14 T 100 9" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M0 24 Q 25 22, 50 16 T 80 14 T 100 9 L 100 35 L 0 35 Z" fill="rgba(0, 122, 255, 0.12)"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Card 4: Tidak Layak Konsumsi -->
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon red">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+      </div>
+      <div>
+        <span class="stat-info-title">Tidak Layak Konsumsi</span>
+        <h2 class="stat-value">115</h2>
+      </div>
+    </div>
+    <div class="stat-footer">
+      <div class="stat-trend danger">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        <span>6% dari total</span>
+      </div>
+      <svg class="stat-sparkline" viewBox="0 0 100 35" fill="none">
+        <path d="M0 26 Q 30 22, 55 19 T 80 15 T 100 11" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M0 26 Q 30 22, 55 19 T 80 15 T 100 11 L 100 35 L 0 35 Z" fill="rgba(239, 68, 68, 0.12)"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- Middle Section: Trends (Line/Area) & Donut Distribution (NO CAMERA) -->
+<section class="analytics-grid compact-two-col">
+  <!-- Line & Area Chart: Tren Hasil Grading -->
+  <div class="glass-card-subtle chart-box-compact">
+    <div class="card-title-row">
+      <h3>Tren Hasil Grading</h3>
+      <select class="ios-select">
+        <option>7 Hari Terakhir</option>
+        <option>14 Hari Terakhir</option>
+        <option>Bulan Ini</option>
+      </select>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Donut Chart: Distribusi Kategori -->
+  <div class="glass-card-subtle donut-box-compact">
+    <div class="card-title-row">
+      <h3>Distribusi Kategori</h3>
+    </div>
+    <div class="donut-chart-container compact-donut-flex">
+      <div class="donut-inner-relative">
+        <canvas id="donutChart"></canvas>
+        <div class="donut-center-label">
+          <span>Total</span>
+          <h4>1.248</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bottom Section: Recent Inspections Table + Hardware Status (NO QUOTE CARD) -->
+<section class="bottom-grid compact-bottom">
+  <!-- Table: Hasil Grading Terbaru -->
+  <div class="glass-card-subtle recent-table-card">
+    <div class="card-title-row" style="margin-bottom: 6px;">
+      <h3>Hasil Grading Terbaru</h3>
+      <a href="#riwayat" class="table-header-link">
+        <span>Lihat Semua</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </a>
+    </div>
+
+    <table class="ios-table compact-table">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Gambar</th>
+          <th>Kategori</th>
+          <th>Diskolorasi</th>
+          <th>Waktu</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Row 1: Sehat -->
+        <tr class="table-row" data-id="001">
+          <td>001</td>
+          <td>
+            <img class="mushroom-thumb" src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=600&auto=format&fit=crop" alt="Jamur 001">
+          </td>
+          <td><span class="badge-grade healthy">Sehat</span></td>
+          <td>0.8%</td>
+          <td>10:23</td>
+          <td style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+            <button class="btn-detail">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <span>Detail</span>
+            </button>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </td>
+        </tr>
+
+        <!-- Row 2: BB - Tidak Cacat -->
+        <tr class="table-row" data-id="002">
+          <td>002</td>
+          <td>
+            <img class="mushroom-thumb" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop" alt="Jamur 002">
+          </td>
+          <td><span class="badge-grade bb-safe">BB - Tidak Cacat</span></td>
+          <td>6.4%</td>
+          <td>10:22</td>
+          <td style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+            <button class="btn-detail">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <span>Detail</span>
+            </button>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </td>
+        </tr>
+
+        <!-- Row 3: Sehat -->
+        <tr class="table-row" data-id="003">
+          <td>003</td>
+          <td>
+            <img class="mushroom-thumb" src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=600&auto=format&fit=crop" alt="Jamur 003">
+          </td>
+          <td><span class="badge-grade healthy">Sehat</span></td>
+          <td>1.2%</td>
+          <td>10:21</td>
+          <td style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+            <button class="btn-detail">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <span>Detail</span>
+            </button>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </td>
+        </tr>
+
+        <!-- Row 4: BB - Cacat -->
+        <tr class="table-row" data-id="004">
+          <td>004</td>
+          <td>
+            <img class="mushroom-thumb" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop" alt="Jamur 004">
+          </td>
+          <td><span class="badge-grade bb-defect">BB - Cacat</span></td>
+          <td>15.7%</td>
+          <td>10:19</td>
+          <td style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+            <button class="btn-detail">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <span>Detail</span>
+            </button>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </td>
+        </tr>
+
+        <!-- Row 5: Tidak Layak Konsumsi -->
+        <tr class="table-row" data-id="005">
+          <td>005</td>
+          <td>
+            <img class="mushroom-thumb" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop" alt="Jamur 005">
+          </td>
+          <td><span class="badge-grade unfit">Tidak Layak</span></td>
+          <td>32.5%</td>
+          <td>10:18</td>
+          <td style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+            <button class="btn-detail">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <span>Detail</span>
+            </button>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Hardware Status Card (Compact 2x2 Grid) -->
+  <div class="glass-card-subtle hardware-card">
+    <div class="card-title-row" style="margin-bottom: 6px;">
+      <h3>Status Perangkat</h3>
+      <span class="badge-grade healthy" style="font-size:0.68rem; padding:2px 8px;">Semua Normal</span>
+    </div>
+
+    <div class="device-list compact-device-grid">
+      <!-- Kamera -->
+      <div class="device-item">
+        <div class="device-left">
+          <div class="device-icon-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          </div>
+          <span>Kamera</span>
+        </div>
+        <div class="device-status-pill">
+          <span class="pulse-dot"></span>
+          <span>Online</span>
+        </div>
+      </div>
+
+      <!-- ESP32 -->
+      <div class="device-item">
+        <div class="device-left">
+          <div class="device-icon-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+          </div>
+          <span>ESP32</span>
+        </div>
+        <div class="device-status-pill">
+          <span class="pulse-dot"></span>
+          <span>Online</span>
+        </div>
+      </div>
+
+      <!-- Sensor Infrared -->
+      <div class="device-item">
+        <div class="device-left">
+          <div class="device-icon-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          </div>
+          <span>Sensor IR</span>
+        </div>
+        <div class="device-status-pill">
+          <span class="pulse-dot"></span>
+          <span>Online</span>
+        </div>
+      </div>
+
+      <!-- Motor Servo -->
+      <div class="device-item">
+        <div class="device-left">
+          <div class="device-icon-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </div>
+          <span>Servo 3x</span>
+        </div>
+        <div class="device-status-pill">
+          <span class="pulse-dot"></span>
+          <span>Online</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% set active_page = 'monitoring' %}
+{% block title %}Monitoring Alat • Mushroom Grading System{% endblock %}
+
+{% block content %}
+<!-- Top Header -->
+<section class="top-header">
+  <div class="header-greeting">
+    <h1>Monitoring Alat</h1>
+    <p>Pantau kondisi seluruh perangkat keras sistem.</p>
+  </div>
+  <div class="header-actions">
+    <div class="status-badge-online">
+      <span class="pulse-dot"></span>
+      <span>Semua Online</span>
+    </div>
+    <div class="date-badge" id="liveDateBadge">–</div>
+  </div>
+</section>
+
+<!-- Device Cards Grid -->
+<section class="monitoring-devices-grid">
+
+  <!-- Kamera -->
+  <div class="glass-card-subtle device-card">
+    <div class="device-card-header">
+      <div class="stat-icon blue">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <div>
+        <h4 class="device-name">Kamera AI</h4>
+        <span class="device-model">ESP32-CAM OV2640</span>
+      </div>
+      <span class="device-badge online">Online</span>
+    </div>
+    <div class="device-metrics">
+      <div class="d-metric"><span>Resolusi</span><strong>1920×1080</strong></div>
+      <div class="d-metric"><span>FPS</span><strong>30</strong></div>
+      <div class="d-metric"><span>Latensi</span><strong>~18ms</strong></div>
+      <div class="d-metric"><span>Deteksi</span><strong class="green-text">Aktif</strong></div>
+    </div>
+    <div class="device-progress-bar">
+      <div class="dpb-fill" style="width:95%;background:var(--ios-blue-dark);"></div>
+    </div>
+    <small class="dpb-label">Utilisasi: 95%</small>
+  </div>
+
+  <!-- ESP32 -->
+  <div class="glass-card-subtle device-card">
+    <div class="device-card-header">
+      <div class="stat-icon green">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+      </div>
+      <div>
+        <h4 class="device-name">ESP32 Controller</h4>
+        <span class="device-model">ESP32-WROOM-32</span>
+      </div>
+      <span class="device-badge online">Online</span>
+    </div>
+    <div class="device-metrics">
+      <div class="d-metric"><span>IP Address</span><strong>192.168.1.45</strong></div>
+      <div class="d-metric"><span>Ping</span><strong>12ms</strong></div>
+      <div class="d-metric"><span>Uptime</span><strong>42:18:05</strong></div>
+      <div class="d-metric"><span>WiFi</span><strong class="green-text">-54dBm</strong></div>
+    </div>
+    <div class="device-progress-bar">
+      <div class="dpb-fill" style="width:78%;background:var(--ios-green-dark);"></div>
+    </div>
+    <small class="dpb-label">CPU: 78%</small>
+  </div>
+
+  <!-- Sensor IR -->
+  <div class="glass-card-subtle device-card">
+    <div class="device-card-header">
+      <div class="stat-icon purple">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6l4 6 4-6"/><path d="M19 6l4 6-4 6"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div>
+        <h4 class="device-name">Sensor IR</h4>
+        <span class="device-model">FC-51 Infrared</span>
+      </div>
+      <span class="device-badge online">Online</span>
+    </div>
+    <div class="device-metrics">
+      <div class="d-metric"><span>Mode</span><strong>Monitoring</strong></div>
+      <div class="d-metric"><span>Trigger</span><strong>1.248×</strong></div>
+      <div class="d-metric"><span>Jarak</span><strong>2–30cm</strong></div>
+      <div class="d-metric"><span>Status</span><strong class="green-text">Siaga</strong></div>
+    </div>
+    <div class="device-progress-bar">
+      <div class="dpb-fill" style="width:100%;background:var(--ios-purple);"></div>
+    </div>
+    <small class="dpb-label">Trigger rate: 100%</small>
+  </div>
+
+  <!-- Servo -->
+  <div class="glass-card-subtle device-card">
+    <div class="device-card-header">
+      <div class="stat-icon red">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div>
+        <h4 class="device-name">Servo Motor (×3)</h4>
+        <span class="device-model">SG90 9g Micro</span>
+      </div>
+      <span class="device-badge online">Online</span>
+    </div>
+    <div class="device-metrics">
+      <div class="d-metric"><span>Servo 1</span><strong class="green-text">Idle</strong></div>
+      <div class="d-metric"><span>Servo 2</span><strong class="green-text">Idle</strong></div>
+      <div class="d-metric"><span>Servo 3</span><strong class="green-text">Idle</strong></div>
+      <div class="d-metric"><span>Aktuasi</span><strong>1.248×</strong></div>
+    </div>
+    <div class="device-progress-bar">
+      <div class="dpb-fill" style="width:35%;background:var(--ios-red);"></div>
+    </div>
+    <small class="dpb-label">Duty cycle: 35%</small>
+  </div>
+
+</section>
+
+<!-- Network & System Health -->
+<section class="monitoring-bottom-grid">
+  <div class="glass-card-subtle">
+    <div class="card-title-row">
+      <h3>Jaringan & Konektivitas</h3>
+    </div>
+    <div class="network-list">
+      <div class="network-row">
+        <div class="network-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        </div>
+        <div class="network-info">
+          <span>WiFi: GradingLab_5G</span>
+          <small>SSID Terhubung • WPA3</small>
+        </div>
+        <span class="device-badge online">Kuat</span>
+      </div>
+      <div class="network-row">
+        <div class="network-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        </div>
+        <div class="network-info">
+          <span>Flask Server</span>
+          <small>127.0.0.1:5000 • HTTP</small>
+        </div>
+        <span class="device-badge online">Running</span>
+      </div>
+      <div class="network-row">
+        <div class="network-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <div class="network-info">
+          <span>API Endpoint</span>
+          <small>/api/stats • /api/device-status</small>
+        </div>
+        <span class="device-badge online">200 OK</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass-card-subtle">
+    <div class="card-title-row">
+      <h3>Riwayat Kejadian</h3>
+    </div>
+    <div class="event-log-list">
+      <div class="event-log-item">
+        <span class="event-time">10:23</span>
+        <span class="event-dot green-bg"></span>
+        <span class="event-desc">Jamur #001 → Sehat (98.4%) → Servo 1</span>
+      </div>
+      <div class="event-log-item">
+        <span class="event-time">10:22</span>
+        <span class="event-dot purple-bg"></span>
+        <span class="event-desc">Jamur #002 → BB Tidak Cacat (94.1%) → Servo 2</span>
+      </div>
+      <div class="event-log-item">
+        <span class="event-time">10:21</span>
+        <span class="event-dot green-bg"></span>
+        <span class="event-desc">Jamur #003 → Sehat (97.9%) → Servo 1</span>
+      </div>
+      <div class="event-log-item">
+        <span class="event-time">10:19</span>
+        <span class="event-dot blue-bg"></span>
+        <span class="event-desc">Jamur #004 → BB Cacat (96.8%) → Servo 3</span>
+      </div>
+      <div class="event-log-item">
+        <span class="event-time">10:18</span>
+        <span class="event-dot red-bg"></span>
+        <span class="event-desc">Jamur #005 → Tidak Layak (95.2%) → Servo 3</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function updateClock() {
+    const now = new Date();
+    const days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+    const el = document.getElementById('liveDateBadge');
+    if (el) el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
+{% endblock %}
+

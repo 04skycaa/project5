@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Mushroom Grading System • Smart Quality Control{% endblock %}</title>
+  
+  <!-- Apple Typography (SF Pro lookalike & Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- Stylesheet (Cache Busted) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=32.0">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Ambient Floating Glows for iOS Frosted Glass Depth -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+  <div class="ambient-glow-3"></div>
+  <div class="ambient-glow-4"></div>
+
+  <!-- Main Grid App Container -->
+  <div class="app-container" id="appContainer">
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar glass-panel" id="mainSidebar">
+
+      <!-- Brand Logo -->
+      <div class="brand-section">
+        <div class="brand-icon-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a9 9 0 0 0-9 9c0 2 1.5 3 2.5 3.5.5.3 1.5.5 2.5.5h8c1 0 2-.2 2.5-.5 1-.5 2.5-1.5 2.5-3.5a9 9 0 0 0-9-9z"/>
+            <path d="M10 15v5a2 2 0 0 0 4 0v-5"/>
+            <circle cx="8" cy="9" r="1" fill="currentColor"/>
+            <circle cx="12" cy="6" r="1.2" fill="currentColor"/>
+            <circle cx="16" cy="9" r="1" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="brand-text sb-fade">
+          <h2>Mushroom Grading</h2>
+          <p>Smart Quality Control</p>
+        </div>
+      </div>
+
+      <!-- Nav Menu (Tanpa Search Bar, Tanpa Header UTAMA & ANALITIK) -->
+      <div class="sidebar-nav">
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="/" class="nav-link {% if active_page == 'dashboard' or not active_page %}active{% endif %}" data-tooltip="Dashboard">
+              <span class="nav-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </span>
+              <span class="nav-label-text sb-fade">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/proses" class="nav-link {% if active_page == 'proses' %}active{% endif %}" data-tooltip="Proses Grading">
+              <span class="nav-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+              </span>
+              <span class="nav-label-text sb-fade">Proses Grading</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/riwayat" class="nav-link {% if active_page == 'riwayat' %}active{% endif %}" data-tooltip="Riwayat Grading">
+              <span class="nav-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+              <span class="nav-label-text sb-fade">Riwayat Grading</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/laporan" class="nav-link {% if active_page == 'laporan' %}active{% endif %}" data-tooltip="Laporan">
+              <span class="nav-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </span>
+              <span class="nav-label-text sb-fade">Laporan</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- User Profile at Bottom -->
+      <div class="user-profile-card">
+        <div class="user-avatar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="user-details sb-fade">
+          <h4>Admin</h4>
+          <p>admin@project5.id</p>
+        </div>
+        <svg class="sb-fade user-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </aside>
+
+    <!-- Main Content Body -->
+    <main class="main-content glass-panel">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- ===================== MOBILE BOTTOM TAB BAR (CURVED NOTCH LIKE IMAGE 2) ===================== -->
+  <nav class="mobile-tab-bar" id="mobileTabBar">
+    <svg class="tab-bar-svg" preserveAspectRatio="none">
+      <path id="tabBarPath" d=""></path>
+    </svg>
+
+    <a href="/" class="mobile-tab-item {% if active_page == 'dashboard' or not active_page %}active{% endif %}" title="Dashboard">
+      <div class="tab-icon-bubble">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <span class="tab-label">Dashboard</span>
+    </a>
+
+    <a href="/proses" class="mobile-tab-item {% if active_page == 'proses' %}active{% endif %}" title="Proses Grading">
+      <div class="tab-icon-bubble">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+      </div>
+      <span class="tab-label">Grading</span>
+    </a>
+
+    <a href="/riwayat" class="mobile-tab-item {% if active_page == 'riwayat' %}active{% endif %}" title="Riwayat Grading">
+      <div class="tab-icon-bubble">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <span class="tab-label">Riwayat</span>
+    </a>
+
+    <a href="/laporan" class="mobile-tab-item {% if active_page == 'laporan' %}active{% endif %}" title="Laporan">
+      <div class="tab-icon-bubble">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+      </div>
+      <span class="tab-label">Laporan</span>
+    </a>
+  </nav>
+
+  <!-- Detail Inspection Modal (Apple Glass Sheet) -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-glass">
+      <div class="modal-header">
+        <div>
+          <span style="font-size:0.75rem; color:#64748B; font-weight:700;">DETAIL INSPEKSI</span>
+          <h3 id="modalId">Mushroom #001</h3>
+        </div>
+        <button class="modal-close-btn" id="closeModalBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-grid">
+        <div class="modal-img-box">
+          <img id="modalImage" src="" alt="Mushroom Preview">
+        </div>
+        <div class="modal-detail-list">
+          <div class="modal-detail-item">
+            <span>KATEGORI HASIL</span>
+            <div style="margin-top: 4px;">
+              <span id="modalCategory" class="badge-grade healthy">Jamur Sehat</span>
+            </div>
+          </div>
+          <div class="modal-detail-item">
+            <span>PREDIKSI DEEP LEARNING</span>
+            <h5 id="modalAiClass">Healthy (98.4%)</h5>
+          </div>
+          <div class="modal-detail-item">
+            <span>PERSENTASE DISKOLORASI</span>
+            <h5 id="modalDiscoloration">0.8%</h5>
+          </div>
+          <div class="modal-detail-item">
+            <span>KONTROL SERVO (ESP32)</span>
+            <h5 id="modalTarget" style="color: #10B981;">Kotak 1: Jamur Sehat</h5>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card-subtle" style="padding: 14px; margin-bottom: 16px;">
+        <span style="font-size:0.72rem; color:#64748B; font-weight:700;">CATATAN PEMERIKSAAN CITRA</span>
+        <p id="modalNotes" style="font-size:0.82rem; color:#334155; margin-top:4px; line-height:1.4;">-</p>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="modalTime" style="font-size:0.75rem; color:#94A3B8; font-weight:600;">-</span>
+        <button class="btn-detail" onclick="document.getElementById('detailModal').classList.remove('active')" style="padding: 8px 20px;">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+
+  <!-- Mobile Tab Bar Curved Notch Script (Soft Spring & Fluid Lerp Animation) -->
+  <script>
+    (function () {
+      let currentNotchX = null;
+      let targetNotchX = null;
+      let notchRafId = null;
+
+      function drawNotchPath(X, W, H) {
+        const path = document.getElementById('tabBarPath');
+        if (!path) return;
+
+        const flatY = 0;
+        const dipY = 32;
+        const cornerR = 24;
+        const notchR = 38;
+
+        const p_start = Math.max(cornerR, X - notchR);
+        const p_end = Math.min(W - cornerR, X + notchR);
+
+        let d = `M 0 ${cornerR} Q 0 ${flatY} ${cornerR} ${flatY} `;
+        if (p_start > cornerR) {
+          d += `L ${p_start} ${flatY} `;
+        }
+        // Lengkungan turun lembut (Cubic Bezier)
+        d += `C ${X - 22} ${flatY}, ${X - 16} ${dipY}, ${X} ${dipY} `;
+        // Lengkungan naik lembut kembali ke garis datar
+        d += `C ${X + 16} ${dipY}, ${X + 22} ${flatY}, ${p_end} ${flatY} `;
+
+        if (p_end < W - cornerR) {
+          d += `L ${W - cornerR} ${flatY} `;
+        }
+        d += `Q ${W} ${flatY} ${W} ${cornerR} `;
+        d += `L ${W} ${H} `;
+        d += `L 0 ${H} Z`;
+
+        path.setAttribute('d', d);
+      }
+
+      function updateMobileNotch(immediate = false) {
+        const bar = document.getElementById('mobileTabBar');
+        if (!bar || window.innerWidth > 960) return;
+
+        const activeItem = bar.querySelector('.mobile-tab-item.active');
+        if (!activeItem) return;
+
+        const barRect = bar.getBoundingClientRect();
+        const itemRect = activeItem.getBoundingClientRect();
+        const W = barRect.width;
+        const H = barRect.height || 68;
+        if (W === 0 || H === 0) return;
+
+        const targetX = itemRect.left + itemRect.width / 2 - barRect.left;
+
+        if (immediate || currentNotchX === null) {
+          if (notchRafId) {
+            cancelAnimationFrame(notchRafId);
+            notchRafId = null;
+          }
+          currentNotchX = targetX;
+          targetNotchX = targetX;
+          drawNotchPath(currentNotchX, W, H);
+          return;
+        }
+
+        targetNotchX = targetX;
+
+        // Fluid spring lerp animation loop (super soft glide)
+        function step() {
+          const dx = targetNotchX - currentNotchX;
+          if (Math.abs(dx) < 0.25) {
+            currentNotchX = targetNotchX;
+            drawNotchPath(currentNotchX, W, H);
+            notchRafId = null;
+            return;
+          }
+
+          // Damping factor 0.16 = pergerakan kurva sangat mulus dan empuk
+          currentNotchX += dx * 0.16;
+          drawNotchPath(currentNotchX, W, H);
+          notchRafId = requestAnimationFrame(step);
+        }
+
+        if (!notchRafId) {
+          notchRafId = requestAnimationFrame(step);
+        }
+      }
+
+      function scheduleNotchUpdate(immediate = false) {
+        updateMobileNotch(immediate);
+        requestAnimationFrame(() => updateMobileNotch(immediate));
+        setTimeout(() => updateMobileNotch(immediate), 60);
+      }
+
+      window.addEventListener('DOMContentLoaded', () => scheduleNotchUpdate(true));
+      window.addEventListener('load', () => scheduleNotchUpdate(true));
+      window.addEventListener('resize', () => scheduleNotchUpdate(true));
+
+      // Animasi pergantian tab dengan soft sliding glide
+      const bar = document.getElementById('mobileTabBar');
+      if (bar) {
+        const items = bar.querySelectorAll('.mobile-tab-item');
+        items.forEach(item => {
+          item.addEventListener('click', () => {
+            items.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            updateMobileNotch(false); // Animasikan transisi cekungan secara halus
+          });
+        });
+      }
+
+      // ========================================================
+      // INITIALIZE CUSTOM APPLE FROSTED GLASS DROPDOWNS
+      // ========================================================
+      function initCustomGlassDropdowns() {
+        document.querySelectorAll('select.ios-select').forEach(select => {
+          if (select.dataset.customDropdownInit) return;
+          select.dataset.customDropdownInit = "true";
+          select.style.display = 'none';
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'custom-glass-dropdown';
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'custom-dropdown-btn';
+
+          const label = document.createElement('span');
+          label.className = 'custom-dropdown-label';
+          label.textContent = select.options[select.selectedIndex]?.text || select.options[0]?.text || '';
+
+          const chevron = document.createElement('span');
+          chevron.className = 'custom-dropdown-chevron';
+          chevron.innerHTML = `
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          `;
+
+          btn.appendChild(label);
+          btn.appendChild(chevron);
+          wrapper.appendChild(btn);
+
+          const menu = document.createElement('div');
+          menu.className = 'custom-dropdown-menu';
+
+          Array.from(select.options).forEach((opt, idx) => {
+            const item = document.createElement('div');
+            item.className = 'custom-dropdown-item' + (idx === select.selectedIndex ? ' active' : '');
+            item.dataset.value = opt.value || opt.text;
+
+            const itemText = document.createElement('span');
+            itemText.className = 'custom-dropdown-text';
+            itemText.textContent = opt.text;
+
+            const itemCheck = document.createElement('span');
+            itemCheck.className = 'custom-dropdown-check';
+            itemCheck.innerHTML = `
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            `;
+
+            item.appendChild(itemText);
+            item.appendChild(itemCheck);
+
+            item.addEventListener('click', (e) => {
+              e.stopPropagation();
+              select.selectedIndex = idx;
+              label.textContent = opt.text;
+
+              menu.querySelectorAll('.custom-dropdown-item').forEach(i => i.classList.remove('active'));
+              item.classList.add('active');
+
+              wrapper.classList.remove('open');
+              select.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            menu.appendChild(item);
+          });
+
+          wrapper.appendChild(menu);
+
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = wrapper.classList.contains('open');
+            document.querySelectorAll('.custom-glass-dropdown.open').forEach(d => {
+              if (d !== wrapper) d.classList.remove('open');
+            });
+            wrapper.classList.toggle('open', !isOpen);
+          });
+
+          select.parentNode.insertBefore(wrapper, select.nextSibling);
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-glass-dropdown')) {
+          document.querySelectorAll('.custom-glass-dropdown.open').forEach(d => d.classList.remove('open'));
+        }
+      });
+
+      window.addEventListener('DOMContentLoaded', initCustomGlassDropdowns);
+      window.addEventListener('load', initCustomGlassDropdowns);
+      setTimeout(initCustomGlassDropdowns, 100);
+    })();
+  </script>
+</body>
+</html>

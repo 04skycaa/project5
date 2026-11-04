@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% set active_page = 'riwayat' %}
+{% block title %}Riwayat Grading • Mushroom Grading System{% endblock %}
+
+{% block content %}
+<!-- Top Header -->
+<section class="top-header">
+  <div class="header-greeting">
+    <h1>Riwayat Grading</h1>
+    <p>Akses seluruh hasil pemeriksaan sebelumnya.</p>
+  </div>
+  <div class="header-actions">
+    <select class="ios-select">
+      <option>Hari Ini</option>
+      <option>7 Hari</option>
+      <option>30 Hari</option>
+      <option>Semua</option>
+    </select>
+    <div class="date-badge" id="liveDateBadge">–</div>
+  </div>
+</section>
+
+<!-- Summary Cards -->
+<section class="stats-grid riwayat-summary">
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon green">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div><span class="stat-info-title">Total Sesi</span><h2 class="stat-value">24</h2></div>
+    </div>
+  </div>
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon emerald">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div><span class="stat-info-title">Total Jamur Diperiksa</span><h2 class="stat-value">1.248</h2></div>
+    </div>
+  </div>
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon blue">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div><span class="stat-info-title">Rata-rata / Sesi</span><h2 class="stat-value">52</h2></div>
+    </div>
+  </div>
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon purple">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <div><span class="stat-info-title">Akurasi Rata-rata</span><h2 class="stat-value">97.2%</h2></div>
+    </div>
+  </div>
+  <div class="stat-card glass-card-subtle">
+    <div class="stat-card-header">
+      <div class="stat-icon red">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div><span class="stat-info-title">Reject Total</span><h2 class="stat-value">115</h2></div>
+    </div>
+  </div>
+</section>
+
+<!-- Search + Filter -->
+<div class="riwayat-filter-bar glass-card-subtle">
+  <div class="search-box">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Cari berdasarkan ID, kategori…" class="search-input" oninput="filterTable(this.value)">
+  </div>
+  <div class="filter-pills">
+    <button class="filter-pill active" onclick="setFilter(this,'semua')">Semua</button>
+    <button class="filter-pill" onclick="setFilter(this,'sehat')">Sehat</button>
+    <button class="filter-pill" onclick="setFilter(this,'bb')">BB</button>
+    <button class="filter-pill" onclick="setFilter(this,'reject')">Reject</button>
+  </div>
+</div>
+
+<!-- Full History Table -->
+<div class="glass-card-subtle riwayat-table-card">
+  <div class="card-title-row">
+    <h3>Semua Riwayat Pemeriksaan</h3>
+    <button class="btn-outline-glass" onclick="alert('Simulasi: Ekspor CSV dijalankan.')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Ekspor CSV
+    </button>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="ios-table compact-table" id="riwayatTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Waktu</th>
+          <th>Kategori</th>
+          <th>Kelas AI</th>
+          <th>Konfidensitas</th>
+          <th>Diskolorasi</th>
+          <th>Servo</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set extra_rows = [
+          {'id':'006','time':'10:17','category':'Sehat','badge':'healthy','ai_class':'Healthy','confidence':99.1,'discoloration':0.5,'servo':'Servo 1','status':'Normal'},
+          {'id':'007','time':'10:16','category':'BB - Cacat','badge':'bb-defect','ai_class':'Bacterial Blotch','confidence':93.4,'discoloration':18.2,'servo':'Servo 3','status':'Cacat'},
+          {'id':'008','time':'10:14','category':'Sehat','badge':'healthy','ai_class':'Healthy','confidence':96.7,'discoloration':1.1,'servo':'Servo 1','status':'Normal'},
+          {'id':'009','time':'10:13','category':'Tidak Layak Konsumsi','badge':'unfit','ai_class':'Dry Bubble','confidence':91.8,'discoloration':28.4,'servo':'Servo 3','status':'Reject'},
+          {'id':'010','time':'10:11','category':'BB - Tidak Cacat','badge':'bb-safe','ai_class':'Bacterial Blotch','confidence':95.5,'discoloration':5.9,'servo':'Servo 2','status':'Toleransi'}
+        ] %}
+        {% for item in inspections %}
+        <tr class="table-row-clickable" data-cat="{{ item.category_badge }}">
+          <td><span class="row-id">#{{ item.id }}</span></td>
+          <td>{{ item.time }}</td>
+          <td><span class="badge-grade {{ item.category_badge }}">{{ item.category }}</span></td>
+          <td>{{ item.ai_class }}</td>
+          <td><strong>{{ item.confidence }}%</strong></td>
+          <td>{{ item.discoloration }}%</td>
+          <td>{{ item.servo_target }}</td>
+          <td><span class="status-chip {{ item.category_badge }}">{{ item.status }}</span></td>
+        </tr>
+        {% endfor %}
+        {% for row in extra_rows %}
+        <tr class="table-row-clickable" data-cat="{{ row.badge }}">
+          <td><span class="row-id">#{{ row.id }}</span></td>
+          <td>{{ row.time }}</td>
+          <td><span class="badge-grade {{ row.badge }}">{{ row.category }}</span></td>
+          <td>{{ row.ai_class }}</td>
+          <td><strong>{{ row.confidence }}%</strong></td>
+          <td>{{ row.discoloration }}%</td>
+          <td>{{ row.servo }}</td>
+          <td><span class="status-chip {{ row.badge }}">{{ row.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="table-pagination">
+    <span class="pagination-info">Menampilkan 1–10 dari 1.248 hasil</span>
+    <div class="pagination-btns">
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <span class="page-ellipsis">…</span>
+      <button class="page-btn">25</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function updateClock() {
+    const now = new Date();
+    const days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+    const el = document.getElementById('liveDateBadge');
+    if (el) el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+  }
+  updateClock(); setInterval(updateClock, 1000);
+
+  function filterTable(val) {
+    const rows = document.querySelectorAll('#riwayatTable tbody tr');
+    rows.forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';
+    });
+  }
+
+  let activeFilter = 'semua';
+  function setFilter(btn, cat) {
+    activeFilter = cat;
+    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const rows = document.querySelectorAll('#riwayatTable tbody tr');
+    rows.forEach(r => {
+      if (cat === 'semua') { r.style.display = ''; return; }
+      const rowCat = r.dataset.cat || '';
+      if (cat === 'sehat') r.style.display = rowCat === 'healthy' ? '' : 'none';
+      else if (cat === 'bb') r.style.display = rowCat.startsWith('bb') ? '' : 'none';
+      else if (cat === 'reject') r.style.display = rowCat === 'unfit' ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}
+
