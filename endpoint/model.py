@@ -7,6 +7,12 @@ from uuid import uuid4
 from flask import Blueprint, current_app, jsonify, request
 from werkzeug.utils import secure_filename
 
+from services.supabase_service import (
+    determine_grading,
+    upload_image_to_storage,
+    save_inspection,
+)
+
 model_api = Blueprint("model_api", __name__)
 
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
@@ -29,7 +35,7 @@ def camera_predict():
         return jsonify({"error": "Ukuran gambar maksimal 10 MB."}), 413
 
     boundary = uuid4().hex
-    filename = secure_filename(image.filename) or "image"
+    filename = secure_filename(image.filename) or "image.jpg"
     content_type = image.mimetype or "application/octet-stream"
     body = (
         f"--{boundary}\r\n"
@@ -73,5 +79,35 @@ def camera_predict():
             "detail": data,
             "status": status,
         }), status
+
+    # Simpan gambar ke Supabase Storage & hasil ke tabel inspections
+    try:
+        predicted_class = data.get("prediction", "Unknown")
+        confidence_val = data.get("confidence", 0)
+        # Jika confidence dalam range 0-1, ubah ke persen
+        if isinstance(confidence_val, (int, float)) and confidence_val <= 1.0:
+            confidence_pct = confidence_val * 100.0
+        else:
+            confidence_pct = float(confidence_val)
+
+        grade, servo_target = determine_grading(predicted_class, confidence_pct)
+        data["grade"] = grade
+        data["servo_target"] = servo_target
+
+        # Upload ke Supabase Storage
+        image_url = upload_image_to_storage(image_data, filename, content_type)
+        if image_url:
+            data["image_url"] = image_url
+            # Simpan baris ke database Supabase
+            inspection_record = save_inspection(
+                image_path=image_url,
+                ai_class=predicted_class,
+                confidence=confidence_pct,
+                grade=grade,
+                servo_target=servo_target,
+            )
+            data["saved_record"] = inspection_record
+    except Exception as e:
+        current_app.logger.error(f"Gagal integrasi Supabase: {e}")
 
     return jsonify(data), status

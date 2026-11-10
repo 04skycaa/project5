@@ -205,13 +205,20 @@ function initDonutChart() {
   if (!ctx) return;
 
   const centerLabel = document.querySelector('.donut-center-label');
+  const serverStats = window.SERVER_STATS || {};
+  const donutData = [
+    serverStats.jamur_sehat ?? 892,
+    serverStats.bb_cacat ?? 150,
+    serverStats.bb_tidak_cacat ?? 91,
+    serverStats.tidak_layak ?? 115
+  ];
 
   donutChartInstance = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels: ['Sehat', 'BB (Cacat)', 'BB (Tidak Cacat)', 'Tidak Layak'],
       datasets: [{
-        data: [892, 150, 91, 115],
+        data: donutData,
         backgroundColor: [
           '#34C759', // Sehat (Green)
           '#8B5CF6', // BB Cacat (Purple)
