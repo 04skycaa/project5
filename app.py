@@ -157,7 +157,7 @@ def api_device_status():
         'esp32': {'status': 'online', 'ip': '192.168.1.45', 'ping_ms': 12},
         'sensor_ir': {'status': 'online', 'state': 'monitoring'},
         'servo': {'status': 'online', 'servos': [1, 2, 3], 'position': 'idle'},
-        'resnet_api': {'status': 'online', 'model': 'ResNet-50', 'latency': '42ms'},
+        'resnet_api': {'status': 'online', 'model': 'ResNet-101 (Keras)'},
         'database': {'status': 'online', 'engine': 'SQLite', 'sync': 'Connected'}
     })
 

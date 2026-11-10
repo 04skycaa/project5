@@ -2,12 +2,64 @@
 {% set active_page = 'proses' %}
 {% block title %}Proses Grading • Mushroom Grading System{% endblock %}
 
+{% set recommendation_texts = {
+  'Healthy': {
+    'diagnosis': 'Jamur sehat',
+    'diagnosis_note': 'Tidak terindikasi penyakit',
+    'status_kind': 'healthy',
+    'title': 'Pertahankan kondisi sehat',
+    'text': 'Kondisi jamur terlihat baik. Pertahankan lingkungan tumbuh yang stabil.'
+  },
+  'Bacterial Blotch': {
+    'diagnosis': 'Bacterial Blotch',
+    'diagnosis_note': 'Penyakit terindikasi',
+    'status_kind': 'disease',
+    'title': 'Kendalikan kelembapan permukaan',
+    'text': 'Lakukan penanganan pada area terdampak untuk mengurangi risiko penyebaran.'
+  },
+  'Dry Bubble': {
+    'diagnosis': 'Dry Bubble',
+    'diagnosis_note': 'Penyakit terindikasi',
+    'status_kind': 'disease',
+    'title': 'Tangani area yang terdampak',
+    'text': 'Segera bersihkan bagian terdampak dan perhatikan kebersihan area kerja.'
+  },
+  'Wet Bubble': {
+    'diagnosis': 'Wet Bubble',
+    'diagnosis_note': 'Penyakit terindikasi',
+    'status_kind': 'disease',
+    'title': 'Isolasi dan bersihkan area',
+    'text': 'Batasi kontak dengan bagian terdampak dan lakukan pembersihan menyeluruh.'
+  },
+  'Cobweb': {
+    'diagnosis': 'Cobweb',
+    'diagnosis_note': 'Penyakit terindikasi',
+    'status_kind': 'disease',
+    'title': 'Tingkatkan kebersihan dan ventilasi',
+    'text': 'Periksa area tumbuh dan jaga sirkulasi udara tetap baik.'
+  },
+  'Cobweb Disease': {
+    'diagnosis': 'Cobweb',
+    'diagnosis_note': 'Penyakit terindikasi',
+    'status_kind': 'disease',
+    'title': 'Tingkatkan kebersihan dan ventilasi',
+    'text': 'Periksa area tumbuh dan jaga sirkulasi udara tetap baik.'
+  },
+  'default': {
+    'diagnosis': 'Perlu pemeriksaan',
+    'diagnosis_note': 'Konfirmasi hasil secara manual',
+    'status_kind': 'review',
+    'title': 'Periksa kondisi jamur',
+    'text': 'Periksa kondisi jamur secara langsung sebelum menentukan penanganan.'
+  }
+} %}
+
 {% block content %}
 <!-- Top Header -->
 <section class="top-header">
   <div class="header-greeting">
     <h1>Proses Grading</h1>
-    <p>Pantau kamera real-time dan hasil deteksi jamur.</p>
+    <p>Pantau kamera real-time dan rekomendasi penanganan jamur.</p>
   </div>
   <div class="header-actions">
     <div class="status-badge-online">
@@ -41,7 +93,11 @@
   </button>
     </div>
 
-    <div class="camera-stream-wrapper">
+  <p id="liveObjDetectionStatus" class="detection-status" role="status" aria-live="polite">
+    Menunggu gambar (jepret atau upload)
+  </p>
+
+  <div class="camera-stream-wrapper">
       <div class="camera-stream-viewport" id="cameraStreamViewport" title="Klik untuk mengaktifkan kamera real-time">
         <!-- Live Real-time Video Stream from User's Webcam -->
         <video id="webcamRealtimeVideo" autoplay playsinline muted style="display:none; width: 100%; height: 100%; object-fit: contain;"></video>
@@ -69,19 +125,6 @@
         </div>
       </div>
 
-      <!-- Status Deteksi Objek -->
-      <div class="camera-detection-status-bar">
-        <div class="det-status-item">
-          <span class="det-label">Status Deteksi:</span>
-          <span class="det-value" id="liveObjDetectionStatus">
-            Menunggu gambar (jepret atau upload)
-          </span>
-        </div>
-        <div class="det-status-item">
-          <span class="det-label">Sumber Stream:</span>
-          <span class="det-value" id="cameraStreamMode">Siaga (Klik untuk Aktifkan)</span>
-        </div>
-      </div>
     </div>
 
     <div class="camera-device-control">
@@ -97,14 +140,14 @@
   </div>
   </div>
 
-  <!-- Hasil Deteksi Terbaru -->
+  <!-- Hasil analisis model -->
   <div class="glass-card-subtle latest-detection-card">
     <div class="card-title-row">
       <div>
-        <span class="detection-eyebrow" id="resultSourceLabel">HASIL MODEL</span>
-        <h3>Hasil Deteksi</h3>
+        <span class="detection-eyebrow" id="resultSourceLabel">HASIL API • KERAS / RESNET-101</span>
+        <h3>Hasil Analisis API</h3>
       </div>
-      <span class="detection-id" id="latestDetectionId">#{{ inspections[0].id }}</span>
+      <span class="detection-id" id="latestDetectionId">#API</span>
     </div>
 
     <div class="latest-detection-body">
@@ -117,52 +160,46 @@
               <circle cx="8.5" cy="8.5" r="1.5"></circle>
               <path d="m21 15-5-5L5 21"></path>
             </svg>
-            <span>Belum ada gambar</span>
+            <span>Gambar belum diunggah</span>
           </div>
         </div>
-        <div class="latest-primary-info">
-          <span class="latest-grade-label">Prediction</span>
-          <span class="prediction-label" id="predictionLabel">
-            {{ inspections[0].ai_class }}
-          </span>
-          <div class="result-classification">
-            <span>Hasil grading</span>
-            <strong id="resultCategory">{{ inspections[0].category }}</strong>
+        <div class="result-diagnosis" id="resultDiagnosis" data-status="review" aria-live="polite">
+          <div class="diagnosis-icon" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 3 4.5 6v5.5c0 4.4 3.2 7.7 7.5 9.5 4.3-1.8 7.5-5.1 7.5-9.5V6L12 3Z"></path>
+              <path d="m8.5 12 2.2 2.2 4.8-4.8"></path>
+            </svg>
+          </div>
+          <div class="diagnosis-copy">
+            <span class="diagnosis-kicker">JENIS JAMUR / PENYAKIT</span>
+            <strong id="diagnosisName">Belum ada hasil</strong>
+            <span class="diagnosis-status" id="diagnosisStatus">Upload gambar untuk memulai analisis</span>
+            <span class="diagnosis-disclaimer">Hasil klasifikasi model AI</span>
           </div>
         </div>
       </div>
 
-      <div class="confidence-panel">
-        <div class="confidence-heading">
-          <span>Keyakinan model</span>
-          <strong id="confidenceValue">{{ inspections[0].confidence }}%</strong>
-        </div>
-        <div class="confidence-track" id="confidenceTrack" role="progressbar" aria-label="Tingkat keyakinan deteksi" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ inspections[0].confidence }}">
-<span id="confidenceBar" data-width="{{ inspections[0].confidence }}"></span>        </div>
-      </div>
-
-      <div class="probabilities-panel">
-        <div class="probabilities-heading">
-          <span>Probabilitas tiap jenis</span>
-          <span>Probabilitas model</span>
-        </div>
-        <div class="probabilities-list">
-          {% set model_labels = {'Healthy': 'Healthy', 'Bacterial Blotch': 'Bacterial_Blotch', 'Dry Bubble': 'Dry_Bubble', 'Wet Bubble': 'Wet_Bubble', 'Cobweb': 'Cobweb_Disease'} %}
-          {% for probability in inspections[0].probabilities %}
-          <div class="probability-row" data-probability="{{ model_labels.get(probability.label, probability.label) }}">
-            <span class="probability-label">{{ probability.label }}</span>
-            <span class="probability-track" role="progressbar" aria-label="Probabilitas {{ probability.label }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ probability.value }}">
-<span class="probability-fill {% if probability.label == inspections[0].ai_class %}is-predicted{% endif %}" data-width="{{ probability.value }}"></span>            </span>
-            <strong class="probability-value">{{ probability.value }}%</strong>
+      <div class="grading-recommendation" aria-live="polite">
+        <div class="recommendation-main">
+          <div class="recommendation-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 3a7 7 0 0 0-4 12.74V19h8v-3.26A7 7 0 0 0 12 3Z"></path>
+              <path d="M9 22h6M9 16h6"></path>
+              <path d="m9.5 9.5 1.5 1.5 3.5-3.5"></path>
+            </svg>
           </div>
-          {% endfor %}
+          <div class="recommendation-copy">
+            <span class="recommendation-kicker">PANDUAN APLIKASI • BUKAN KELUARAN API</span>
+            <span class="rec-title" id="recommendationTitle">Menunggu gambar</span>
+            <p class="rec-desc" id="recommendationText">Panduan aplikasi akan ditampilkan setelah prediksi API diterima.</p>
+          </div>
         </div>
       </div>
 
       <div class="result-footer">
         <div class="result-time">
           <span>Waktu deteksi</span>
-          <strong id="resultTime">{{ inspections[0].time }} WIB</strong>
+          <strong id="resultTime">—</strong>
           <span class="result-date" id="resultDate"></span>
         </div>
         <div class="sort-result">
@@ -171,7 +208,7 @@
           </span>
           <span class="sort-result-copy">
             <span>Tujuan sortir</span>
-            <strong id="servoTarget">{{ inspections[0].servo_target }}</strong>
+            <strong id="servoTarget">Tidak dikirim oleh API</strong>
           </span>
         </div>
       </div>
@@ -182,6 +219,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   // ========================================================
   // KONFIGURASI
@@ -189,9 +227,44 @@
   const PREDICT_URL = '/api/camera/predict';
   const MAX_UPLOAD_MB = 10;
   const BTN_ANALYZE_LABEL = '📸 Jepret & Klasifikasi';
-  const BTN_UPLOAD_LABEL = '📁 Upload Gambar';
-  const IDLE_STATUS_TEXT = 'Menunggu gambar (jepret atau upload)';
+  const RECOMMENDATIONS = {{ recommendation_texts|tojson }};
   let latestResultImageUrl = null;
+  let predictionRequestId = 0;
+  let predictionController = null;
+  const initialResultImage = document.getElementById('latestResultImagePreview');
+  const initialEmptyPreview = document.getElementById('latestResultImageEmpty');
+
+  initialResultImage.addEventListener('error', () => {
+    initialResultImage.hidden = true;
+    initialEmptyPreview.hidden = false;
+  });
+
+  function showImagePreview(imageBlob) {
+    const imagePreview = document.getElementById('latestResultImagePreview');
+    const emptyPreview = document.getElementById('latestResultImageEmpty');
+    if (latestResultImageUrl) URL.revokeObjectURL(latestResultImageUrl);
+    latestResultImageUrl = URL.createObjectURL(imageBlob);
+    imagePreview.src = latestResultImageUrl;
+    imagePreview.alt = 'Gambar yang diunggah';
+    imagePreview.hidden = false;
+    emptyPreview.hidden = true;
+  }
+
+  function showApiDisconnectedAlert() {
+    if (window.Swal?.fire) {
+      window.Swal.fire({
+        icon: 'error',
+        title: 'API tidak terhubung',
+        text: 'Tidak dapat menghubungi API prediksi. Pastikan server API berjalan, lalu coba lagi.',
+        confirmButtonText: 'Mengerti',
+        showClass: { popup: 'swal2-show' },
+        hideClass: { popup: 'swal2-hide' }
+      });
+      return;
+    }
+
+    alert('API tidak terhubung. Pastikan server API berjalan, lalu coba lagi.');
+  }
 
   // ========================================================
   // LIVE CLOCK
@@ -275,11 +348,6 @@ async function startRealtimeCamera() {
     const select = document.getElementById('webcamDeviceSelect');
     const selectedDeviceId = select?.value;
 
-    if (!selectedDeviceId) {
-        alert('Pilih perangkat kamera terlebih dahulu.');
-        return;
-    }
-
     cameraStarting = true;
     const requestId = ++cameraRequestId;
 
@@ -291,21 +359,15 @@ async function startRealtimeCamera() {
     const statusBadge = document.getElementById('cameraStatusBadge');
     const hudCamTag = document.getElementById('hudCameraTag');
     const hudResTag = document.getElementById('hudResolutionTag');
-    const streamMode = document.getElementById('cameraStreamMode');
     const detStatus = document.getElementById('liveObjDetectionStatus');
 
     let newStream = null;
 
     if (btnText) btnText.textContent = 'Menghubungkan...';
     if (statusBadge) statusBadge.textContent = 'MENGHUBUNGKAN';
-    if (streamMode) streamMode.textContent = 'Menghubungkan webcam USB...';
-
     try {
-        // Tidak memaksakan resolusi tertentu
         newStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                deviceId: { exact: selectedDeviceId }
-            },
+            video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
             audio: false
         });
 
@@ -341,8 +403,15 @@ async function startRealtimeCamera() {
         const track = newStream.getVideoTracks()[0];
         const settings = track.getSettings();
 
+        await loadCameraDevices();
+        if (requestId !== cameraRequestId) return;
+
+        if (select && settings.deviceId) {
+            select.value = settings.deviceId;
+        }
+
         if (hudCamTag) {
-            hudCamTag.textContent = track.label || 'WEBCAM USB';
+            hudCamTag.textContent = track.label || 'KAMERA';
         }
 
         if (hudResTag) {
@@ -350,13 +419,9 @@ async function startRealtimeCamera() {
                 `${settings.width || video.videoWidth}×${settings.height || video.videoHeight}`;
         }
 
-        if (streamMode) {
-            streamMode.textContent = 'Webcam fisik aktif';
-        }
-
         if (detStatus) {
             detStatus.textContent =
-                `Kamera aktif: ${track.label}. Siap untuk klasifikasi.`;
+                `Kamera aktif: ${track.label || 'kamera default'}. Siap untuk klasifikasi.`;
         }
 
     } catch (error) {
@@ -386,8 +451,6 @@ async function startRealtimeCamera() {
         if (statusBadge) {
             statusBadge.textContent = 'KAMERA TIDAK AKTIF';
         }
-
-        if (streamMode) streamMode.textContent = 'Kamera gagal diaktifkan';
 
         const messages = {
             AbortError: 'Webcam gagal memulai. Periksa driver dan koneksi USB.',
@@ -438,8 +501,6 @@ async function startRealtimeCamera() {
       document.getElementById('btnToggleCamera').classList.remove('active');
       document.getElementById('btnToggleText').textContent = 'Buka Kamera';
       document.getElementById('cameraStatusBadge').textContent = 'KAMERA SIAGA';
-      document.getElementById('cameraStreamMode').textContent = 'Siaga';
-      document.getElementById('liveObjDetectionStatus').textContent = IDLE_STATUS_TEXT;
   }
 
   // ==========================================
@@ -496,40 +557,101 @@ async function startRealtimeCamera() {
   // ========================================================
   async function sendImageToModel(blob, filename) {
     const btnAnalyze = document.getElementById('btnAnalyzeCamera');
-    const btnUpload = document.getElementById('btnUploadImage');
     const detStatus = document.getElementById('liveObjDetectionStatus');
+    const requestId = ++predictionRequestId;
+    if (predictionController) predictionController.abort();
+    const controller = new AbortController();
+    predictionController = controller;
 
     btnAnalyze.disabled = true;
-    btnUpload.disabled = true;
     btnAnalyze.textContent = 'Mengirim...';
     if (detStatus) detStatus.textContent = 'Mengirim gambar ke model...';
 
     try {
+      showImagePreview(blob);
+      resetModelResult();
+
       const formData = new FormData();
       formData.append('image', blob, filename);
 
-      const response = await fetch(PREDICT_URL, { method: 'POST', body: formData });
+      let response;
+      try {
+        response = await fetch(PREDICT_URL, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal
+        });
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        showApiDisconnectedAlert();
+        throw new Error('API tidak terhubung. Pastikan server API berjalan.');
+      }
 
-      let payload = {};
-      try { payload = await response.json(); } catch (_) {}
+      let payload;
+      try {
+        payload = await response.json();
+      } catch {
+        throw new Error('Respons API bukan JSON yang valid.');
+      }
+
+      if (requestId !== predictionRequestId) return;
+
+      if ([502, 503, 504].includes(response.status)) {
+        showApiDisconnectedAlert();
+        throw new Error('API tidak terhubung atau sedang tidak tersedia.');
+      }
 
       if (!response.ok) {
-        throw new Error(payload.error || `API gagal (${response.status}).`);
+        const apiDetail = payload.detail?.message || payload.message || payload.error;
+        throw new Error(apiDetail || `API gagal (${response.status}).`);
       }
 
-      renderCameraResult(payload, blob);
-      if (detStatus) {
-        detStatus.textContent = `Prediksi model berhasil: ${formatPredictionLabel(payload.prediction)}.`;
+      if (
+        !payload ||
+        typeof payload !== 'object' ||
+        payload.status !== 'success' ||
+        typeof payload.prediction !== 'string' ||
+        !Number.isFinite(payload.confidence) ||
+        payload.confidence < 0 ||
+        payload.confidence > 1 ||
+        !payload.probabilities ||
+        typeof payload.probabilities !== 'object' ||
+        Array.isArray(payload.probabilities) ||
+        Object.keys(payload.probabilities).length === 0 ||
+        !Object.hasOwn(payload.probabilities, payload.prediction) ||
+        !Object.values(payload.probabilities).every(
+          probability => Number.isFinite(probability) && probability >= 0 && probability <= 1
+        )
+      ) {
+        throw new Error('Format hasil API tidak sesuai: dibutuhkan prediction, confidence, dan probabilities.');
+      }
+
+      if (requestId !== predictionRequestId) return;
+      renderCameraResult(payload);
+      if (detStatus && requestId === predictionRequestId) {
+        detStatus.textContent = 'Analisis selesai. Rekomendasi telah diperbarui.';
       }
     } catch (error) {
+      if (requestId !== predictionRequestId) return;
       console.error('Klasifikasi gagal:', error);
       if (detStatus) detStatus.textContent = `Gagal: ${error.message}`;
     } finally {
-      btnAnalyze.disabled = false;
-      btnUpload.disabled = false;
-      btnAnalyze.textContent = BTN_ANALYZE_LABEL;
-      btnUpload.textContent = BTN_UPLOAD_LABEL;
+      if (requestId === predictionRequestId) {
+        predictionController = null;
+        btnAnalyze.disabled = false;
+        btnAnalyze.textContent = BTN_ANALYZE_LABEL;
+      }
     }
+  }
+
+  function resetModelResult() {
+    document.getElementById('diagnosisName').textContent = 'Menunggu hasil API...';
+    document.getElementById('diagnosisStatus').textContent = 'Gambar sedang diproses oleh API CNN.';
+    document.getElementById('recommendationTitle').textContent = 'Menunggu hasil API';
+    document.getElementById('recommendationText').textContent =
+      'Panduan aplikasi akan ditampilkan setelah prediksi API diterima.';
+    document.getElementById('servoTarget').textContent = 'Tidak dikirim oleh API';
+    document.getElementById('latestDetectionId').textContent = '#API';
   }
 
   // ========================================================
@@ -594,27 +716,17 @@ async function startRealtimeCamera() {
   // ========================================================
   // TAMPILKAN HASIL DARI MODEL
   // ========================================================
-  function renderCameraResult(result, imageBlob) {
-    const confidence = Number(result.confidence) * 100;
-    const label = formatPredictionLabel(result.prediction);
+  function renderCameraResult(result) {
+    document.getElementById('latestResultImagePreview').alt =
+      `Gambar yang dianalisis: ${result.prediction}`;
 
-    if (imageBlob) {
-      const imagePreview = document.getElementById('latestResultImagePreview');
-      const emptyPreview = document.getElementById('latestResultImageEmpty');
-      if (latestResultImageUrl) URL.revokeObjectURL(latestResultImageUrl);
-      latestResultImageUrl = URL.createObjectURL(imageBlob);
-      imagePreview.src = latestResultImageUrl;
-      imagePreview.hidden = false;
-      emptyPreview.hidden = true;
-      imagePreview.alt = `Gambar yang dianalisis: ${label}`;
-    }
-
-    document.getElementById('latestDetectionId').textContent = '#MODEL';
-    document.getElementById('predictionLabel').textContent = label;
-    document.getElementById('resultCategory').textContent = label;
-    document.getElementById('confidenceValue').textContent = `${confidence.toFixed(2)}%`;
-    document.getElementById('confidenceTrack').setAttribute('aria-valuenow', confidence);
-    document.getElementById('confidenceBar').style.width = `${confidence}%`;
+    document.getElementById('latestDetectionId').textContent = '#API';
+    const recommendation = RECOMMENDATIONS[formatPredictionLabel(result.prediction)] || RECOMMENDATIONS.default;
+    document.getElementById('diagnosisName').textContent = result.prediction;
+    document.getElementById('diagnosisStatus').textContent = 'Prediksi persis dari API model';
+    document.getElementById('resultDiagnosis').dataset.status = recommendation.status_kind;
+    document.getElementById('recommendationTitle').textContent = recommendation.title;
+    document.getElementById('recommendationText').textContent = recommendation.text;
     const detectionTime = new Date();
     document.getElementById('resultTime').textContent =
       `${detectionTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WIB`;
@@ -626,23 +738,7 @@ async function startRealtimeCamera() {
         timeZone: 'Asia/Jakarta'
       });
     document.getElementById('servoTarget').textContent =
-      result.servo_target || 'Tidak tersedia dari API model';
-
-    // Probabilitas tiap kelas
-    document.querySelectorAll('[data-probability]').forEach((row) => {
-      const probability = result.probabilities ? result.probabilities[row.dataset.probability] : undefined;
-      if (probability === undefined) return;
-
-      const percentage = Number(probability) * 100;
-      const value = row.querySelector('.probability-value');
-      const track = row.querySelector('.probability-track');
-      const fill = row.querySelector('.probability-fill');
-
-      value.textContent = `${percentage.toFixed(2)}%`;
-      track.setAttribute('aria-valuenow', percentage);
-      fill.style.width = `${percentage}%`;
-      fill.classList.toggle('is-predicted', row.dataset.probability === result.prediction);
-    });
+      result.servo_target || 'Tidak dikirim oleh API';
   }
 
   function formatPredictionLabel(label) {
