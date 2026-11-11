@@ -32,26 +32,24 @@ def get_supabase():
         return None
 
 
-def determine_grading(ai_class: str, confidence: float):
+def determine_grading(ai_class: str, confidence: float = 0.0):
     """
-    Menentukan grade dan target servo berdasarkan hasil diagnosa AI:
-    - Healthy -> Sehat (Kotak 1: Jamur Sehat)
-    - Bacterial_Blotch -> BB - Tidak Cacat / BB - Cacat (Kotak 2 / Kotak 3)
-    - Wet_Bubble / Dry_Bubble / Cobweb_Disease -> Tidak Layak Konsumsi (Kotak 4)
+    Fallback penentuan grade jika dipanggil tanpa hasil PCV.
+    Untuk logika grading utama dengan PCV, gunakan services.grading.determine_grading.
     """
     cls_clean = (ai_class or "").strip().replace(" ", "_")
     conf_pct = confidence * 100.0 if confidence <= 1.0 else confidence
 
     if cls_clean == "Healthy":
-        return "Sehat", "Kotak 1: Jamur Sehat"
+        return "SEHAT", "SERVO_SEHAT"
     elif cls_clean == "Bacterial_Blotch":
-        if conf_pct >= 95.0:
-            return "BB - Cacat", "Kotak 3: BB Cacat"
-        return "BB - Tidak Cacat", "Kotak 2: BB Tidak Cacat"
+        if conf_pct >= 90.0:
+            return "BB_CACAT", "SERVO_BB_CACAT"
+        return "BB_TIDAK_CACAT", "SERVO_BB_TIDAK_CACAT"
     elif cls_clean in ("Dry_Bubble", "Wet_Bubble", "Cobweb_Disease"):
-        return "Tidak Layak Konsumsi", "Kotak 4: Jamur Tidak Layak"
+        return "TIDAK_LAYAK", "SERVO_TIDAK_LAYAK"
     else:
-        return "Tidak Layak Konsumsi", "Kotak 4: Jamur Tidak Layak"
+        return "TIDAK_LAYAK", "SERVO_TIDAK_LAYAK"
 
 
 def upload_image_to_storage(image_bytes: bytes, filename: str = None, content_type: str = "image/jpeg") -> str:
@@ -88,10 +86,12 @@ def save_inspection(
     ai_class: str,
     confidence: float,
     grade: str = None,
-    servo_target: str = None
+    servo_target: str = None,
+    pcv_result: dict = None
 ) -> dict:
     """
     Menyimpan data hasil grading jamur ke tabel 'inspections' di Supabase.
+    Meneruskan pcv_result (threshold_v, spot_percentage, dll) ke objek rekaman inspeksi.
     """
     client = get_supabase()
     if client is None:
@@ -117,9 +117,10 @@ def save_inspection(
 
     try:
         response = client.table("inspections").insert(data_payload).execute()
-        if response.data and len(response.data) > 0:
-            return response.data[0]
-        return data_payload
+        saved_row = response.data[0] if (response.data and len(response.data) > 0) else data_payload
+        if pcv_result:
+            saved_row["pcv_result"] = pcv_result
+        return saved_row
     except Exception as e:
         print(f"[ERROR] Gagal menyimpan inspeksi ke Supabase: {e}")
         return None
@@ -199,13 +200,13 @@ def calculate_database_stats():
         if insp_at:
             dates_seen.add(str(insp_at)[:10])
 
-        if "Tidak Cacat" in grade:
+        if "Tidak Cacat" in grade or "BB_TIDAK_CACAT" in grade:
             bb_tidak_cacat += 1
-        elif "Cacat" in grade:
+        elif "Cacat" in grade or "BB_CACAT" in grade:
             bb_cacat += 1
-        elif "Tidak Layak" in grade or "unfit" in grade.lower():
+        elif "Tidak Layak" in grade or "TIDAK_LAYAK" in grade or "unfit" in grade.lower():
             tidak_layak += 1
-        elif "Sehat" in grade or "Healthy" in grade:
+        elif "Sehat" in grade or "Healthy" in grade or "SEHAT" in grade:
             sehat += 1
         else:
             tidak_layak += 1

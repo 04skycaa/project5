@@ -35,19 +35,34 @@ def format_inspections(raw_rows):
         grade = str(r.get('grade') or 'Sehat')
         badge = 'healthy'
         status = 'Normal'
+        display_category = grade
 
-        if 'Tidak Cacat' in grade:
+        if 'Tidak Cacat' in grade or 'BB_TIDAK_CACAT' in grade:
             badge = 'bb-safe'
             status = 'Toleransi'
-        elif 'Cacat' in grade:
+            display_category = 'BB - Tidak Cacat'
+        elif 'Cacat' in grade or 'BB_CACAT' in grade:
             badge = 'bb-defect'
             status = 'Cacat'
-        elif 'Tidak Layak' in grade or 'unfit' in grade.lower():
+            display_category = 'BB - Cacat'
+        elif 'Tidak Layak' in grade or 'TIDAK_LAYAK' in grade or 'unfit' in grade.lower():
             badge = 'unfit'
             status = 'Reject'
-        elif 'Sehat' in grade or 'Healthy' in grade:
+            display_category = 'Tidak Layak Konsumsi'
+        elif 'Sehat' in grade or 'Healthy' in grade or 'SEHAT' in grade:
             badge = 'healthy'
             status = 'Normal'
+            display_category = 'Sehat'
+
+        # Format servo target agar rapi dibaca
+        raw_servo = r.get('servo_target') or '-'
+        servo_map = {
+            'SERVO_SEHAT': 'Kotak 1: Jamur Sehat',
+            'SERVO_BB_TIDAK_CACAT': 'Kotak 2: BB Tidak Cacat',
+            'SERVO_BB_CACAT': 'Kotak 3: BB Cacat',
+            'SERVO_TIDAK_LAYAK': 'Kotak 4: Jamur Tidak Layak'
+        }
+        display_servo = servo_map.get(raw_servo, raw_servo)
 
         # Format waktu — konversi dari UTC ke WIB (UTC+7)
         WIB = timezone(timedelta(hours=7))
@@ -73,13 +88,13 @@ def format_inspections(raw_rows):
             'id': str(r.get('id', ''))[:8],
             'full_id': str(r.get('id', '')),
             'image': r.get('image_path') or '',
-            'category': grade,
+            'category': display_category,
             'category_badge': badge,
             'ai_class': r.get('ai_class', '-'),
             'confidence': conf_val,
             'time': time_str,
             'date': date_str,
-            'servo_target': r.get('servo_target') or '-',
+            'servo_target': display_servo,
             'status': status
         })
     return formatted
@@ -273,10 +288,13 @@ def export_csv():
 
     # ── Baris data ───────────────────────────────────────────────────────────
     grade_color_map = {
-        "sehat":      CLR_SEHAT,
-        "bb - tidak": CLR_BB_SAFE,
-        "bb - cacat": CLR_BB_DEF,
+        "sehat":       CLR_SEHAT,
+        "bb - tidak":  CLR_BB_SAFE,
+        "bb_tidak":    CLR_BB_SAFE,
+        "bb - cacat":  CLR_BB_DEF,
+        "bb_cacat":    CLR_BB_DEF,
         "tidak layak": CLR_REJECT,
+        "tidak_layak": CLR_REJECT,
     }
 
     for i, item in enumerate(raw_data or [], start=1):
@@ -334,10 +352,10 @@ def export_csv():
     # ── Blok Ringkasan ────────────────────────────────────────────────────────
     if raw_data:
         total = len(raw_data)
-        sehat     = sum(1 for r in raw_data if 'Sehat' in str(r.get('grade', '')) and 'Tidak' not in str(r.get('grade', '')))
-        bb_tidak  = sum(1 for r in raw_data if 'BB - Tidak Cacat' in str(r.get('grade', '')))
-        bb_cacat  = sum(1 for r in raw_data if 'BB - Cacat' in str(r.get('grade', '')) and 'Tidak Cacat' not in str(r.get('grade', '')))
-        reject    = sum(1 for r in raw_data if 'Tidak Layak' in str(r.get('grade', '')))
+        sehat     = sum(1 for r in raw_data if ('Sehat' in str(r.get('grade', '')) or 'SEHAT' in str(r.get('grade', ''))) and 'Tidak' not in str(r.get('grade', '')) and 'TIDAK' not in str(r.get('grade', '')))
+        bb_tidak  = sum(1 for r in raw_data if 'Tidak Cacat' in str(r.get('grade', '')) or 'BB_TIDAK_CACAT' in str(r.get('grade', '')))
+        bb_cacat  = sum(1 for r in raw_data if ('BB - Cacat' in str(r.get('grade', '')) or 'BB_CACAT' in str(r.get('grade', ''))) and 'Tidak Cacat' not in str(r.get('grade', '')) and 'BB_TIDAK_CACAT' not in str(r.get('grade', '')))
+        reject    = sum(1 for r in raw_data if 'Tidak Layak' in str(r.get('grade', '')) or 'TIDAK_LAYAK' in str(r.get('grade', '')))
 
         summ_start = spacer_row + 1
 

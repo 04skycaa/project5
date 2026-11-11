@@ -3,55 +3,55 @@
 {% block title %}Proses Grading • Mushroom Grading System{% endblock %}
 
 {% set recommendation_texts = {
-  'Healthy': {
-    'diagnosis': 'Jamur sehat',
-    'diagnosis_note': 'Tidak terindikasi penyakit',
-    'status_kind': 'healthy',
-    'title': 'Pertahankan kondisi sehat',
-    'text': 'Kondisi jamur terlihat baik. Pertahankan lingkungan tumbuh yang stabil.'
-  },
-  'Bacterial Blotch': {
-    'diagnosis': 'Bacterial Blotch',
-    'diagnosis_note': 'Penyakit terindikasi',
-    'status_kind': 'disease',
-    'title': 'Kendalikan kelembapan permukaan',
-    'text': 'Lakukan penanganan pada area terdampak untuk mengurangi risiko penyebaran.'
-  },
-  'Dry Bubble': {
-    'diagnosis': 'Dry Bubble',
-    'diagnosis_note': 'Penyakit terindikasi',
-    'status_kind': 'disease',
-    'title': 'Tangani area yang terdampak',
-    'text': 'Segera bersihkan bagian terdampak dan perhatikan kebersihan area kerja.'
-  },
-  'Wet Bubble': {
-    'diagnosis': 'Wet Bubble',
-    'diagnosis_note': 'Penyakit terindikasi',
-    'status_kind': 'disease',
-    'title': 'Isolasi dan bersihkan area',
-    'text': 'Batasi kontak dengan bagian terdampak dan lakukan pembersihan menyeluruh.'
-  },
-  'Cobweb': {
-    'diagnosis': 'Cobweb',
-    'diagnosis_note': 'Penyakit terindikasi',
-    'status_kind': 'disease',
-    'title': 'Tingkatkan kebersihan dan ventilasi',
-    'text': 'Periksa area tumbuh dan jaga sirkulasi udara tetap baik.'
-  },
-  'Cobweb Disease': {
-    'diagnosis': 'Cobweb',
-    'diagnosis_note': 'Penyakit terindikasi',
-    'status_kind': 'disease',
-    'title': 'Tingkatkan kebersihan dan ventilasi',
-    'text': 'Periksa area tumbuh dan jaga sirkulasi udara tetap baik.'
-  },
-  'default': {
-    'diagnosis': 'Perlu pemeriksaan',
-    'diagnosis_note': 'Konfirmasi hasil secara manual',
-    'status_kind': 'review',
-    'title': 'Periksa kondisi jamur',
-    'text': 'Periksa kondisi jamur secara langsung sebelum menentukan penanganan.'
-  }
+'Healthy': {
+'diagnosis': 'Jamur sehat',
+'diagnosis_note': 'Tidak terindikasi penyakit',
+'status_kind': 'healthy',
+'title': 'Pertahankan kondisi sehat',
+'text': 'Kondisi jamur terlihat baik. Pertahankan lingkungan tumbuh yang stabil.'
+},
+'Bacterial Blotch': {
+'diagnosis': 'Bacterial Blotch',
+'diagnosis_note': 'Penyakit terindikasi',
+'status_kind': 'disease',
+'title': 'Kendalikan kelembapan permukaan',
+'text': 'Lakukan penanganan pada area terdampak untuk mengurangi risiko penyebaran.'
+},
+'Dry Bubble': {
+'diagnosis': 'Dry Bubble',
+'diagnosis_note': 'Penyakit terindikasi',
+'status_kind': 'disease',
+'title': 'Tangani area yang terdampak',
+'text': 'Segera bersihkan bagian terdampak dan perhatikan kebersihan area kerja.'
+},
+'Wet Bubble': {
+'diagnosis': 'Wet Bubble',
+'diagnosis_note': 'Penyakit terindikasi',
+'status_kind': 'disease',
+'title': 'Isolasi dan bersihkan area',
+'text': 'Batasi kontak dengan bagian terdampak dan lakukan pembersihan menyeluruh.'
+},
+'Cobweb': {
+'diagnosis': 'Cobweb',
+'diagnosis_note': 'Penyakit terindikasi',
+'status_kind': 'disease',
+'title': 'Tingkatkan kebersihan dan ventilasi',
+'text': 'Periksa area tumbuh dan jaga sirkulasi udara tetap baik.'
+},
+'Cobweb Disease': {
+'diagnosis': 'Cobweb',
+'diagnosis_note': 'Penyakit terindikasi',
+'status_kind': 'disease',
+'title': 'Tingkatkan kebersihan dan ventilasi',
+'text': 'Periksa area tumbuh dan jaga sirkulasi udara tetap baik.'
+},
+'default': {
+'diagnosis': 'Perlu pemeriksaan',
+'diagnosis_note': 'Konfirmasi hasil secara manual',
+'status_kind': 'review',
+'title': 'Periksa kondisi jamur',
+'text': 'Periksa kondisi jamur secara langsung sebelum menentukan penanganan.'
+}
 } %}
 
 {% block content %}
@@ -71,7 +71,8 @@
 </section>
 
 <!-- Kamera dan hasil deteksi -->
-<section class="proses-mid-grid">
+<section class="proses-mid-grid" id="gradingPage"
+         data-recommendations="{{ recommendation_texts|tojson|forceescape }}">
   <!-- Live Camera -->
   <div class="glass-card-subtle live-camera-card">
     <div class="card-title-row camera-title-row">
@@ -80,34 +81,40 @@
     </div>
 
     <div class="camera-actions">
-  <button class="btn-camera-toggle" id="btnAnalyzeCamera" type="button"
-          title="Jepret dan klasifikasikan gambar">📸 Jepret &amp; Klasifikasi</button>
+      <button class="btn-camera-toggle" id="btnAnalyzeCamera" type="button" title="Jepret dan klasifikasikan gambar">📸
+        Jepret &amp; Klasifikasi</button>
 
-  <button class="btn-camera-toggle" id="btnUploadImage" type="button"
-          title="Upload gambar dari perangkat">📁 Upload Gambar</button>
-  <input type="file" id="uploadImageInput" accept="image/*" hidden>
+      <button class="btn-camera-toggle" id="btnUploadImage" type="button" title="Upload gambar dari perangkat">📁 Upload
+        Gambar</button>
+      <input type="file" id="uploadImageInput" accept="image/*" hidden>
 
-  <button class="btn-camera-toggle" id="btnToggleCamera" title="Mulai / Berhenti Kamera Real-time" type="button">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-    <span id="btnToggleText">Buka Kamera</span>
-  </button>
+      <button class="btn-camera-toggle" id="btnToggleCamera" title="Mulai / Berhenti Kamera Real-time" type="button">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+          <circle cx="12" cy="13" r="4" />
+        </svg>
+        <span id="btnToggleText">Buka Kamera</span>
+      </button>
     </div>
 
-  <p id="liveObjDetectionStatus" class="detection-status" role="status" aria-live="polite">
-    Menunggu gambar (jepret atau upload)
-  </p>
+    <p id="liveObjDetectionStatus" class="detection-status" role="status" aria-live="polite">
+      Menunggu gambar (jepret atau upload)
+    </p>
 
-  <div class="camera-stream-wrapper">
+    <div class="camera-stream-wrapper">
       <div class="camera-stream-viewport" id="cameraStreamViewport" title="Klik untuk mengaktifkan kamera real-time">
         <!-- Live Real-time Video Stream from User's Webcam -->
-        <video id="webcamRealtimeVideo" autoplay playsinline muted style="display:none; width: 100%; height: 100%; object-fit: contain;"></video>
+        <video id="webcamRealtimeVideo" autoplay playsinline muted
+          style="display:none; width: 100%; height: 100%; object-fit: contain;"></video>
 
         <div id="cameraFeedPlaceholder" class="camera-feed-placeholder" aria-hidden="true"></div>
 
         <!-- Click to Start Realtime Prompt Overlay -->
         <div class="camera-start-overlay" id="cameraStartOverlay">
           <div class="camera-start-pill">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
             <span>Klik untuk Kamera Real-time</span>
           </div>
         </div>
@@ -131,13 +138,13 @@
       <label for="webcamDeviceSelect">Perangkat Kamera</label>
 
       <select id="webcamDeviceSelect">
-          <option value="">Memuat kamera...</option>
+        <option value="">Memuat kamera...</option>
       </select>
 
       <button type="button" id="btnRefreshCamera">
-          Refresh
+        Refresh
       </button>
-  </div>
+    </div>
   </div>
 
   <!-- Hasil analisis model -->
@@ -191,7 +198,8 @@
           <div class="recommendation-copy">
             <span class="recommendation-kicker">PANDUAN APLIKASI • BUKAN KELUARAN API</span>
             <span class="rec-title" id="recommendationTitle">Menunggu gambar</span>
-            <p class="rec-desc" id="recommendationText">Panduan aplikasi akan ditampilkan setelah prediksi API diterima.</p>
+            <p class="rec-desc" id="recommendationText">Panduan aplikasi akan ditampilkan setelah prediksi API diterima.
+            </p>
           </div>
         </div>
       </div>
@@ -204,7 +212,12 @@
         </div>
         <div class="sort-result">
           <span class="sort-result-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
+            </svg>
           </span>
           <span class="sort-result-copy">
             <span>Tujuan sortir</span>
@@ -227,7 +240,7 @@
   const PREDICT_URL = '/api/camera/predict';
   const MAX_UPLOAD_MB = 10;
   const BTN_ANALYZE_LABEL = '📸 Jepret & Klasifikasi';
-  const RECOMMENDATIONS = {{ recommendation_texts|tojson }};
+  const RECOMMENDATIONS = JSON.parse(document.getElementById('gradingPage').dataset.recommendations);
   let latestResultImageUrl = null;
   let predictionRequestId = 0;
   let predictionController = null;
@@ -271,11 +284,11 @@
   // ========================================================
   function updateClock() {
     const now = new Date();
-    const days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
-    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
     const el = document.getElementById('liveDateBadge');
     if (el) {
-      el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+      el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
     }
     const resultDate = document.getElementById('resultDate');
     if (resultDate) {
@@ -290,59 +303,59 @@
   updateClock();
   setInterval(updateClock, 1000);
 
-let liveWebcamStream = null;
-let cameraStarting = false;
-let cameraRequestId = 0;
+  let liveWebcamStream = null;
+  let cameraStarting = false;
+  let cameraRequestId = 0;
 
-// ==========================================
-// DETEKSI PERANGKAT KAMERA
-// ==========================================
-async function loadCameraDevices() {
+  // ==========================================
+  // DETEKSI PERANGKAT KAMERA
+  // ==========================================
+  async function loadCameraDevices() {
     const select = document.getElementById('webcamDeviceSelect');
 
     if (!select) return;
 
     try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
+      const devices = await navigator.mediaDevices.enumerateDevices();
 
-        const cameras = devices.filter(
-            device => device.kind === 'videoinput'
-        );
+      const cameras = devices.filter(
+        device => device.kind === 'videoinput'
+      );
 
-        const previousValue = select.value;
+      const previousValue = select.value;
 
-        select.innerHTML = '';
+      select.innerHTML = '';
 
-        if (!cameras.length) {
-            select.add(new Option('Kamera tidak ditemukan', ''));
-            return;
-        }
+      if (!cameras.length) {
+        select.add(new Option('Kamera tidak ditemukan', ''));
+        return;
+      }
 
-        cameras.forEach((camera, index) => {
-            const name = camera.label || `Kamera ${index + 1}`;
-            select.add(new Option(name, camera.deviceId));
-        });
+      cameras.forEach((camera, index) => {
+        const name = camera.label || `Kamera ${index + 1}`;
+        select.add(new Option(name, camera.deviceId));
+      });
 
-        // Pertahankan pilihan jika perangkat masih tersedia
-        if (cameras.some(c => c.deviceId === previousValue)) {
-            select.value = previousValue;
-        }
+      // Pertahankan pilihan jika perangkat masih tersedia
+      if (cameras.some(c => c.deviceId === previousValue)) {
+        select.value = previousValue;
+      }
 
-        console.table(cameras.map(camera => ({
-            nama: camera.label,
-            deviceId: camera.deviceId
-        })));
+      console.table(cameras.map(camera => ({
+        nama: camera.label,
+        deviceId: camera.deviceId
+      })));
 
     } catch (error) {
-        console.error('Gagal membaca perangkat kamera:', error);
-        select.innerHTML = '<option value="">Gagal membaca kamera</option>';
+      console.error('Gagal membaca perangkat kamera:', error);
+      select.innerHTML = '<option value="">Gagal membaca kamera</option>';
     }
-}
+  }
 
-// ==========================================
-// MEMULAI KAMERA
-// ==========================================
-async function startRealtimeCamera() {
+  // ==========================================
+  // MEMULAI KAMERA
+  // ==========================================
+  async function startRealtimeCamera() {
     if (cameraStarting || liveWebcamStream) return;
 
     const select = document.getElementById('webcamDeviceSelect');
@@ -366,152 +379,152 @@ async function startRealtimeCamera() {
     if (btnText) btnText.textContent = 'Menghubungkan...';
     if (statusBadge) statusBadge.textContent = 'MENGHUBUNGKAN';
     try {
-        newStream = await navigator.mediaDevices.getUserMedia({
-            video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
-            audio: false
-        });
+      newStream = await navigator.mediaDevices.getUserMedia({
+        video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
+        audio: false
+      });
 
-        if (requestId !== cameraRequestId) {
-            newStream.getTracks().forEach(track => track.stop());
-            return;
-        }
-
-        liveWebcamStream = newStream;
-        video.srcObject = newStream;
-
-        await video.play();
-
-        if (requestId !== cameraRequestId) {
-            newStream.getTracks().forEach(track => track.stop());
-            return;
-        }
-
-        video.style.display = 'block';
-
-        if (placeholder) placeholder.style.display = 'none';
-        document.getElementById('cameraStreamViewport')?.classList.add('camera-active');
-        if (overlay) overlay.classList.add('hidden');
-
-        if (btnToggle) btnToggle.classList.add('active');
-        if (btnText) btnText.textContent = 'Hentikan';
-
-        if (statusBadge) {
-            statusBadge.innerHTML =
-                '<span class="pulse-dot"></span> LIVE REALTIME';
-        }
-
-        const track = newStream.getVideoTracks()[0];
-        const settings = track.getSettings();
-
-        await loadCameraDevices();
-        if (requestId !== cameraRequestId) return;
-
-        if (select && settings.deviceId) {
-            select.value = settings.deviceId;
-        }
-
-        if (hudCamTag) {
-            hudCamTag.textContent = track.label || 'KAMERA';
-        }
-
-        if (hudResTag) {
-            hudResTag.textContent =
-                `${settings.width || video.videoWidth}×${settings.height || video.videoHeight}`;
-        }
-
-        if (detStatus) {
-            detStatus.textContent =
-                `Kamera aktif: ${track.label || 'kamera default'}. Siap untuk klasifikasi.`;
-        }
-
-    } catch (error) {
-        console.error('Gagal membuka webcam:', error);
-
-        if (newStream) {
-            newStream.getTracks().forEach(track => track.stop());
-        }
-
-        if (requestId !== cameraRequestId) return;
-
-        liveWebcamStream = null;
-
-        if (video) {
-            video.pause();
-            video.srcObject = null;
-            video.style.display = 'none';
-        }
-
-        if (placeholder) placeholder.style.display = 'block';
-        document.getElementById('cameraStreamViewport')?.classList.remove('camera-active');
-        if (overlay) overlay.classList.remove('hidden');
-
-        if (btnToggle) btnToggle.classList.remove('active');
-        if (btnText) btnText.textContent = 'Buka Kamera';
-
-        if (statusBadge) {
-            statusBadge.textContent = 'KAMERA TIDAK AKTIF';
-        }
-
-        const messages = {
-            AbortError: 'Webcam gagal memulai. Periksa driver dan koneksi USB.',
-            NotReadableError: 'Webcam sedang digunakan aplikasi lain.',
-            NotAllowedError: 'Izin kamera belum diberikan.',
-            NotFoundError: 'Perangkat kamera tidak ditemukan.',
-            OverconstrainedError: 'Perangkat tidak mendukung konfigurasi kamera.'
-        };
-
-        if (detStatus) {
-            detStatus.textContent =
-                messages[error.name] || error.message;
-        }
-
-    } finally {
-        if (requestId === cameraRequestId) {
-            cameraStarting = false;
-        }
-    }
-}
-
-// ==========================================
-// MENGHENTIKAN KAMERA
-// ==========================================
-  function stopRealtimeCamera() {
-      cameraRequestId++;
-      cameraStarting = false;
-
-      const video = document.getElementById('webcamRealtimeVideo');
-      const placeholder = document.getElementById('cameraFeedPlaceholder');
-      const overlay = document.getElementById('cameraStartOverlay');
-
-      if (liveWebcamStream) {
-          liveWebcamStream.getTracks().forEach(track => track.stop());
-          liveWebcamStream = null;
+      if (requestId !== cameraRequestId) {
+        newStream.getTracks().forEach(track => track.stop());
+        return;
       }
 
+      liveWebcamStream = newStream;
+      video.srcObject = newStream;
+
+      await video.play();
+
+      if (requestId !== cameraRequestId) {
+        newStream.getTracks().forEach(track => track.stop());
+        return;
+      }
+
+      video.style.display = 'block';
+
+      if (placeholder) placeholder.style.display = 'none';
+      document.getElementById('cameraStreamViewport')?.classList.add('camera-active');
+      if (overlay) overlay.classList.add('hidden');
+
+      if (btnToggle) btnToggle.classList.add('active');
+      if (btnText) btnText.textContent = 'Hentikan';
+
+      if (statusBadge) {
+        statusBadge.innerHTML =
+          '<span class="pulse-dot"></span> LIVE REALTIME';
+      }
+
+      const track = newStream.getVideoTracks()[0];
+      const settings = track.getSettings();
+
+      await loadCameraDevices();
+      if (requestId !== cameraRequestId) return;
+
+      if (select && settings.deviceId) {
+        select.value = settings.deviceId;
+      }
+
+      if (hudCamTag) {
+        hudCamTag.textContent = track.label || 'KAMERA';
+      }
+
+      if (hudResTag) {
+        hudResTag.textContent =
+          `${settings.width || video.videoWidth}×${settings.height || video.videoHeight}`;
+      }
+
+      if (detStatus) {
+        detStatus.textContent =
+          `Kamera aktif: ${track.label || 'kamera default'}. Siap untuk klasifikasi.`;
+      }
+
+    } catch (error) {
+      console.error('Gagal membuka webcam:', error);
+
+      if (newStream) {
+        newStream.getTracks().forEach(track => track.stop());
+      }
+
+      if (requestId !== cameraRequestId) return;
+
+      liveWebcamStream = null;
+
       if (video) {
-          video.pause();
-          video.srcObject = null;
-          video.style.display = 'none';
+        video.pause();
+        video.srcObject = null;
+        video.style.display = 'none';
       }
 
       if (placeholder) placeholder.style.display = 'block';
       document.getElementById('cameraStreamViewport')?.classList.remove('camera-active');
       if (overlay) overlay.classList.remove('hidden');
 
-      document.getElementById('btnToggleCamera').classList.remove('active');
-      document.getElementById('btnToggleText').textContent = 'Buka Kamera';
-      document.getElementById('cameraStatusBadge').textContent = 'KAMERA SIAGA';
+      if (btnToggle) btnToggle.classList.remove('active');
+      if (btnText) btnText.textContent = 'Buka Kamera';
+
+      if (statusBadge) {
+        statusBadge.textContent = 'KAMERA TIDAK AKTIF';
+      }
+
+      const messages = {
+        AbortError: 'Webcam gagal memulai. Periksa driver dan koneksi USB.',
+        NotReadableError: 'Webcam sedang digunakan aplikasi lain.',
+        NotAllowedError: 'Izin kamera belum diberikan.',
+        NotFoundError: 'Perangkat kamera tidak ditemukan.',
+        OverconstrainedError: 'Perangkat tidak mendukung konfigurasi kamera.'
+      };
+
+      if (detStatus) {
+        detStatus.textContent =
+          messages[error.name] || error.message;
+      }
+
+    } finally {
+      if (requestId === cameraRequestId) {
+        cameraStarting = false;
+      }
+    }
+  }
+
+  // ==========================================
+  // MENGHENTIKAN KAMERA
+  // ==========================================
+  function stopRealtimeCamera() {
+    cameraRequestId++;
+    cameraStarting = false;
+
+    const video = document.getElementById('webcamRealtimeVideo');
+    const placeholder = document.getElementById('cameraFeedPlaceholder');
+    const overlay = document.getElementById('cameraStartOverlay');
+
+    if (liveWebcamStream) {
+      liveWebcamStream.getTracks().forEach(track => track.stop());
+      liveWebcamStream = null;
+    }
+
+    if (video) {
+      video.pause();
+      video.srcObject = null;
+      video.style.display = 'none';
+    }
+
+    if (placeholder) placeholder.style.display = 'block';
+    document.getElementById('cameraStreamViewport')?.classList.remove('camera-active');
+    if (overlay) overlay.classList.remove('hidden');
+
+    document.getElementById('btnToggleCamera').classList.remove('active');
+    document.getElementById('btnToggleText').textContent = 'Buka Kamera';
+    document.getElementById('cameraStatusBadge').textContent = 'KAMERA SIAGA';
   }
 
   // ==========================================
   // TOGGLE KAMERA
   // ==========================================
   function toggleRealtimeCamera() {
-      if (cameraStarting || liveWebcamStream) {
-          stopRealtimeCamera();
-      } else {
-          startRealtimeCamera();
-      }
+    if (cameraStarting || liveWebcamStream) {
+      stopRealtimeCamera();
+    } else {
+      startRealtimeCamera();
+    }
   }
 
   // ==========================================
@@ -520,32 +533,32 @@ async function startRealtimeCamera() {
   const btnToggleCamera = document.getElementById('btnToggleCamera');
 
   if (btnToggleCamera) {
-      btnToggleCamera.addEventListener('click', event => {
-          event.stopPropagation();
-          toggleRealtimeCamera();
-      });
+    btnToggleCamera.addEventListener('click', event => {
+      event.stopPropagation();
+      toggleRealtimeCamera();
+    });
   }
 
   const cameraViewport = document.getElementById('cameraStreamViewport');
 
   if (cameraViewport) {
-      cameraViewport.addEventListener('click', () => {
-          if (!liveWebcamStream && !cameraStarting) {
-              startRealtimeCamera();
-          }
-      });
+    cameraViewport.addEventListener('click', () => {
+      if (!liveWebcamStream && !cameraStarting) {
+        startRealtimeCamera();
+      }
+    });
   }
 
   const btnRefreshCamera = document.getElementById('btnRefreshCamera');
 
   if (btnRefreshCamera) {
-      btnRefreshCamera.addEventListener('click', loadCameraDevices);
+    btnRefreshCamera.addEventListener('click', loadCameraDevices);
   }
 
   // Deteksi ulang jika perangkat USB dilepas atau dipasang
   navigator.mediaDevices?.addEventListener?.(
-      'devicechange',
-      loadCameraDevices
+    'devicechange',
+    loadCameraDevices
   );
 
   // Jalankan setelah halaman siap
@@ -737,7 +750,12 @@ async function startRealtimeCamera() {
     }
     const recommendation = RECOMMENDATIONS[formatPredictionLabel(result.prediction)] || RECOMMENDATIONS.default;
     document.getElementById('diagnosisName').textContent = result.prediction;
-    document.getElementById('diagnosisStatus').textContent = 'Prediksi persis dari API model';
+    if (result.pcv_result && result.pcv_result.spot_percentage !== undefined) {
+      document.getElementById('diagnosisStatus').textContent =
+        `Analisis PCV: Luas Bercak ${result.pcv_result.spot_percentage}% · Grade: ${result.grade || '-'}`;
+    } else {
+      document.getElementById('diagnosisStatus').textContent = 'Prediksi persis dari API model';
+    }
     document.getElementById('resultDiagnosis').dataset.status = recommendation.status_kind;
     document.getElementById('recommendationTitle').textContent = recommendation.title;
     document.getElementById('recommendationText').textContent = recommendation.text;
