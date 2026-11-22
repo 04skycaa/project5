@@ -2,12 +2,856 @@
 {% set active_page = 'riwayat' %}
 {% block title %}Riwayat Grading • Mushroom Grading System{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* ══════════════════════════════════════════════════════════════
+     APPLE TACTILE LIQUID FROSTED GLASS (BLUR GLASS) THEME
+     Sesuai dengan estetika gradasi cream-putih & kristal akrilik
+     ══════════════════════════════════════════════════════════════ */
+
+  /* Level 1: Kartu Kelompok Hari */
+  .day-group-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.14) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1.2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 22px;
+    margin-bottom: 16px;
+    box-shadow:
+      0 10px 30px -4px rgba(140, 100, 60, 0.07),
+      0 3px 8px -1px rgba(140, 100, 60, 0.03),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.95),
+      inset 0 -1.5px 2px 0 rgba(210, 175, 130, 0.10),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    overflow: hidden;
+    transition: all 0.28s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .day-group-card:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.22) 100%);
+    border-color: rgba(255, 255, 255, 1);
+    box-shadow:
+      0 16px 36px -4px rgba(140, 100, 60, 0.12),
+      0 5px 12px -2px rgba(140, 100, 60, 0.05),
+      inset 0 2px 2px 0 #FFFFFF,
+      inset 0 -1.5px 2px 0 rgba(210, 175, 130, 0.15),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+    transform: translateY(-2px);
+  }
+
+  /* Header Baris Hari */
+  .day-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    cursor: pointer;
+    user-select: none;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.08) 100%);
+    transition: background 0.2s ease;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .day-row-header:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.50) 0%, rgba(255, 255, 255, 0.20) 100%);
+  }
+
+  .day-title-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .day-date-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ios-label, #1E293B);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  /* Pills Info Hari (Frosted Glass) */
+  .pill-count {
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    background: rgba(45, 106, 79, 0.12);
+    border: 1px solid rgba(45, 106, 79, 0.25);
+    color: #1B4332;
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85);
+  }
+
+  .pill-session-count {
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    background: rgba(0, 122, 255, 0.12);
+    border: 1px solid rgba(0, 122, 255, 0.25);
+    color: #0056B3;
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85);
+  }
+
+  /* Mini Category Chips (Glass Pill) */
+  .category-chips-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .cat-mini-chip {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3.5px 10px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), inset 0 1px 1px rgba(255, 255, 255, 0.85);
+    transition: transform 0.15s ease;
+  }
+
+  .cat-mini-chip:hover {
+    transform: scale(1.04);
+  }
+
+  .cat-mini-chip.healthy {
+    background: rgba(52, 199, 89, 0.14);
+    border: 1px solid rgba(52, 199, 89, 0.32);
+    color: #15803D;
+  }
+
+  .cat-mini-chip.bb-safe {
+    background: rgba(0, 122, 255, 0.14);
+    border: 1px solid rgba(0, 122, 255, 0.32);
+    color: #0369A1;
+  }
+
+  .cat-mini-chip.bb-defect {
+    background: rgba(139, 92, 246, 0.14);
+    border: 1px solid rgba(139, 92, 246, 0.32);
+    color: #6D28D9;
+  }
+
+  .cat-mini-chip.unfit {
+    background: rgba(255, 59, 48, 0.14);
+    border: 1px solid rgba(255, 59, 48, 0.32);
+    color: #B91C1C;
+  }
+
+  /* Tombol Toggle Detail Sesi (Tactile Glass Pill) */
+  .btn-toggle-drilldown {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6.5px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.25) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--ios-label, #1E293B);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .btn-toggle-drilldown:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.45) 100%);
+    border-color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(45, 106, 79, 0.14), inset 0 1.5px 1.5px #FFFFFF;
+    transform: translateY(-1.5px);
+  }
+
+  .chevron-arrow {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .chevron-arrow.rotated {
+    transform: rotate(180deg);
+  }
+
+  /* Level 2: Kontainer Dropdown Sesi (Translucent Glass) */
+  .sessions-dropdown-container {
+    display: none;
+    padding: 16px 22px 22px 22px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255, 255, 255, 0.55);
+  }
+
+  .sessions-dropdown-container.active {
+    display: block;
+    animation: slideDownFade 0.25s ease-out;
+  }
+
+  /* Sub-Card Tiap Sesi (Tactile Liquid Glass) */
+  .session-subcard {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.50) 0%, rgba(255, 255, 255, 0.16) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1.2px solid rgba(255, 255, 255, 0.88);
+    border-radius: 18px;
+    margin-top: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow:
+      0 4px 16px -2px rgba(140, 100, 60, 0.06),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.95),
+      inset 0 -1px 2px 0 rgba(210, 175, 130, 0.08),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    flex-wrap: wrap;
+    gap: 12px;
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .session-subcard:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.28) 100%);
+    border-color: rgba(255, 255, 255, 1);
+    box-shadow:
+      0 8px 24px -2px rgba(45, 106, 79, 0.12),
+      inset 0 2px 2px 0 #FFFFFF,
+      inset 0 -1px 2px 0 rgba(210, 175, 130, 0.12);
+    transform: translateY(-2px);
+  }
+
+  /* Badge Nomor Sesi (Frosted Emerald Glass) */
+  .sess-badge-pill {
+    background: linear-gradient(135deg, rgba(45, 106, 79, 0.18) 0%, rgba(45, 106, 79, 0.08) 100%);
+    border: 1px solid rgba(45, 106, 79, 0.35);
+    color: #1B4332;
+    font-weight: 800;
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 9999px;
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85);
+  }
+
+  /* Badge Waktu & Total Jamur Sesi (Glass Capsule) */
+  .sess-time-pill {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ios-label, #1E293B);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sess-total-pill {
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    padding: 3.5px 12px;
+    border-radius: 9999px;
+    color: var(--ios-label, #1E293B);
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  }
+
+  /* Tombol Pop-up Diagram Donat & Hasil Sesi (Tactile Emerald Pill Button) */
+  .btn-session-popup {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8.5px 18px;
+    font-size: 12.5px;
+    font-weight: 700;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%);
+    color: #FFFFFF;
+    cursor: pointer;
+    box-shadow:
+      0 4px 14px rgba(45, 106, 79, 0.28),
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.55),
+      inset 0 -1.5px 2px rgba(0, 0, 0, 0.20);
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .btn-session-popup:hover {
+    background: linear-gradient(135deg, #378564 0%, #245741 100%);
+    box-shadow:
+      0 6px 20px rgba(45, 106, 79, 0.40),
+      inset 0 1.5px 1.5px rgba(255, 255, 255, 0.80);
+    transform: translateY(-2px);
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     POP-UP MODAL (ULTRA FROSTED BLUR GLASS)
+     ══════════════════════════════════════════════════════════════ */
+  .ios-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.38);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+
+  .ios-modal-backdrop.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .ios-modal-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.52) 100%);
+    backdrop-filter: blur(36px) saturate(200%);
+    -webkit-backdrop-filter: blur(36px) saturate(200%);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    border-radius: 26px;
+    box-shadow:
+      0 28px 64px -12px rgba(120, 80, 40, 0.18),
+      0 8px 24px -4px rgba(120, 80, 40, 0.08),
+      inset 0 2px 2px 0 #FFFFFF,
+      inset 0 -2px 3px 0 rgba(210, 175, 130, 0.12);
+    width: 100%;
+    max-width: 840px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.93) translateY(14px);
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .ios-modal-backdrop.open .ios-modal-card {
+    transform: scale(1) translateY(0);
+  }
+
+  .ios-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 26px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.70);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.15) 100%);
+  }
+
+  .modal-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .modal-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(45, 106, 79, 0.14);
+    border: 1px solid rgba(45, 106, 79, 0.30);
+    color: #2D6A4F;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  }
+
+  .btn-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.50);
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+  }
+
+  .btn-modal-close:hover {
+    background: #EF4444;
+    color: #FFFFFF;
+    border-color: #EF4444;
+  }
+
+  /* KPI Mini Strip di Modal (Frosted Glass Items) */
+  .modal-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    padding: 14px 26px;
+    background: rgba(255, 255, 255, 0.20);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  }
+
+  .modal-kpi-item {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.22) 100%);
+    border: 1.2px solid rgba(255, 255, 255, 0.90);
+    border-radius: 14px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 2px 8px rgba(140, 100, 60, 0.03), inset 0 1px 1px #FFFFFF;
+    backdrop-filter: blur(12px);
+  }
+
+  .modal-kpi-lbl {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .modal-kpi-val {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--ios-label, #1E293B);
+  }
+
+  /* Grid Body Modal: Donut Chart + Tabel */
+  .modal-grid-body {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    padding: 24px 26px;
+    overflow-y: auto;
+  }
+
+  @media (max-width: 768px) {
+    .modal-grid-body {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .modal-chart-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.48) 0%, rgba(255, 255, 255, 0.16) 100%);
+    border: 1.2px solid rgba(255, 255, 255, 0.88);
+    border-radius: 20px;
+    padding: 20px 14px;
+    backdrop-filter: blur(18px);
+    box-shadow: 0 4px 18px rgba(140, 100, 60, 0.04), inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+  }
+
+  .chart-center-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .chart-center-badge strong {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--ios-label, #1E293B);
+    line-height: 1;
+    display: block;
+  }
+
+  .chart-center-badge small {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+  }
+
+  .modal-table-box {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-scroll-wrapper {
+    overflow-x: auto;
+    border: 1.2px solid rgba(255, 255, 255, 0.88);
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.20) 100%);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 4px 18px rgba(140, 100, 60, 0.04), inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+  }
+
+  .ios-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 26px;
+    border-top: 1px solid rgba(255, 255, 255, 0.65);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.12) 100%);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .btn-modal-done {
+    padding: 8px 24px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.40);
+    background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%);
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(45, 106, 79, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .btn-modal-done:hover {
+    background: linear-gradient(135deg, #378564 0%, #245741 100%);
+    box-shadow: 0 6px 18px rgba(45, 106, 79, 0.35);
+    transform: translateY(-1.5px);
+  }
+
+  @keyframes slideDownFade {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ══════════════════════════════════════
+     DATE PICKER + QUICK FILTER BAR
+     ══════════════════════════════════════ */
+  .filter-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* ═══════════════════════════════════════════
+     CUSTOM FROSTED GLASS DROPDOWN
+     ═══════════════════════════════════════════ */
+  .custom-dropdown-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .custom-dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 15px;
+    border-radius: 9999px;
+    border: 1.2px solid rgba(255, 255, 255, 0.90);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.35) 100%);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    box-shadow:
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.95),
+      0 2px 8px rgba(140, 100, 60, 0.05);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ios-label, #1E293B);
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+    user-select: none;
+    outline: none;
+  }
+
+  .custom-dropdown-trigger:hover {
+    background: linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.65) 100%);
+    border-color: #FFFFFF;
+    box-shadow:
+      0 6px 16px rgba(140, 100, 60, 0.10),
+      inset 0 1.5px 1.5px #FFFFFF;
+    transform: translateY(-1px);
+  }
+
+  .custom-dropdown-trigger.open {
+    border-color: rgba(45, 106, 79, 0.6);
+    box-shadow:
+      0 6px 20px rgba(45, 106, 79, 0.15),
+      inset 0 1.5px 1.5px #FFFFFF;
+  }
+
+  .dropdown-icon {
+    color: #2D6A4F;
+    flex-shrink: 0;
+  }
+
+  .dropdown-chevron {
+    color: #64748B;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+  }
+
+  .custom-dropdown-trigger.open .dropdown-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Dropdown Menu Popover */
+  .custom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 190px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.72) 100%);
+    backdrop-filter: blur(25px) saturate(190%);
+    -webkit-backdrop-filter: blur(25px) saturate(190%);
+    border: 1.2px solid rgba(255, 255, 255, 0.95);
+    border-radius: 18px;
+    box-shadow:
+      0 16px 36px -4px rgba(140, 100, 60, 0.16),
+      0 4px 12px -2px rgba(140, 100, 60, 0.08),
+      inset 0 1.5px 1.5px #FFFFFF,
+      inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    padding: 6px;
+    z-index: 150;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.96);
+    transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+    pointer-events: none;
+  }
+
+  .custom-dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .custom-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8.5px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.18s ease;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ios-label, #1E293B);
+  }
+
+  .custom-dropdown-item .item-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .custom-dropdown-item .item-icon {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .custom-dropdown-item .item-text {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .custom-dropdown-item .item-check {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .custom-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.75);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    color: #2D6A4F;
+    transform: translateX(2px);
+  }
+
+  .custom-dropdown-item.active {
+    background: linear-gradient(135deg, rgba(45, 106, 79, 0.15) 0%, rgba(45, 106, 79, 0.06) 100%);
+    color: #1B4332;
+    font-weight: 700;
+  }
+
+  .custom-dropdown-item.active .item-check {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .filter-bar-divider {
+    width: 1px;
+    height: 22px;
+    background: rgba(0, 0, 0, 0.09);
+    flex-shrink: 0;
+  }
+
+  /* Date Picker pill */
+  .date-picker-glass {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 9999px;
+    border: 1.2px solid rgba(255, 255, 255, 0.90);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0.26) 100%);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    box-shadow:
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.95),
+      0 2px 8px rgba(140, 100, 60, 0.05);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ios-secondary-label, #475569);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .date-picker-glass:has(input:not([value=""])),
+  .date-picker-glass.has-value {
+    border-color: rgba(0, 122, 255, 0.45);
+    background: linear-gradient(135deg, rgba(0, 122, 255, 0.10) 0%, rgba(0, 122, 255, 0.04) 100%);
+    color: #0056B3;
+  }
+
+  input[type="date"].date-input-glass {
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: inherit;
+    outline: none;
+    cursor: pointer;
+    width: 118px;
+  }
+
+  /* Clear button */
+  .btn-clear-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9999px;
+    border: 1.2px solid rgba(255, 255, 255, 0.80);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.22) 100%);
+    backdrop-filter: blur(14px);
+    color: #94A3B8;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, 0.95), 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .btn-clear-filter:hover {
+    color: #EF4444;
+    border-color: rgba(239, 68, 68, 0.40);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.10) 0%, rgba(239, 68, 68, 0.04) 100%);
+  }
+
+  /* Quick filter pills row */
+  .quick-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .quick-filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ios-tertiary-label, #94A3B8);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .qf-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    border: 1.2px solid rgba(255, 255, 255, 0.85);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.20) 100%);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ios-secondary-label, #475569);
+    cursor: pointer;
+    box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, 0.95), 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  .qf-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, 0.95), 0 4px 12px rgba(0, 0, 0, 0.07);
+  }
+
+  .qf-pill.active {
+    background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%);
+    border-color: rgba(45, 106, 79, 0.6);
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px rgba(45, 106, 79, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  }
+
+  /* "Tidak ada hasil" state */
+  .no-results-hint {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ios-tertiary-label, #94A3B8);
+    font-size: 14px;
+    font-weight: 600;
+    display: none;
+  }
+
+  .filter-status-bar {
+    font-size: 11.5px;
+    color: var(--ios-secondary-label, #475569);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .filter-status-bar span.fs-count {
+    color: var(--ios-label, #1E293B);
+    font-weight: 800;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Top Header -->
 <section class="top-header">
   <div class="header-greeting">
     <h1>Riwayat Grading</h1>
-    <p>Data pemeriksaan jamur kancing langsung dari database Supabase.</p>
+    <p>Daftar pemeriksaan jamur kancing per hari, per sesi, dan diagram hasil kategori.</p>
   </div>
   <div class="header-actions">
     <div class="date-badge" id="liveDateBadge">
@@ -15,163 +859,796 @@
     </div>
     <div class="status-badge-online">
       <span class="pulse-dot"></span>
-      <span>Database Terhubung</span>
+      <span>Database Supabase Aktif</span>
     </div>
   </div>
 </section>
 
-<!-- Summary Cards -->
+<!-- Summary KPI Cards -->
 <section class="stats-grid riwayat-summary">
   <div class="stat-card glass-card-subtle">
     <div class="stat-card-header">
       <div class="stat-icon emerald">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
       </div>
-      <div><span class="stat-info-title">Total Diperiksa</span><h2 class="stat-value">{{ stats.total_jamur }}</h2></div>
+      <div><span class="stat-info-title">Total Diperiksa</span>
+        <h2 class="stat-value">{{ stats.total_jamur }}</h2>
+      </div>
     </div>
   </div>
   <div class="stat-card glass-card-subtle">
     <div class="stat-card-header">
       <div class="stat-icon green">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
       </div>
-      <div><span class="stat-info-title">Jamur Sehat</span><h2 class="stat-value">{{ stats.jamur_sehat }}</h2></div>
+      <div><span class="stat-info-title">Jamur Sehat</span>
+        <h2 class="stat-value">{{ stats.jamur_sehat }}</h2>
+      </div>
     </div>
   </div>
   <div class="stat-card glass-card-subtle">
     <div class="stat-card-header">
       <div class="stat-icon blue">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
       </div>
-      <div><span class="stat-info-title">BB Total</span><h2 class="stat-value">{{ stats.bb_total }}</h2></div>
+      <div><span class="stat-info-title">BB Total</span>
+        <h2 class="stat-value">{{ stats.bb_total }}</h2>
+      </div>
     </div>
   </div>
   <div class="stat-card glass-card-subtle">
     <div class="stat-card-header">
       <div class="stat-icon purple">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
       </div>
-      <div><span class="stat-info-title">Akurasi Rata-rata</span><h2 class="stat-value">{{ stats.avg_accuracy }}%</h2></div>
+      <div><span class="stat-info-title">Total Sesi</span>
+        <h2 class="stat-value">{{ stats.total_sesi }}</h2>
+      </div>
     </div>
   </div>
   <div class="stat-card glass-card-subtle">
     <div class="stat-card-header">
       <div class="stat-icon red">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
       </div>
-      <div><span class="stat-info-title">Reject Total</span><h2 class="stat-value">{{ stats.tidak_layak }}</h2></div>
+      <div><span class="stat-info-title">Reject Total</span>
+        <h2 class="stat-value">{{ stats.tidak_layak }}</h2>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- Search + Filter -->
+<!-- Search Box + Date Picker + Periode Dropdown -->
 <div class="riwayat-filter-bar glass-card-subtle">
-  <div class="search-box">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" placeholder="Cari berdasarkan ID, kelas, grade…" class="search-input" oninput="filterTable(this.value)">
-  </div>
-  <div class="filter-pills">
-    <button class="filter-pill active" onclick="setFilter(this,'semua')">Semua</button>
-    <button class="filter-pill" onclick="setFilter(this,'sehat')">Sehat</button>
-    <button class="filter-pill" onclick="setFilter(this,'bb')">BB</button>
-    <button class="filter-pill" onclick="setFilter(this,'reject')">Reject</button>
+  <div class="filter-bar-row">
+
+    <!-- Text Search -->
+    <div class="search-box" style="flex:1; min-width:180px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2">
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+      <input type="text" id="searchTextInput" placeholder="Cari tanggal atau nomor sesi…" class="search-input"
+        oninput="onTextSearch(this.value)">
+    </div>
+
+    <div class="filter-bar-divider"></div>
+
+    <!-- Periode Custom Frosted Glass Dropdown -->
+    <div class="custom-dropdown-container" id="periodeDropdownContainer">
+      <button type="button" class="custom-dropdown-trigger" id="periodeDropdownTrigger" onclick="togglePeriodeDropdown(event)">
+        <svg class="dropdown-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+        <span id="periodeDropdownLabel" class="dropdown-label">Semua</span>
+        <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+
+      <!-- Floating Glass Menu -->
+      <div class="custom-dropdown-menu" id="periodeDropdownMenu">
+        <div class="custom-dropdown-item active" data-val="semua" onclick="selectPeriodeOption('semua', 'Semua')">
+          <div class="item-left">
+            <span class="item-icon">📋</span>
+            <span class="item-text">Semua</span>
+          </div>
+          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+
+        <div class="custom-dropdown-item" data-val="today" onclick="selectPeriodeOption('today', 'Hari Ini')">
+          <div class="item-left">
+            <span class="item-icon">📅</span>
+            <span class="item-text">Hari Ini</span>
+          </div>
+          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+
+        <div class="custom-dropdown-item" data-val="7days" onclick="selectPeriodeOption('7days', '7 Hari Terakhir')">
+          <div class="item-left">
+            <span class="item-icon">📆</span>
+            <span class="item-text">7 Hari Terakhir</span>
+          </div>
+          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+
+        <div class="custom-dropdown-item" data-val="bulan" onclick="selectPeriodeOption('bulan', 'Bulan Ini')">
+          <div class="item-left">
+            <span class="item-icon">🗓️</span>
+            <span class="item-text">Bulan Ini</span>
+          </div>
+          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Picker (selalu tampil di samping dropdown) -->
+    <label class="date-picker-glass" id="datePickerWrap" title="Pilih tanggal spesifik">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+        style="color:#64748B;flex-shrink:0;">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+      <input type="date" id="datePickerInput" class="date-input-glass" onchange="onDatePick(this.value)">
+    </label>
+
+    <!-- Clear All Filters -->
+    <button class="btn-clear-filter" onclick="clearAllFilters()" title="Reset semua filter">×</button>
+
+    <!-- Status Info -->
+    <div class="filter-status-bar" id="filterStatusBar">
+      <span class="fs-count" id="fsCount">{{ grouped_history|length }}</span> hari ditampilkan
+    </div>
+
   </div>
 </div>
 
-<!-- Full History Table -->
+<!-- Hierarki Riwayat: Per Hari -> Dropdown Sesi -> Pop-up & Diagram Donat -->
 <div class="glass-card-subtle riwayat-table-card">
   <div class="card-title-row">
-    <h3>Semua Riwayat Pemeriksaan</h3>
-    <a href="/api/export-csv" class="btn-outline-glass" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <div>
+      <h3>Daftar Riwayat Jamur per Hari</h3>
+      <p style="font-size: 13px; color: var(--ios-tertiary-label); margin-top: 3px;">
+        Klik <strong>Detail Sesi</strong> untuk membuka dropdown sesi, lalu klik <strong>Diagram &amp; Hasil
+          Sesi</strong> untuk melihat diagram per kategori.
+      </p>
+    </div>
+    <a href="/api/export-csv" class="btn-outline-glass"
+      style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </svg>
       Ekspor Excel
     </a>
   </div>
-  <div style="overflow-x:auto;">
-    <table class="ios-table compact-table" id="riwayatTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Gambar</th>
-          <th>Waktu</th>
-          <th>Kategori</th>
-          <th>Kelas AI</th>
-          <th>Konfidensitas</th>
-          <th>Tujuan Sortir</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in inspections %}
-        <tr class="table-row-clickable" data-cat="{{ item.category_badge }}">
-          <td><span class="row-id">#{{ item.id }}</span></td>
-          <td>
-            {% if item.image %}
-            <a href="{{ item.image }}" target="_blank" title="Buka gambar penuh">
-              <img class="mushroom-thumb" src="{{ item.image }}" alt="Jamur {{ item.id }}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=600&auto=format&fit=crop'">
-            </a>
-            {% else %}
-            <div class="mushroom-thumb" style="display:flex;align-items:center;justify-content:center;background:#e2e8f0;font-size:10px;color:#64748b;">-</div>
-            {% endif %}
-          </td>
-          <td>{{ item.time }} <small style="color:#94A3B8;">WIB</small></td>
-          <td><span class="badge-grade {{ item.category_badge }}">{{ item.category }}</span></td>
-          <td>{{ item.ai_class }}</td>
-          <td><strong>{{ item.confidence }}%</strong></td>
-          <td>{{ item.servo_target }}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="7" style="text-align:center;padding:40px 20px;color:#64748B;">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
-              <strong style="color:#334155;font-size:1rem;">Tabel Database Supabase Masih Kosong (0 Hasil)</strong>
-              <span style="font-size:0.85rem;color:#64748B;max-width:480px;line-height:1.5;">
-                Belum ada pemeriksaan yang tersimpan di tabel <code>inspections</code>. Silakan buka menu <strong>Proses Grading</strong> lalu klik <strong>📸 Jepret &amp; Klasifikasi</strong> atau <strong>📁 Upload Gambar</strong> untuk menambahkan data asli pertama Anda.
-              </span>
-            </div>
-          </td>
-        </tr>
+
+  <div style="margin-top: 18px;" id="historyContainer">
+    {% for day in grouped_history %}
+    {% set day_idx = loop.index %}
+    {% set day_num = loop.index0 %}
+    <!-- LEVEL 1: KARTU HARI / TANGGAL -->
+    <div class="day-group-card" data-date="{{ day.date }}" data-raw-date="{{ day.raw_date }}"
+      id="dayCard-{{ day_idx }}">
+      <div class="day-row-header" onclick="toggleDay('daySessions-{{ day_idx }}', 'dayIcon-{{ day_idx }}')">
+        <div class="day-title-info">
+          <div class="day-date-title">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            <span>{{ day.date }}</span>
+          </div>
+          <span class="pill-count">Total: {{ day.total_jamur }} Jamur</span>
+          <span class="pill-session-count">{{ day.total_sesi }} Sesi</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <!-- Ringkasan Kategori Hari Ini -->
+          <div class="category-chips-summary">
+            {% if day.sehat > 0 %}<span class="cat-mini-chip healthy">{{ day.sehat }} Sehat</span>{% endif %}
+            {% if day.bb_safe > 0 %}<span class="cat-mini-chip bb-safe">{{ day.bb_safe }} BB Aman</span>{% endif %}
+            {% if day.bb_defect > 0 %}<span class="cat-mini-chip bb-defect">{{ day.bb_defect }} BB Cacat</span>{% endif
+            %}
+            {% if day.reject > 0 %}<span class="cat-mini-chip unfit">{{ day.reject }} Reject</span>{% endif %}
+          </div>
+
+          <button type="button" class="btn-toggle-drilldown"
+            onclick="event.stopPropagation(); toggleDay('daySessions-{{ day_idx }}', 'dayIcon-{{ day_idx }}')">
+            <span>Detail Sesi</span>
+            <svg class="chevron-arrow {% if loop.first %}rotated{% endif %}" id="dayIcon-{{ day_idx }}" width="13"
+              height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- LEVEL 2: DAFTAR SESI DI HARI TERSEBUT (DROPDOWN) -->
+      <div class="sessions-dropdown-container {% if loop.first %}active{% endif %}" id="daySessions-{{ day_idx }}">
+        <div
+          style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 4px;">
+          <span
+            style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.06em;">
+            DAFTAR SESI ALAT (TANGGAL: {{ day.date }})
+          </span>
+          <span style="font-size: 12px; color: #64748B; font-weight: 500;">Pilih sesi untuk melihat pop-up
+            diagram</span>
+        </div>
+
+        {% for sess in day.sessions_list %}
+        {% set sess_num = loop.index0 %}
+        <div class="session-subcard" data-session="{{ sess.session_label }}">
+          <!-- Info Ringkas Sesi -->
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <span class="sess-badge-pill">{{ sess.session_label }}</span>
+            <span class="sess-time-pill">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.2">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>Waktu Sesi: <strong style="color:#2D6A4F;">{{ sess.rentang_sesi }}</strong></span>
+            </span>
+            <span class="sess-total-pill">
+              {{ sess.total_jamur }} Jamur
+            </span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- Tombol Pop-up Diagram Donat & Rincian -->
+            <button type="button" class="btn-session-popup" data-day="{{ day_num }}" data-sess="{{ sess_num }}"
+              onclick="openSessionByIndex(this)">
+              <span>Detail</span>
+            </button>
+          </div>
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+    </div>
+    {% else %}
+    <!-- TAMPILAN JIKA BELUM ADA DATA -->
+    <div style="text-align:center;padding:48px 20px;color:#64748B;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8">
+          <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
+          <polyline points="14 2 14 8 20 8" />
+          <path d="M2 15h10" />
+          <path d="m9 18 3-3-3-3" />
+        </svg>
+        <strong style="color:#334155;font-size:1.05rem;">Belum Ada Riwayat Sesi Pemeriksaan di Database
+          Supabase</strong>
+        <span style="font-size:0.85rem;color:#64748B;max-width:480px;line-height:1.5;">
+          Data sesi dan jumlah jamur per kategori akan otomatis tercatat di sini saat alat dijalankan pada menu
+          <strong>Proses Grading</strong>.
+        </span>
+      </div>
+    </div>
+    {% endfor %}
   </div>
+
   <div class="table-pagination">
-    <span class="pagination-info">Menampilkan {{ inspections|length }} hasil dari database</span>
+    <span class="pagination-info">Menampilkan {{ grouped_history|length }} hari pemeriksaan ({{ stats.total_jamur }}
+      total jamur di database)</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     POP-UP MODAL (DIAGRAM DONAT & TABEL RINCIAN KATEGORI)
+     ══════════════════════════════════════════════════════════════ -->
+<div id="sessionDetailModal" class="ios-modal-backdrop" onclick="closeSessionModal(event)">
+  <div class="ios-modal-card" onclick="event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="ios-modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 2a10 10 0 0 1 10 10" />
+          </svg>
+        </div>
+        <div>
+          <h3 id="modalSessionTitle"
+            style="font-size:17px; font-weight:800; color:var(--ios-label, #1E293B); margin:0;">Detail Sesi</h3>
+          <p id="modalSessionSubtitle" style="font-size:12.5px; color:#64748B; margin-top:3px; font-weight:500;">Tanggal
+            &amp; Rentang Waktu Sesi</p>
+        </div>
+      </div>
+      <button type="button" class="btn-modal-close" onclick="closeSessionModalDirect()" title="Tutup">✕</button>
+    </div>
+
+    <!-- Modal KPI Strip -->
+    <div class="modal-kpi-strip">
+      <div class="modal-kpi-item">
+        <span class="modal-kpi-lbl">Total Jamur</span>
+        <span class="modal-kpi-val" id="modalTotalJamur">0</span>
+      </div>
+      <div class="modal-kpi-item">
+        <span class="modal-kpi-lbl">Sehat</span>
+        <span class="modal-kpi-val" style="color:#4ADE80;" id="modalSehat">0</span>
+      </div>
+      <div class="modal-kpi-item">
+        <span class="modal-kpi-lbl">BB Aman</span>
+        <span class="modal-kpi-val" style="color:#3B82F6;" id="modalBbSafe">0</span>
+      </div>
+      <div class="modal-kpi-item">
+        <span class="modal-kpi-lbl">BB Cacat</span>
+        <span class="modal-kpi-val" style="color:#7C3AED;" id="modalBbDefect">0</span>
+      </div>
+      <div class="modal-kpi-item">
+        <span class="modal-kpi-lbl">Reject</span>
+        <span class="modal-kpi-val" style="color:#EF4444;" id="modalReject">0</span>
+      </div>
+    </div>
+
+    <!-- Modal Grid Body: Diagram Donat + Tabel Rincian -->
+    <div class="modal-grid-body">
+      <!-- Diagram Donat Kategori -->
+      <div class="modal-chart-box">
+        <h4
+          style="font-size:13px; font-weight:800; color:var(--ios-label, #1E293B); margin-bottom:14px; display:flex; align-items:center; gap:6px;">
+          <span>Diagram Sesi</span>
+        </h4>
+        <div style="position:relative; width:210px; height:210px; margin:0 auto;">
+          <canvas id="sessionDoughnutCanvas" width="210" height="210"></canvas>
+          <div class="chart-center-badge">
+            <strong id="chartCenterTotalNum">0</strong>
+            <small>Total Jamur</small>
+          </div>
+        </div>
+        <div style="margin-top:14px; font-size:11.5px; color:#64748B; text-align:center; font-weight:500;">
+          Persentase dihitung dari total jamur pada sesi ini
+        </div>
+      </div>
+
+      <!-- Tabel Rincian Database Inspeksi -->
+      <div class="modal-table-box">
+        <h4
+          style="font-size:13px; font-weight:800; color:var(--ios-label, #1E293B); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+          <span>📋 Data Kategori (Tabel <code
+              style="background:rgba(45,106,79,0.12); color:#2D6A4F; padding:2px 7px; border-radius:6px; font-size:12px; font-weight:700;">public.inspeksi</code>)</span>
+          <span style="font-size:11.5px; font-weight:600; color:#64748B;">Kolom <code
+              style="font-size:11px;">jumlah</code></span>
+        </h4>
+        <div class="table-scroll-wrapper">
+          <table class="ios-table compact-table" style="width:100%; background:transparent;">
+            <thead>
+              <tr style="background:rgba(255,255,255,0.40);">
+                <th style="width:36px; text-align:center;">No</th>
+                <th>Kategori Jamur</th>
+                <th style="text-align:center; width:70px;">Jumlah</th>
+                <th style="text-align:center; width:70px;">Persen</th>
+                <th style="text-align:center; width:90px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="modalCategoryTableBody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+            <tfoot>
+              <tr style="font-weight:800; background:rgba(45,106,79,0.08);">
+                <td colspan="2" style="text-align:right; font-weight:800; color:#1B4332;">TOTAL SESI:</td>
+                <td style="text-align:center; font-weight:800; color:#2D6A4F; font-size:13.5px;"
+                  id="modalTableTotalJumlah">0</td>
+                <td style="text-align:center; font-weight:800; color:#1B4332;">100%</td>
+                <td style="text-align:center; color:#64748B; font-size:11px; font-weight:700;">6 Kategori</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="ios-modal-footer">
+      <span style="font-size:12px; color:#64748B; font-weight:500;">Data tersinkronisasi langsung dari database
+        Supabase.</span>
+      <button type="button" class="btn-modal-done" onclick="closeSessionModalDirect()">Tutup</button>
+    </div>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
+<!-- Data JSON riwayat yang di-render aman untuk linter IDE -->
+<script id="historyDataJson" type="application/json">
+  {{ grouped_history|tojson|safe }}
+</script>
+
 <script>
+  // Jam Realtime Indonesia (WIB)
   function updateClock() {
-    const now = new Date();
-    const days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
-    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
     const el = document.getElementById('liveDateBadge');
-    if (el) el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+    if (!el) return;
+    const now = new Date();
+    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const dStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    const tStr = `${String(now.getHours()).padStart(2, '0')}.${String(now.getMinutes()).padStart(2, '0')}.${String(now.getSeconds()).padStart(2, '0')} WIB`;
+    el.textContent = `${dStr} • ${tStr}`;
   }
   updateClock(); setInterval(updateClock, 1000);
 
-  function filterTable(val) {
-    const rows = document.querySelectorAll('#riwayatTable tbody tr');
-    rows.forEach(r => {
-      r.style.display = r.textContent.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';
+  // Toggle Level 1 -> Level 2 (Buka Dropdown Sesi per Hari)
+  function toggleDay(sessionsContainerId, iconId) {
+    const container = document.getElementById(sessionsContainerId);
+    const icon = document.getElementById(iconId);
+    if (!container) return;
+    const isExpanded = container.classList.contains('active');
+    if (isExpanded) {
+      container.classList.remove('active');
+      if (icon) icon.classList.remove('rotated');
+    } else {
+      container.classList.add('active');
+      if (icon) icon.classList.add('rotated');
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // DATE PICKER + PERIODE DROPDOWN + TEXT SEARCH SYSTEM
+  // ══════════════════════════════════════════════════════════════
+  let _textQuery = '';
+  let _dateFilter = '';      // "YYYY-MM-DD" or ''
+  let _quickFilter = 'semua'; // 'semua' | 'today' | '7days' | 'bulan'
+
+  function applyFilters() {
+    const dayCards = document.querySelectorAll('.day-group-card');
+    const today = new Date().toISOString().slice(0, 10);
+    let visible = 0;
+
+    dayCards.forEach(card => {
+      const rawDate = card.dataset.rawDate || '';
+      let show = true;
+
+      // 1. Text search — cari di data-date + konten sesi di dalam card
+      if (_textQuery) {
+        // Ambil teks yang relevan: tanggal dari attribute + text semua .session-subcard
+        const q = _textQuery.toLowerCase().replace(/#/g, '').trim();
+
+        // Cek tanggal (data-date)
+        const dateAttr = (card.dataset.date || '').toLowerCase();
+        // Cek teks isi card (hapus # agar "sesi 1" cocok "Sesi #1")
+        const cardText = card.innerText.toLowerCase().replace(/#/g, '');
+
+        show = dateAttr.includes(q) || cardText.includes(q);
+      }
+
+      // 2. Date picker
+      if (_dateFilter && show) {
+        show = rawDate === _dateFilter;
+      }
+
+      // 3. Quick filter
+      if (!_dateFilter && _quickFilter !== 'semua' && show) {
+        if (_quickFilter === 'today') {
+          show = rawDate === today;
+        } else if (_quickFilter === '7days') {
+          const d7 = new Date();
+          d7.setDate(d7.getDate() - 6);
+          show = rawDate >= d7.toISOString().slice(0, 10);
+        } else if (_quickFilter === 'bulan') {
+          show = rawDate.startsWith(today.slice(0, 7));
+        }
+      }
+
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+
+      // Auto-expand matched cards when searching
+      if (show && _textQuery) {
+        const sessContainer = card.querySelector('.sessions-dropdown-container');
+        if (sessContainer) sessContainer.classList.add('active');
+      }
+    });
+
+    // Update status bar
+    const fsCount = document.getElementById('fsCount');
+    if (fsCount) fsCount.textContent = visible;
+
+    // No results hint
+    let hint = document.getElementById('noResultsHint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.id = 'noResultsHint';
+      hint.className = 'no-results-hint';
+      hint.innerHTML = '🔍 Tidak ada data yang cocok. <button onclick="clearAllFilters()" style="background:none;border:none;color:#2D6A4F;font-weight:700;cursor:pointer;">Reset Filter</button>';
+      const container = document.getElementById('historyContainer');
+      if (container) container.appendChild(hint);
+    }
+    hint.style.display = visible === 0 ? 'block' : 'none';
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  CUSTOM FROSTED GLASS DROPDOWN CONTROLLER
+  // ═══════════════════════════════════════════════════════
+  function togglePeriodeDropdown(e) {
+    if (e) e.stopPropagation();
+    const trigger = document.getElementById('periodeDropdownTrigger');
+    const menu    = document.getElementById('periodeDropdownMenu');
+    if (!trigger || !menu) return;
+
+    const isOpen = menu.classList.contains('show');
+    if (isOpen) {
+      closePeriodeDropdown();
+    } else {
+      trigger.classList.add('open');
+      menu.classList.add('show');
+    }
+  }
+
+  function closePeriodeDropdown() {
+    const trigger = document.getElementById('periodeDropdownTrigger');
+    const menu    = document.getElementById('periodeDropdownMenu');
+    if (trigger) trigger.classList.remove('open');
+    if (menu) menu.classList.remove('show');
+  }
+
+  function selectPeriodeOption(val, label) {
+    const labelEl = document.getElementById('periodeDropdownLabel');
+    if (labelEl) labelEl.textContent = label;
+
+    document.querySelectorAll('.custom-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.val === val);
+    });
+
+    closePeriodeDropdown();
+    onPeriodeChange(val);
+  }
+
+  document.addEventListener('click', (e) => {
+    const container = document.getElementById('periodeDropdownContainer');
+    if (container && !container.contains(e.target)) {
+      closePeriodeDropdown();
+    }
+  });
+
+  function onTextSearch(val) {
+    _textQuery = val;
+    applyFilters();
+  }
+
+  function onDatePick(val) {
+    _dateFilter = val;
+    const wrap = document.getElementById('datePickerWrap');
+    if (wrap) wrap.classList.toggle('has-value', !!val);
+    // Reset custom dropdown ke Semua saat tanggal dipilih manual
+    if (val) {
+      _quickFilter = 'semua';
+      const labelEl = document.getElementById('periodeDropdownLabel');
+      if (labelEl) labelEl.textContent = 'Semua';
+      document.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.val === 'semua');
+      });
+    }
+    applyFilters();
+  }
+
+  function onPeriodeChange(val) {
+    // Clear date picker saat periode dipilih
+    _dateFilter = '';
+    const dp = document.getElementById('datePickerInput');
+    if (dp) dp.value = '';
+    const wrap = document.getElementById('datePickerWrap');
+    if (wrap) wrap.classList.remove('has-value');
+    _quickFilter = val;
+    applyFilters();
+  }
+
+  function clearAllFilters() {
+    _textQuery = '';
+    _dateFilter = '';
+    _quickFilter = 'semua';
+    const ti = document.getElementById('searchTextInput');
+    if (ti) ti.value = '';
+    const dp = document.getElementById('datePickerInput');
+    if (dp) dp.value = '';
+    const wrap = document.getElementById('datePickerWrap');
+    if (wrap) wrap.classList.remove('has-value');
+
+    const labelEl = document.getElementById('periodeDropdownLabel');
+    if (labelEl) labelEl.textContent = 'Semua';
+    document.querySelectorAll('.custom-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.val === 'semua');
+    });
+
+    applyFilters();
+  }
+
+  // Legacy alias
+  function filterHistory(q) { onTextSearch(q); }
+
+  // ══════════════════════════════════════════════════════════════
+  // POP-UP MODAL & CHART.JS DOUGHNUT CHART LOGIC
+  // ══════════════════════════════════════════════════════════════
+  const historyDataEl = document.getElementById('historyDataJson');
+  const HISTORY_DATA = historyDataEl ? JSON.parse(historyDataEl.textContent || '[]') : [];
+  let sessionChartInstance = null;
+
+  function openSessionByIndex(btn) {
+    if (!btn || !btn.dataset) return;
+    const dayIdx = parseInt(btn.dataset.day, 10);
+    const sessIdx = parseInt(btn.dataset.sess, 10);
+    const sess = HISTORY_DATA?.[dayIdx]?.sessions_list?.[sessIdx];
+    if (sess) {
+      openSessionModal(sess);
+    }
+  }
+
+  function openSessionModal(sessionData) {
+    if (!sessionData) return;
+
+    // 1. Update Judul dan Subtitle Modal
+    const titleEl = document.getElementById('modalSessionTitle');
+    const subtitleEl = document.getElementById('modalSessionSubtitle');
+    if (titleEl) titleEl.textContent = `Hasil Grading ${sessionData.session_label || 'Sesi'}`;
+    if (subtitleEl) subtitleEl.textContent = `Tanggal: ${sessionData.tanggal || '-'} • Waktu: ${sessionData.rentang_sesi || '-'}`;
+
+    // 2. Update KPI Strip
+    const totalEl = document.getElementById('modalTotalJamur');
+    const sehatEl = document.getElementById('modalSehat');
+    const bbSafeEl = document.getElementById('modalBbSafe');
+    const bbDefectEl = document.getElementById('modalBbDefect');
+    const rejectEl = document.getElementById('modalReject');
+    const centerTotalEl = document.getElementById('chartCenterTotalNum');
+    const tableTotalEl = document.getElementById('modalTableTotalJumlah');
+
+    const totalCount = sessionData.total_jamur || 0;
+    if (totalEl) totalEl.textContent = totalCount;
+    if (centerTotalEl) centerTotalEl.textContent = totalCount;
+    if (tableTotalEl) tableTotalEl.textContent = totalCount;
+    if (sehatEl) sehatEl.textContent = sessionData.sehat || 0;
+    if (bbSafeEl) bbSafeEl.textContent = sessionData.bb_safe || 0;
+    if (bbDefectEl) bbDefectEl.textContent = sessionData.bb_defect || 0;
+    if (rejectEl) rejectEl.textContent = sessionData.reject || 0;
+
+    // 3. Render Tabel Rincian Kategori dari data sessionData.kategori_rows
+    const tbody = document.getElementById('modalCategoryTableBody');
+    if (tbody) {
+      tbody.innerHTML = '';
+      const rows = sessionData.kategori_rows || [];
+      rows.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        tr.style.background = 'rgba(255, 255, 255, 0.35)';
+        tr.style.transition = 'background 0.15s ease';
+        tr.onmouseenter = () => { tr.style.background = 'rgba(255, 255, 255, 0.65)'; };
+        tr.onmouseleave = () => { tr.style.background = 'rgba(255, 255, 255, 0.35)'; };
+
+        tr.innerHTML = `
+          <td style="text-align:center; color:#64748B; font-weight:700;">${idx + 1}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${r.warna}; flex-shrink:0; box-shadow:0 0 4px ${r.warna}88;"></span>
+              <strong style="color:var(--ios-label, #1E293B); font-size:12.5px;">${r.nama}</strong>
+            </div>
+          </td>
+          <td style="text-align:center; font-weight:800; color:var(--ios-label, #1E293B); font-size:13px;">${r.jumlah}</td>
+          <td style="text-align:center; color:#64748B; font-weight:700; font-size:12px;">${r.persen}%</td>
+          <td style="text-align:center;">
+            <span class="badge-grade ${r.badge}" style="font-size:11px; padding:3px 9px;">${r.status}</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 4. Inisialisasi / Perbarui Diagram Donat (Chart.js)
+    renderSessionDoughnutChart(sessionData);
+
+    // 5. Buka Modal
+    const modal = document.getElementById('sessionDetailModal');
+    if (modal) {
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function renderSessionDoughnutChart(sessionData) {
+    const canvas = document.getElementById('sessionDoughnutCanvas');
+    if (!canvas) return;
+
+    if (sessionChartInstance) {
+      sessionChartInstance.destroy();
+      sessionChartInstance = null;
+    }
+
+    const labels = sessionData.chart_labels || ['Healthy', 'Bacterial Blotch Tidak Cacat', 'Bacterial Blotch Cacat', 'Dry Bubble', 'Cobweb Disease', 'Wet Bubble'];
+    let values = sessionData.chart_values || [0, 0, 0, 0, 0, 0];
+    const colors = sessionData.chart_colors || ['#4ADE80', '#3B82F6', '#7C3AED', '#F59E0B', '#EC4899', '#EF4444'];
+
+    const totalVal = values.reduce((a, b) => a + b, 0);
+
+    let chartData = values;
+    let chartColors = colors;
+    if (totalVal === 0) {
+      chartData = [1];
+      chartColors = ['#E2E8F0'];
+    }
+
+    const ctx = canvas.getContext('2d');
+    sessionChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: totalVal === 0 ? ['Belum ada jamur'] : labels,
+        datasets: [{
+          data: chartData,
+          backgroundColor: chartColors,
+          borderWidth: 2.5,
+          borderColor: '#FFFFFF',
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: totalVal > 0,
+            backgroundColor: 'rgba(30, 41, 59, 0.85)',
+            titleFont: { weight: 'bold' },
+            padding: 10,
+            cornerRadius: 10,
+            callbacks: {
+              label: function (context) {
+                const val = context.raw || 0;
+                const pct = totalVal > 0 ? ((val / totalVal) * 100).toFixed(1) : 0;
+                return ` ${context.label}: ${val} Jamur (${pct}%)`;
+              }
+            }
+          }
+        },
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 500
+        }
+      }
     });
   }
 
-  let activeFilter = 'semua';
-  function setFilter(btn, cat) {
-    activeFilter = cat;
-    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const rows = document.querySelectorAll('#riwayatTable tbody tr');
-    rows.forEach(r => {
-      if (cat === 'semua') { r.style.display = ''; return; }
-      const rowCat = r.dataset.cat || '';
-      if (cat === 'sehat') r.style.display = rowCat === 'healthy' ? '' : 'none';
-      else if (cat === 'bb') r.style.display = rowCat.startsWith('bb') ? '' : 'none';
-      else if (cat === 'reject') r.style.display = rowCat === 'unfit' ? '' : 'none';
-    });
+  function closeSessionModal(event) {
+    if (event.target.id === 'sessionDetailModal') {
+      closeSessionModalDirect();
+    }
   }
+
+  function closeSessionModalDirect() {
+    const modal = document.getElementById('sessionDetailModal');
+    if (modal) {
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeSessionModalDirect();
+    }
+  });
 </script>
 {% endblock %}

@@ -216,7 +216,7 @@
       <thead>
         <tr>
           <th>ID</th>
-          <th>Gambar</th>
+          <th>Sesi</th>
           <th>Kategori</th>
           <th>Akurasi AI</th>
           <th>Waktu</th>
@@ -227,16 +227,10 @@
         {% for item in inspections %}
         <tr class="table-row" data-id="{{ item.id }}">
           <td><span class="row-id">#{{ item.id }}</span></td>
-          <td>
-            {% if item.image %}
-            <img class="mushroom-thumb" src="{{ item.image }}" alt="Jamur {{ item.id }}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=600&auto=format&fit=crop'">
-            {% else %}
-            <div class="mushroom-thumb" style="display:flex;align-items:center;justify-content:center;background:#e2e8f0;font-size:10px;color:#64748b;">No Img</div>
-            {% endif %}
-          </td>
+          <td><span class="badge-grade" style="background: rgba(45, 106, 79, 0.12); color: #1B4332; font-weight: 600;">{{ item.sesi_label }}</span></td>
           <td><span class="badge-grade {{ item.category_badge }}">{{ item.category }}</span></td>
           <td><strong>{{ item.confidence }}%</strong></td>
-          <td>{{ item.time }}</td>
+          <td>{{ item.time }} <small style="color:#94A3B8;">WIB</small></td>
           <td>
             <span class="status-chip {{ item.category_badge }}">{{ item.status }}</span>
           </td>

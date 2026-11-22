@@ -12,8 +12,8 @@ from werkzeug.utils import secure_filename
 from services.grading import determine_grading
 from services.pcv_analysis import analyze_bacterial_blotch
 from services.supabase_service import (
-    upload_image_to_storage,
     save_inspection,
+    get_active_session,
 )
 
 model_api = Blueprint("model_api", __name__)
@@ -150,7 +150,7 @@ def camera_predict():
                 "error": f"PCV Validation Error: {pcv_val_err}"
             })
             # Tetap simpan ke database dengan status fallback
-            _save_record(data, image_data, filename, content_type, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, None)
+            _save_record(data, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, None)
             return jsonify(data), 422
 
         except Exception as pcv_err:
@@ -163,7 +163,7 @@ def camera_predict():
                 "pcv_result": None,
                 "error": f"PCV Processing Error: {pcv_err}"
             })
-            _save_record(data, image_data, filename, content_type, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, None)
+            _save_record(data, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, None)
             return jsonify(data), 500
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -180,7 +180,7 @@ def camera_predict():
             "pcv_result": pcv_result,
             "error": f"Grading Validation Error: {grade_val_err}"
         })
-        _save_record(data, image_data, filename, content_type, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, pcv_result)
+        _save_record(data, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, pcv_result)
         return jsonify(data), 422
     except Exception as grade_err:
         current_app.logger.error(f"Sistem grading error: {grade_err}")
@@ -191,7 +191,7 @@ def camera_predict():
             "pcv_result": pcv_result,
             "error": f"Grading Processing Error: {grade_err}"
         })
-        _save_record(data, image_data, filename, content_type, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, pcv_result)
+        _save_record(data, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, pcv_result)
         return jsonify(data), 500
 
     grade = grading_result["grade"]
@@ -203,27 +203,33 @@ def camera_predict():
     data["pcv_result"] = grading_result.get("pcv_result")
 
     # ══════════════════════════════════════════════════════════════════════════
-    # SIMPAN KE SUPABASE (STORAGE & DATABASE)
+    # SIMPAN KE SUPABASE (TABEL INSPEKSI & SESI — TANPA SIMPAN GAMBAR)
     # ══════════════════════════════════════════════════════════════════════════
-    _save_record(data, image_data, filename, content_type, predicted_class, confidence_pct, grade, servo_target, pcv_result)
+    _save_record(data, predicted_class, confidence_pct, grade, servo_target, pcv_result)
 
     return jsonify(data), status
 
 
-def _save_record(data, image_data, filename, content_type, ai_class, confidence, grade, servo_target, pcv_result):
-    """Menyimpan gambar ke Supabase Storage dan hasil pemeriksaan ke Supabase DB."""
+def _save_record(data, ai_class, confidence, grade, servo_target, pcv_result):
+    """Menyimpan hasil pemeriksaan ke Supabase DB (tabel inspeksi & sesi) tanpa menyimpan gambar."""
     try:
-        image_url = upload_image_to_storage(image_data, filename, content_type)
-        if image_url:
-            data["image_url"] = image_url
-            inspection_record = save_inspection(
-                image_path=image_url,
-                ai_class=ai_class,
-                confidence=confidence,
-                grade=grade,
-                servo_target=servo_target,
-                pcv_result=pcv_result
-            )
+        active_sesi = get_active_session()
+        sesi_id = active_sesi.get("id") if active_sesi else None
+
+        inspection_record = save_inspection(
+            grade=grade,
+            sesi_id=sesi_id,
+            ai_class=ai_class,
+            confidence=confidence,
+            servo_target=servo_target,
+            pcv_result=pcv_result
+        )
+        if inspection_record:
             data["saved_record"] = inspection_record
+            if active_sesi:
+                data["sesi_info"] = {
+                    "nomor_sesi": active_sesi.get("nomor_sesi"),
+                    "tanggal": active_sesi.get("tanggal")
+                }
     except Exception as e:
-        current_app.logger.error(f"Gagal integrasi Supabase: {e}")
+        current_app.logger.error(f"Gagal simpan inspeksi ke Supabase: {e}")

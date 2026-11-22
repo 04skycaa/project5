@@ -1,230 +1,1454 @@
 {% extends 'base.html' %}
 {% set active_page = 'laporan' %}
-{% block title %}Laporan • Mushroom Grading System{% endblock %}
+{% block title %}Laporan Grading • Mushroom Grading System{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ══════════════════════════════════════════════════════
+     APPLE TACTILE LIQUID FROSTED GLASS THEME — LAPORAN
+     ══════════════════════════════════════════════════════ */
+
+  /* Period Filter Bar */
+  .laporan-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 20px;
+    margin-bottom: 22px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.20) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1.2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 20px;
+    box-shadow:
+      0 10px 28px -4px rgba(140, 100, 60, 0.06),
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+  }
+
+  /* ═══════════════════════════════════════════
+     CUSTOM FROSTED GLASS DROPDOWN
+     ═══════════════════════════════════════════ */
+  .custom-dropdown-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .custom-dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 15px;
+    border-radius: 9999px;
+    border: 1.2px solid rgba(255, 255, 255, 0.90);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.35) 100%);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    box-shadow:
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.95),
+      0 2px 8px rgba(140, 100, 60, 0.05);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ios-label, #1E293B);
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+    user-select: none;
+    outline: none;
+  }
+
+  .custom-dropdown-trigger:hover {
+    background: linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.65) 100%);
+    border-color: #FFFFFF;
+    box-shadow:
+      0 6px 16px rgba(140, 100, 60, 0.10),
+      inset 0 1.5px 1.5px #FFFFFF;
+    transform: translateY(-1px);
+  }
+
+  .custom-dropdown-trigger.open {
+    border-color: rgba(45, 106, 79, 0.6);
+    box-shadow:
+      0 6px 20px rgba(45, 106, 79, 0.15),
+      inset 0 1.5px 1.5px #FFFFFF;
+  }
+
+  .dropdown-icon {
+    color: #2D6A4F;
+    flex-shrink: 0;
+  }
+
+  .dropdown-chevron {
+    color: #64748B;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+  }
+
+  .custom-dropdown-trigger.open .dropdown-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Dropdown Menu Popover */
+  .custom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 200px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.72) 100%);
+    backdrop-filter: blur(25px) saturate(190%);
+    -webkit-backdrop-filter: blur(25px) saturate(190%);
+    border: 1.2px solid rgba(255, 255, 255, 0.95);
+    border-radius: 18px;
+    box-shadow:
+      0 16px 36px -4px rgba(140, 100, 60, 0.16),
+      0 4px 12px -2px rgba(140, 100, 60, 0.08),
+      inset 0 1.5px 1.5px #FFFFFF,
+      inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    padding: 6px;
+    z-index: 150;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.96);
+    transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+    pointer-events: none;
+  }
+
+  .custom-dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .custom-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8.5px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.18s ease;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ios-label, #1E293B);
+  }
+
+  .custom-dropdown-item .item-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .custom-dropdown-item .item-icon {
+    font-size: 14px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .custom-dropdown-item .item-text {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .custom-dropdown-item .item-check {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .custom-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.75);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    color: #2D6A4F;
+    transform: translateX(2px);
+  }
+
+  .custom-dropdown-item.active {
+    background: linear-gradient(135deg, rgba(45, 106, 79, 0.15) 0%, rgba(45, 106, 79, 0.06) 100%);
+    color: #1B4332;
+    font-weight: 700;
+  }
+
+  .custom-dropdown-item.active .item-check {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Clear Button Glass */
+  .btn-clear-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9999px;
+    border: 1.2px solid rgba(255, 255, 255, 0.80);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.22) 100%);
+    backdrop-filter: blur(14px);
+    color: #94A3B8;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, 0.95), 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .btn-clear-filter:hover {
+    color: #EF4444;
+    border-color: rgba(239, 68, 68, 0.40);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.10) 0%, rgba(239, 68, 68, 0.04) 100%);
+  }
+
+  .filter-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+  }
+
+  /* Date Range Picker Glass */
+  .date-range-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    border: 1.2px solid rgba(255, 255, 255, 0.88);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.28) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, 0.95), 0 2px 8px rgba(140, 100, 60, 0.04);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ios-secondary-label, #475569);
+    transition: all 0.2s ease;
+  }
+
+  .date-range-wrap.has-custom {
+    border-color: rgba(45, 106, 79, 0.45);
+    background: linear-gradient(135deg, rgba(45, 106, 79, 0.12) 0%, rgba(45, 106, 79, 0.04) 100%);
+    color: #1B4332;
+  }
+
+  .date-glass {
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: inherit;
+    outline: none;
+    cursor: pointer;
+    width: 110px;
+  }
+
+  .date-range-sep {
+    font-size: 11px;
+    color: #94A3B8;
+    font-weight: 700;
+  }
+
+  /* 4 Grade Box Grid (Kotak Mesin Grading) */
+  .section-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .section-label-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .grade-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  @media (max-width: 960px) {
+    .grade-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .grade-kpi-grid { grid-template-columns: 1fr; }
+  }
+
+  .grade-box {
+    border-radius: 20px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1.2px solid rgba(255, 255, 255, 0.88);
+    box-shadow:
+      0 10px 24px -4px rgba(140, 100, 60, 0.07),
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+    transition: all 0.26s cubic-bezier(0.25, 1, 0.5, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grade-box:hover {
+    transform: translateY(-2.5px);
+    box-shadow:
+      0 14px 30px -4px rgba(140, 100, 60, 0.12),
+      inset 0 2px 2px #FFFFFF;
+  }
+
+  .grade-box.sehat {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.22) 0%, rgba(74, 222, 128, 0.07) 100%);
+    border-color: rgba(74, 222, 128, 0.45);
+  }
+  .grade-box.bb-aman {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.20) 0%, rgba(59, 130, 246, 0.06) 100%);
+    border-color: rgba(59, 130, 246, 0.40);
+  }
+  .grade-box.bb-cacat {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.20) 0%, rgba(124, 58, 237, 0.06) 100%);
+    border-color: rgba(124, 58, 237, 0.40);
+  }
+  .grade-box.reject {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.20) 0%, rgba(239, 68, 68, 0.06) 100%);
+    border-color: rgba(239, 68, 68, 0.40);
+  }
+
+  .grade-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .grade-box-badge {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(8px);
+  }
+
+  .grade-box.sehat .grade-box-badge {
+    background: rgba(74, 222, 128, 0.25);
+    color: #15803D;
+    border: 1px solid rgba(74, 222, 128, 0.5);
+  }
+  .grade-box.bb-aman .grade-box-badge {
+    background: rgba(59, 130, 246, 0.20);
+    color: #1D4ED8;
+    border: 1px solid rgba(59, 130, 246, 0.45);
+  }
+  .grade-box.bb-cacat .grade-box-badge {
+    background: rgba(124, 58, 237, 0.20);
+    color: #6D28D9;
+    border: 1px solid rgba(124, 58, 237, 0.45);
+  }
+  .grade-box.reject .grade-box-badge {
+    background: rgba(239, 68, 68, 0.20);
+    color: #B91C1C;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+  }
+
+  .grade-box-target {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+  }
+
+  .grade-box-main {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .grade-box-val {
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ios-label, #1E293B);
+  }
+
+  .grade-box-pct {
+    font-size: 13px;
+    font-weight: 800;
+    opacity: 0.85;
+  }
+
+  .grade-box.sehat .grade-box-pct { color: #15803D; }
+  .grade-box.bb-aman .grade-box-pct { color: #1D4ED8; }
+  .grade-box.bb-cacat .grade-box-pct { color: #6D28D9; }
+  .grade-box.reject .grade-box-pct { color: #B91C1C; }
+
+  .grade-box-desc {
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  /* Summary KPI Strip */
+  .laporan-summary-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  @media (max-width: 860px) {
+    .laporan-summary-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .summary-strip-item {
+    border-radius: 18px;
+    padding: 15px 18px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.18) 100%);
+    border: 1.2px solid rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 4px 14px rgba(140, 100, 60, 0.04), inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .strip-lbl {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .strip-val {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--ios-label, #1E293B);
+    line-height: 1.1;
+  }
+
+  .strip-sub {
+    font-size: 11px;
+    color: #94A3B8;
+    font-weight: 600;
+  }
+
+  /* Charts Grid (Tren Harian + Donat 6 Kategori) */
+  .laporan-charts-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  @media (max-width: 960px) {
+    .laporan-charts-grid { grid-template-columns: 1fr; }
+  }
+
+  .laporan-chart-card {
+    border-radius: 22px;
+    padding: 22px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.18) 100%);
+    border: 1.2px solid rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(18px) saturate(170%);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+    box-shadow:
+      0 10px 30px -4px rgba(140, 100, 60, 0.07),
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chart-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .chart-card-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--ios-label, #1E293B);
+    letter-spacing: -0.01em;
+  }
+
+  .chart-card-sub {
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .chart-canvas-wrap {
+    height: 250px;
+    position: relative;
+    width: 100%;
+  }
+
+  /* Donut + Table Flex inside Donut Card */
+  .donut-card-body {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  @media (max-width: 640px) {
+    .donut-card-body { flex-direction: column; }
+  }
+
+  .donut-left-wrapper {
+    position: relative;
+    width: 170px;
+    height: 170px;
+    flex-shrink: 0;
+    margin: 0 auto;
+  }
+
+  .donut-center-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .donut-center-badge strong {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--ios-label, #1E293B);
+    line-height: 1;
+    display: block;
+  }
+
+  .donut-center-badge small {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+  }
+
+  /* Mini Table 6 Kategori */
+  .kat6-table-wrap {
+    flex: 1;
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  .kat6-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+  }
+
+  .kat6-table th {
+    padding: 7px 10px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.45);
+    color: #64748B;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .kat6-table td {
+    padding: 6.5px 10px;
+    font-weight: 600;
+    color: var(--ios-label, #1E293B);
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  .kat6-table tr:hover td {
+    background: rgba(255, 255, 255, 0.45);
+  }
+
+  /* Per-hari Table Card */
+  .perhari-table-card {
+    border-radius: 22px;
+    padding: 22px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.18) 100%);
+    border: 1.2px solid rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(18px);
+    box-shadow:
+      0 10px 30px -4px rgba(140, 100, 60, 0.07),
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+    margin-bottom: 22px;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1.2px solid rgba(255, 255, 255, 0.7);
+  }
+
+  .laporan-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    background: transparent;
+  }
+
+  .laporan-table thead th {
+    padding: 11px 14px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.55);
+    font-weight: 800;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #475569;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.8);
+  }
+
+  .laporan-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+    transition: background 0.15s ease;
+  }
+
+  .laporan-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  .laporan-table tbody td {
+    padding: 11px 14px;
+    font-weight: 600;
+    color: var(--ios-label, #1E293B);
+  }
+
+  .laporan-table tfoot td {
+    padding: 12px 14px;
+    font-weight: 800;
+    background: rgba(45, 106, 79, 0.08);
+    border-top: 1.5px solid rgba(45, 106, 79, 0.2);
+    color: var(--ios-label, #1E293B);
+  }
+
+  /* Rekomendasi Grid */
+  .laporan-reko-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  @media (max-width: 960px) {
+    .laporan-reko-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .laporan-reko-grid { grid-template-columns: 1fr; }
+  }
+
+  .reko-card {
+    border-radius: 18px;
+    padding: 16px 18px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.58) 0%, rgba(255, 255, 255, 0.20) 100%);
+    border: 1.2px solid rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 4px 14px rgba(140, 100, 60, 0.04), inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .reko-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .reko-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--ios-label, #1E293B);
+  }
+
+  .reko-desc {
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 500;
+    line-height: 1.45;
+  }
+
+  /* Loading Overlay */
+  #laporanLoadingOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+  }
+  #laporanLoadingOverlay.active { display: flex; }
+
+  .loading-spinner {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 3.5px solid rgba(45, 106, 79, 0.2);
+    border-top-color: #2D6A4F;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Print Stylesheet */
+  @media print {
+    body { background: #FFFFFF !important; color: #000000 !important; }
+    .sidebar, .top-header .header-actions, .laporan-filter-bar, #laporanLoadingOverlay {
+      display: none !important;
+    }
+    .app-container { margin: 0 !important; padding: 0 !important; }
+    .grade-box, .laporan-chart-card, .perhari-table-card, .summary-strip-item, .reko-card {
+      border: 1px solid #CCCCCC !important;
+      background: #FFFFFF !important;
+      box-shadow: none !important;
+      page-break-inside: avoid;
+    }
+    .chart-canvas-wrap { height: 200px !important; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
+
+<!-- Loading Overlay -->
+<div id="laporanLoadingOverlay">
+  <div class="loading-spinner"></div>
+</div>
+
 <!-- Top Header -->
 <section class="top-header">
   <div class="header-greeting">
     <h1>Laporan Grading</h1>
-    <p>Evaluasi performa sistem dan hasil grading berbasis data database Supabase.</p>
+    <p>Evaluasi performa kualitas jamur berdasarkan 4 kotak grading mesin dan 6 kategori penyakit.</p>
   </div>
   <div class="header-actions">
-    <div class="date-badge" id="liveDateBadge">
-      Sen, 27 Okt 2026 • 10:24 WIB
-    </div>
-    <button class="btn-detail" onclick="window.print()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Cetak / Unduh PDF
+    <div class="date-badge" id="liveDateBadge">—</div>
+    <button class="btn-detail" onclick="window.print()" title="Cetak atau Simpan sebagai PDF">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;">
+        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        <rect x="6" y="14" width="12" height="8"></rect>
+      </svg>
+      Cetak / PDF
+    </button>
+    <button class="btn-detail" onclick="eksporExcel()" title="Unduh data dalam format Excel .xlsx">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Ekspor Excel
     </button>
   </div>
 </section>
 
-<!-- KPI Summary Cards -->
-<section class="stats-grid">
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon green">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      </div>
-      <div><span class="stat-info-title">Tingkat Keberhasilan</span><h2 class="stat-value">{{ stats.keberhasilan_rate }}%</h2></div>
-    </div>
-    <div class="stat-footer"><div class="stat-trend positive"><span>Sehat + BB Aman</span></div></div>
-  </div>
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon blue">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      </div>
-      <div><span class="stat-info-title">Total Inspeksi</span><h2 class="stat-value">{{ stats.total_jamur }}</h2></div>
-    </div>
-    <div class="stat-footer"><div class="stat-trend positive"><span>Data Supabase</span></div></div>
-  </div>
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon purple">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </div>
-      <div><span class="stat-info-title">Rata-rata / Hari</span><h2 class="stat-value">{{ stats.rata_rata_hari }}</h2></div>
-    </div>
-    <div class="stat-footer"><div class="stat-trend positive"><span>Kapasitas Sortir</span></div></div>
-  </div>
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon emerald">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </div>
-      <div><span class="stat-info-title">Akurasi Rata-rata AI</span><h2 class="stat-value">{{ stats.avg_accuracy }}%</h2></div>
-    </div>
-    <div class="stat-footer"><div class="stat-trend positive"><span>Model ResNet-101</span></div></div>
-  </div>
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon red">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      </div>
-      <div><span class="stat-info-title">Reject Rate</span><h2 class="stat-value">{{ stats.reject_rate }}%</h2></div>
-    </div>
-    <div class="stat-footer"><div class="stat-trend danger"><span>Jamur Tidak Layak</span></div></div>
-  </div>
-</section>
+<!-- Period Filter Bar -->
+<div class="laporan-filter-bar">
+  <span style="font-size:11px; font-weight:800; color:#64748B; text-transform:uppercase; letter-spacing:0.04em;">Periode:</span>
 
-<!-- Charts Section -->
-<section class="analytics-grid compact-two-col laporan-charts">
-  <!-- Trend Bar Chart -->
-  <div class="glass-card-subtle chart-box-compact">
-    <div class="card-title-row">
-      <h3>Tren Komposisi Kategori</h3>
+  <!-- Periode Custom Frosted Glass Dropdown -->
+  <div class="custom-dropdown-container" id="periodeDropdownContainer">
+    <button type="button" class="custom-dropdown-trigger" id="periodeDropdownTrigger" onclick="togglePeriodeDropdown(event)">
+      <svg class="dropdown-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+      <span id="periodeDropdownLabel" class="dropdown-label">
+        {% if periode=='hari' %}Hari Ini
+        {% elif periode=='minggu' %}7 Hari Terakhir
+        {% elif periode=='bulan' %}Bulan Ini
+        {% elif periode=='tahun' %}Tahun Ini
+        {% else %}Semua Riwayat{% endif %}
+      </span>
+      <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+
+    <!-- Floating Frosted Glass Menu Popover -->
+    <div class="custom-dropdown-menu" id="periodeDropdownMenu">
+      <div class="custom-dropdown-item {% if periode=='semua' or not periode %}active{% endif %}" data-val="semua" onclick="selectPeriodeOption('semua', 'Semua Riwayat')">
+        <div class="item-left">
+          <span class="item-icon">📋</span>
+          <span class="item-text">Semua Riwayat</span>
+        </div>
+        <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+
+      <div class="custom-dropdown-item {% if periode=='hari' %}active{% endif %}" data-val="hari" onclick="selectPeriodeOption('hari', 'Hari Ini')">
+        <div class="item-left">
+          <span class="item-icon">📅</span>
+          <span class="item-text">Hari Ini</span>
+        </div>
+        <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+
+      <div class="custom-dropdown-item {% if periode=='minggu' %}active{% endif %}" data-val="minggu" onclick="selectPeriodeOption('minggu', '7 Hari Terakhir')">
+        <div class="item-left">
+          <span class="item-icon">📆</span>
+          <span class="item-text">7 Hari Terakhir</span>
+        </div>
+        <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+
+      <div class="custom-dropdown-item {% if periode=='bulan' %}active{% endif %}" data-val="bulan" onclick="selectPeriodeOption('bulan', 'Bulan Ini')">
+        <div class="item-left">
+          <span class="item-icon">🗓️</span>
+          <span class="item-text">Bulan Ini</span>
+        </div>
+        <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+
+      <div class="custom-dropdown-item {% if periode=='tahun' %}active{% endif %}" data-val="tahun" onclick="selectPeriodeOption('tahun', 'Tahun Ini')">
+        <div class="item-left">
+          <span class="item-icon">📊</span>
+          <span class="item-text">Tahun Ini</span>
+        </div>
+        <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
     </div>
-    <div class="chart-wrapper">
+  </div>
+
+  <div class="filter-divider"></div>
+
+  <!-- Custom Date Range Picker -->
+  <div class="date-range-wrap" id="dateRangeWrap">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink:0;color:#64748B;">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    <input type="date" id="dariInput" class="date-glass" value="{{ dari }}" onchange="onCustomDateChange()" title="Tanggal Awal">
+    <span class="date-range-sep">s/d</span>
+    <input type="date" id="sampaiInput" class="date-glass" value="{{ sampai }}" onchange="onCustomDateChange()" title="Tanggal Akhir">
+  </div>
+
+  <!-- Clear / Reset Filter Button -->
+  <button class="btn-clear-filter" onclick="clearAllFilters()" title="Reset Filter ke Semua">×</button>
+
+  <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+    <span style="font-size:11.5px; color:#64748B; font-weight:700;" id="periodeInfo">
+      {% if dari and sampai %}{{ dari }} – {{ sampai }}{% else %}Semua Riwayat{% endif %}
+    </span>
+    <button onclick="refreshLaporan()" title="Perbarui Data"
+      style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9999px;border:1.2px solid rgba(255,255,255,0.85);background:linear-gradient(135deg,rgba(255,255,255,0.7)0%,rgba(255,255,255,0.25)100%);backdrop-filter:blur(14px);color:#475569;cursor:pointer;font-size:14px;box-shadow:inset 0 1.5px 1px rgba(255,255,255,0.95);transition:all 0.2s;">
+      ↻
+    </button>
+  </div>
+</div>
+
+<!-- 4 Grade Box Grid (Sesuai 4 Kotak Fisik Mesin Grading) -->
+<div class="section-label-row">
+  <span class="section-label-title">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Hasil Pemilahan 4 Kotak Mesin Grading
+  </span>
+  <span style="font-size:11px; color:#94A3B8; font-weight:600;">Sesuai target servo pemilah otomatis</span>
+</div>
+
+<div class="grade-kpi-grid">
+  <!-- Kotak 1: Sehat -->
+  <div class="grade-box sehat">
+    <div class="grade-box-header">
+      <span class="grade-box-badge">Kotak 1: Sehat</span>
+      <span class="grade-box-target">Konsumsi</span>
+    </div>
+    <div class="grade-box-main">
+      <span class="grade-box-val" id="gradeSehat">{{ stats.sehat }}</span>
+      <span class="grade-box-pct" id="gradeSehatPct">{{ stats.percentages.sehat }}%</span>
+    </div>
+    <div class="grade-box-desc">
+      Jamur segar tanpa cacat, media tanam optimal.
+    </div>
+  </div>
+
+  <!-- Kotak 2: BB Tidak Cacat -->
+  <div class="grade-box bb-aman">
+    <div class="grade-box-header">
+      <span class="grade-box-badge">Kotak 2: BB Toleransi</span>
+      <span class="grade-box-target">Toleransi</span>
+    </div>
+    <div class="grade-box-main">
+      <span class="grade-box-val" id="gradeBbAman">{{ stats.bb_tidak_cacat }}</span>
+      <span class="grade-box-pct" id="gradeBbAmanPct">{{ stats.percentages.bb_tidak_cacat }}%</span>
+    </div>
+    <div class="grade-box-desc">
+      Bercak bakteri ringan, masih layak pasar.
+    </div>
+  </div>
+
+  <!-- Kotak 3: BB Cacat -->
+  <div class="grade-box bb-cacat">
+    <div class="grade-box-header">
+      <span class="grade-box-badge">Kotak 3: BB Cacat</span>
+      <span class="grade-box-target">Mutu Rendah</span>
+    </div>
+    <div class="grade-box-main">
+      <span class="grade-box-val" id="gradeBbCacat">{{ stats.bb_cacat }}</span>
+      <span class="grade-box-pct" id="gradeBbCacatPct">{{ stats.percentages.bb_cacat }}%</span>
+    </div>
+    <div class="grade-box-desc">
+      Bercak bakteri meluas/rusak, harga afkir.
+    </div>
+  </div>
+
+  <!-- Kotak 4: Tidak Layak Konsumsi -->
+  <div class="grade-box reject">
+    <div class="grade-box-header">
+      <span class="grade-box-badge">Kotak 4: Tidak Layak</span>
+      <span class="grade-box-target">Reject Total</span>
+    </div>
+    <div class="grade-box-main">
+      <span class="grade-box-val" id="gradeTidakLayak">{{ stats.tidak_layak }}</span>
+      <span class="grade-box-pct" id="gradeTidakLayakPct">{{ stats.percentages.tidak_layak }}%</span>
+    </div>
+    <div class="grade-box-desc">
+      Dry Bubble, Cobweb, atau Wet Bubble berat.
+    </div>
+  </div>
+</div>
+
+<!-- Summary Strip (Metrik Operasional) -->
+<div class="laporan-summary-strip">
+  <div class="summary-strip-item">
+    <span class="strip-lbl">Total Diperiksa</span>
+    <span class="strip-val" id="totalJamur">{{ stats.total_jamur }}</span>
+    <span class="strip-sub">akumulasi butir jamur</span>
+  </div>
+  <div class="summary-strip-item">
+    <span class="strip-lbl">Sesi Alat Aktif</span>
+    <span class="strip-val" id="totalSesi">{{ stats.total_sesi }}</span>
+    <span class="strip-sub">sesi grading terekam</span>
+  </div>
+  <div class="summary-strip-item">
+    <span class="strip-lbl">Tingkat Lolos Mutu</span>
+    <span class="strip-val" id="keberhasilan" style="color:#16A34A;">{{ stats.keberhasilan_rate }}%</span>
+    <span class="strip-sub">Sehat + BB Toleransi</span>
+  </div>
+  <div class="summary-strip-item">
+    <span class="strip-lbl">Tingkat Penolakan</span>
+    <span class="strip-val" id="rejectRate" style="color:#DC2626;">{{ stats.reject_rate }}%</span>
+    <span class="strip-sub">Kotak 4 (Reject Penyakit)</span>
+  </div>
+</div>
+
+<!-- Charts Grid: Tren Harian (Bar) + Rincian 6 Kategori Penyakit (Donut & Table) -->
+<div class="laporan-charts-grid">
+
+  <!-- Card Kiri: Tren Harian per Grade -->
+  <div class="laporan-chart-card">
+    <div class="chart-card-header">
+      <div>
+        <h4 class="chart-card-title">📈 Tren Volume per Grade</h4>
+        <p class="chart-card-sub">Distribusi 4 kotak hasil sortir per hari</p>
+      </div>
+    </div>
+    <div class="chart-canvas-wrap">
       <canvas id="laporanBarChart"></canvas>
     </div>
   </div>
 
-  <!-- Distribusi Kategori -->
-  <div class="glass-card-subtle donut-box-compact">
-    <div class="card-title-row"><h3>Distribusi Kategori</h3></div>
-    <div class="donut-chart-container compact-donut-flex">
-      <div class="donut-inner-relative">
-        <canvas id="laporanDonutChart"></canvas>
-        <div class="donut-center-label">
-          <span>Total</span>
-          <h4>{{ stats.total_jamur }}</h4>
-        </div>
+  <!-- Card Kanan: Donut Chart 6 Kategori Penyakit -->
+  <div class="laporan-chart-card">
+    <div class="chart-card-header">
+      <div>
+        <h4 class="chart-card-title">🍩 Rincian 6 Kategori Penyakit</h4>
+        <p class="chart-card-sub">Proporsi detail penyakit yang terdeteksi model AI</p>
       </div>
     </div>
-  </div>
-</section>
 
-<!-- Bottom: Category Breakdown + Recommendations -->
-<section class="monitoring-bottom-grid">
-  <div class="glass-card-subtle">
-    <div class="card-title-row"><h3>Rincian Kategori</h3></div>
-    <div class="proses-dist-list">
-      <div class="dist-row">
-        <div class="dist-label"><span class="dot-green"></span> Sehat</div>
-        <div class="dist-bar-wrap"><div class="dist-bar" style="width:{{ stats.percentages.sehat }}%;background:#34C759;"></div></div>
-        <span class="dist-val">{{ stats.jamur_sehat }} <small>({{ stats.percentages.sehat }}%)</small></span>
+    <div class="donut-card-body">
+      <!-- Donut with Center Total Badge -->
+      <div class="donut-left-wrapper">
+        <canvas id="laporanDonutChart" width="170" height="170"></canvas>
+        <div class="donut-center-badge">
+          <strong id="donutCenterTotal">{{ stats.total_jamur }}</strong>
+          <small>Total Jamur</small>
+        </div>
       </div>
-      <div class="dist-row">
-        <div class="dist-label"><span class="dot-purple"></span> BB Cacat</div>
-        <div class="dist-bar-wrap"><div class="dist-bar" style="width:{{ stats.percentages.bb_cacat }}%;background:#8B5CF6;"></div></div>
-        <span class="dist-val">{{ stats.bb_cacat }} <small>({{ stats.percentages.bb_cacat }}%)</small></span>
-      </div>
-      <div class="dist-row">
-        <div class="dist-label"><span class="dot-blue"></span> BB Tidak Cacat</div>
-        <div class="dist-bar-wrap"><div class="dist-bar" style="width:{{ stats.percentages.bb_tidak_cacat }}%;background:#007AFF;"></div></div>
-        <span class="dist-val">{{ stats.bb_tidak_cacat }} <small>({{ stats.percentages.bb_tidak_cacat }}%)</small></span>
-      </div>
-      <div class="dist-row">
-        <div class="dist-label"><span class="dot-red"></span> Tidak Layak</div>
-        <div class="dist-bar-wrap"><div class="dist-bar" style="width:{{ stats.percentages.tidak_layak }}%;background:#FF3B30;"></div></div>
-        <span class="dist-val">{{ stats.tidak_layak }} <small>({{ stats.percentages.tidak_layak }}%)</small></span>
+
+      <!-- Compact 6 Kategori Table -->
+      <div class="kat6-table-wrap">
+        <table class="kat6-table">
+          <thead>
+            <tr>
+              <th>Kategori</th>
+              <th style="text-align:center;">Jumlah</th>
+              <th style="text-align:center;">Persen</th>
+              <th style="text-align:center;">Kotak</th>
+            </tr>
+          </thead>
+          <tbody id="kat6TableBody">
+            <!-- Populated via JS renderKat6Table -->
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <div class="glass-card-subtle">
-    <div class="card-title-row"><h3>Rekomendasi Operasional</h3></div>
-    <div class="recommendation-list">
-      <div class="rec-item green-border">
-        <div class="rec-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-        <div>
-          <span class="rec-title">Kualitas Panen</span>
-          <p class="rec-desc">{{ stats.percentages.sehat }}% jamur tergolong Sehat. Kualitas media tanam terpelihara dengan baik.</p>
-        </div>
-      </div>
-      <div class="rec-item purple-border">
-        <div class="rec-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-        <div>
-          <span class="rec-title">Pengendalian Penyakit</span>
-          <p class="rec-desc">{{ stats.percentages.bb_cacat }}% BB Cacat dan {{ stats.percentages.tidak_layak }}% Tidak Layak terdeteksi oleh sistem.</p>
-        </div>
-      </div>
-      <div class="rec-item blue-border">
-        <div class="rec-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-        <div>
-          <span class="rec-title">Akurasi Model CNN</span>
-          <p class="rec-desc">Tingkat keyakinan rata-rata model ResNet-101 mencapai {{ stats.avg_accuracy }}%.</p>
-        </div>
-      </div>
+</div>
+
+<!-- Tabel Riwayat Harian dalam Periode -->
+<div class="perhari-table-card">
+  <div class="chart-card-header">
+    <div>
+      <h4 class="chart-card-title">📋 Rangkuman Harian Periode Terpilih</h4>
+      <p class="chart-card-sub">Rekapitulasi agregat jamur per hari yang masuk ke masing-masing kotak</p>
     </div>
   </div>
-</section>
+
+  <div class="table-scroll">
+    <table class="laporan-table">
+      <thead>
+        <tr>
+          <th style="width:40px; text-align:center;">No</th>
+          <th>Tanggal</th>
+          <th style="color:#15803D;">Kotak 1 (Sehat)</th>
+          <th style="color:#1D4ED8;">Kotak 2 (BB Aman)</th>
+          <th style="color:#6D28D9;">Kotak 3 (BB Cacat)</th>
+          <th style="color:#B91C1C;">Kotak 4 (Reject)</th>
+          <th>Total Jamur</th>
+          <th style="text-align:right;">Lolos Pasar (%)</th>
+        </tr>
+      </thead>
+      <tbody id="perHariTableBody">
+        <!-- Populated via JS renderPerHariTable -->
+      </tbody>
+      <tfoot id="perHariTableFoot">
+        <!-- Populated via JS renderPerHariFoot -->
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- Rekomendasi Operasional AI -->
+<div class="section-label-row">
+  <span class="section-label-title">
+    💡 Evaluasi &amp; Rekomendasi Operasional
+  </span>
+  <span style="font-size:11px; color:#94A3B8; font-weight:600;">Analisis otomatis berbasis distribusi data</span>
+</div>
+
+<div class="laporan-reko-grid" id="rekoGrid">
+  <!-- Populated via JS renderRekomendasi -->
+</div>
+
+<!-- Initial Data JSON -->
+<script id="initialStatsJson" type="application/json">{{ stats|tojson }}</script>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-  const stats = {{ stats|tojson }};
+  // ═══════════════════════════════════════════════════════
+  //  KONSTANTA RESMI SESUAI SUPABASE & ATURAN 4 KOTAK
+  // ═══════════════════════════════════════════════════════
+  const KAT6_NAMES  = [
+    'Healthy',
+    'Bacterial Blotch Tidak Cacat',
+    'Bacterial Blotch Cacat',
+    'Dry Bubble',
+    'Cobweb Disease',
+    'Wet Bubble'
+  ];
 
-  // Bar Chart
-  const barCtx = document.getElementById('laporanBarChart');
-  if (barCtx) {
-    new Chart(barCtx, {
+  // Palet warna yang disetujui
+  const KAT6_COLORS = [
+    '#4ADE80', // Healthy: Hijau Muda Soft
+    '#3B82F6', // BB Tidak Cacat: Biru Cerah
+    '#7C3AED', // BB Cacat: Ungu Indigo
+    '#F59E0B', // Dry Bubble: Oranye Amber
+    '#EC4899', // Cobweb: Pink Magenta
+    '#EF4444'  // Wet Bubble: Merah Terang
+  ];
+
+  const KAT6_BOXES = [
+    'Kotak 1',
+    'Kotak 2',
+    'Kotak 3',
+    'Kotak 4',
+    'Kotak 4',
+    'Kotak 4'
+  ];
+
+  const GRADE_KEYS   = ['sehat', 'bb_tidak_cacat', 'bb_cacat', 'tidak_layak'];
+  const GRADE_LABELS = ['Kotak 1 (Sehat)', 'Kotak 2 (BB Aman)', 'Kotak 3 (BB Cacat)', 'Kotak 4 (Reject)'];
+  const GRADE_COLORS = ['#4ADE80', '#3B82F6', '#7C3AED', '#EF4444'];
+
+  let barChartInst   = null;
+  let donutChartInst = null;
+  let _currentDari   = document.getElementById('dariInput')?.value || '';
+  let _currentSampai = document.getElementById('sampaiInput')?.value || '';
+
+  // ═══════════════════════════════════════════════════════
+  //  HELPER: FORMAT TANGGAL LOKAL (ANTI-OFFSET GMT+7)
+  // ═══════════════════════════════════════════════════════
+  function formatLocalDate(d) {
+    const year  = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day   = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  INIT
+  // ═══════════════════════════════════════════════════════
+  const initialStatsEl = document.getElementById('initialStatsJson');
+  const initialStats   = initialStatsEl ? JSON.parse(initialStatsEl.textContent || '{}') : {};
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderAll(initialStats);
+    initClock();
+  });
+
+  // ═══════════════════════════════════════════════════════
+  //  CUSTOM FROSTED GLASS DROPDOWN CONTROLLER
+  // ═══════════════════════════════════════════════════════
+  function togglePeriodeDropdown(e) {
+    if (e) e.stopPropagation();
+    const trigger = document.getElementById('periodeDropdownTrigger');
+    const menu    = document.getElementById('periodeDropdownMenu');
+    if (!trigger || !menu) return;
+
+    const isOpen = menu.classList.contains('show');
+    if (isOpen) {
+      closePeriodeDropdown();
+    } else {
+      trigger.classList.add('open');
+      menu.classList.add('show');
+    }
+  }
+
+  function closePeriodeDropdown() {
+    const trigger = document.getElementById('periodeDropdownTrigger');
+    const menu    = document.getElementById('periodeDropdownMenu');
+    if (trigger) trigger.classList.remove('open');
+    if (menu) menu.classList.remove('show');
+  }
+
+  function selectPeriodeOption(val, label) {
+    // 1. Update text label pada trigger button
+    const labelEl = document.getElementById('periodeDropdownLabel');
+    if (labelEl) labelEl.textContent = label;
+
+    // 2. Tandai item yang aktif
+    document.querySelectorAll('.custom-dropdown-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.val === val);
+    });
+
+    // 3. Tutup popover menu
+    closePeriodeDropdown();
+
+    // 4. Jalankan filter data
+    onPeriodeChange(val);
+  }
+
+  // Tutup dropdown jika user klik di luar area menu
+  document.addEventListener('click', (e) => {
+    const container = document.getElementById('periodeDropdownContainer');
+    if (container && !container.contains(e.target)) {
+      closePeriodeDropdown();
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════
+  //  PERIODE DATA & DATE RANGE SELECTOR
+  // ═══════════════════════════════════════════════════════
+  function onPeriodeChange(val) {
+    const today = new Date();
+    let dari = '';
+    let sampai = formatLocalDate(today);
+
+    switch (val) {
+      case 'semua':
+        dari = '';
+        sampai = '';
+        break;
+      case 'hari':
+        dari = formatLocalDate(today);
+        sampai = formatLocalDate(today);
+        break;
+      case 'minggu':
+        const d7 = new Date(today);
+        d7.setDate(d7.getDate() - 6);
+        dari = formatLocalDate(d7);
+        break;
+      case 'bulan':
+        dari = formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 1));
+        break;
+      case 'tahun':
+        dari = `${today.getFullYear()}-01-01`;
+        break;
+      default:
+        dari = '';
+        sampai = '';
+    }
+
+    const dariEl = document.getElementById('dariInput');
+    const sampaiEl = document.getElementById('sampaiInput');
+    if (dariEl) dariEl.value = dari;
+    if (sampaiEl) sampaiEl.value = sampai;
+
+    _currentDari = dari;
+    _currentSampai = sampai;
+
+    const wrap = document.getElementById('dateRangeWrap');
+    if (wrap) wrap.classList.remove('has-custom');
+
+    fetchAndRender(dari, sampai);
+  }
+
+  function clearAllFilters() {
+    selectPeriodeOption('semua', 'Semua Riwayat');
+  }
+
+  function onCustomDateChange() {
+    const dari = document.getElementById('dariInput')?.value || '';
+    const sampai = document.getElementById('sampaiInput')?.value || '';
+
+    const wrap = document.getElementById('dateRangeWrap');
+    if (wrap) wrap.classList.add('has-custom');
+
+    _currentDari = dari;
+    _currentSampai = sampai;
+    fetchAndRender(dari, sampai);
+  }
+
+  function refreshLaporan() {
+    fetchAndRender(_currentDari, _currentSampai);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  API FETCH REAL-TIME
+  // ═══════════════════════════════════════════════════════
+  async function fetchAndRender(dari, sampai) {
+    const loader = document.getElementById('laporanLoadingOverlay');
+    if (loader) loader.classList.add('active');
+
+    const infoEl = document.getElementById('periodeInfo');
+    if (infoEl) {
+      if (dari && sampai) {
+        infoEl.textContent = `${dari} – ${sampai}`;
+      } else if (dari && !sampai) {
+        infoEl.textContent = `Sejak ${dari}`;
+      } else if (!dari && sampai) {
+        infoEl.textContent = `Hingga ${sampai}`;
+      } else {
+        infoEl.textContent = 'Semua Riwayat';
+      }
+    }
+
+    try {
+      const res = await fetch(`/api/laporan-stats?dari=${encodeURIComponent(dari)}&sampai=${encodeURIComponent(sampai)}`);
+      const data = await res.json();
+      renderAll(data);
+    } catch (err) {
+      console.error('[ERROR] Gagal memuat data laporan:', err);
+    } finally {
+      if (loader) loader.classList.remove('active');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  ORCHESTRATOR RENDER ALL
+  // ═══════════════════════════════════════════════════════
+  function renderAll(d) {
+    updateKPIs(d);
+    renderBarChart(d);
+    renderDonutChart(d);
+    renderKat6Table(d);
+    renderPerHariTable(d);
+    renderRekomendasi(d);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  1. UPDATE KPI CARDS
+  // ═══════════════════════════════════════════════════════
+  function updateKPIs(d) {
+    const p = d.percentages || {};
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+
+    set('totalJamur',         d.total_jamur ?? 0);
+    set('totalSesi',          d.total_sesi ?? 0);
+    set('keberhasilan',       `${d.keberhasilan_rate ?? 0}%`);
+    set('rejectRate',         `${d.reject_rate ?? 0}%`);
+
+    set('gradeSehat',         d.sehat ?? 0);
+    set('gradeSehatPct',      `${p.sehat ?? 0}%`);
+
+    set('gradeBbAman',        d.bb_tidak_cacat ?? 0);
+    set('gradeBbAmanPct',     `${p.bb_tidak_cacat ?? 0}%`);
+
+    set('gradeBbCacat',       d.bb_cacat ?? 0);
+    set('gradeBbCacatPct',    `${p.bb_cacat ?? 0}%`);
+
+    set('gradeTidakLayak',    d.tidak_layak ?? 0);
+    set('gradeTidakLayakPct', `${p.tidak_layak ?? 0}%`);
+
+    const donutTotal = document.getElementById('donutCenterTotal');
+    if (donutTotal) donutTotal.textContent = d.total_jamur ?? 0;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  2. BAR CHART TREN HARIAN PER GRADE
+  // ═══════════════════════════════════════════════════════
+  function renderBarChart(d) {
+    const ctx = document.getElementById('laporanBarChart');
+    if (!ctx) return;
+
+    if (barChartInst) {
+      barChartInst.destroy();
+      barChartInst = null;
+    }
+
+    const perHari = d.per_hari || [];
+    const labels = perHari.map(h => h.tanggal_fmt || h.tanggal);
+
+    if (perHari.length === 0) {
+      barChartInst = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Tidak Ada Data'],
+          datasets: [{ data: [0], backgroundColor: '#E2E8F0' }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+      return;
+    }
+
+    const datasets = GRADE_KEYS.map((key, i) => ({
+      label: GRADE_LABELS[i],
+      data: perHari.map(h => h[key] || 0),
+      backgroundColor: GRADE_COLORS[i],
+      borderRadius: 6,
+      borderSkipped: false,
+      maxBarThickness: 38
+    }));
+
+    barChartInst = new Chart(ctx, {
       type: 'bar',
-      data: {
-        labels: ['Sehat', 'BB Cacat', 'BB Tidak Cacat', 'Tidak Layak'],
-        datasets: [{
-          label: 'Jumlah Jamur',
-          data: [
-            stats.jamur_sehat,
-            stats.bb_cacat,
-            stats.bb_tidak_cacat,
-            stats.tidak_layak
-          ],
-          backgroundColor: [
-            'rgba(52,199,89,0.85)',
-            'rgba(139,92,246,0.85)',
-            'rgba(0,122,255,0.85)',
-            'rgba(255,59,48,0.85)'
-          ],
-          borderRadius: 8
-        }]
-      },
+      data: { labels, datasets },
       options: {
-        responsive: true, maintainAspectRatio: false,
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { backgroundColor: 'rgba(255,255,255,0.96)', titleColor: '#0F172A', bodyColor: '#334155', borderColor: 'rgba(226,232,240,0.9)', borderWidth: 1, cornerRadius: 10 }
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              font: { size: 10.5, weight: '700' },
+              boxWidth: 10,
+              boxHeight: 10,
+              padding: 12,
+              color: '#475569'
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            titleColor: '#0F172A',
+            bodyColor: '#334155',
+            borderColor: 'rgba(226, 232, 240, 0.95)',
+            borderWidth: 1.5,
+            cornerRadius: 12,
+            padding: 10
+          }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#64748B' } },
-          y: { grid: { color: 'rgba(226,232,240,0.6)' }, ticks: { font: { size: 10 }, color: '#94A3B8' }, beginAtZero: true }
+          x: {
+            stacked: true,
+            grid: { display: false },
+            ticks: { font: { size: 10.5, weight: '600' }, color: '#64748B' }
+          },
+          y: {
+            stacked: true,
+            grid: { color: 'rgba(226, 232, 240, 0.6)' },
+            ticks: { font: { size: 10 }, color: '#94A3B8' },
+            beginAtZero: true
+          }
         }
       }
     });
   }
 
-  // Donut Chart
-  const donutCtx = document.getElementById('laporanDonutChart');
-  if (donutCtx) {
-    const cl = document.querySelector('.donut-center-label');
-    new Chart(donutCtx, {
+  // ═══════════════════════════════════════════════════════
+  //  3. DONUT CHART 6 KATEGORI
+  // ═══════════════════════════════════════════════════════
+  function renderDonutChart(d) {
+    const ctx = document.getElementById('laporanDonutChart');
+    if (!ctx) return;
+
+    if (donutChartInst) {
+      donutChartInst.destroy();
+      donutChartInst = null;
+    }
+
+    const kat6 = d.kat6 || {};
+    const values = KAT6_NAMES.map(n => kat6[n] || 0);
+    const total = values.reduce((a, b) => a + b, 0);
+
+    const chartValues = total === 0 ? [1] : values;
+    const chartColors = total === 0 ? ['#E2E8F0'] : KAT6_COLORS;
+
+    donutChartInst = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: ['Sehat','BB Cacat','BB Tidak Cacat','Tidak Layak'],
+        labels: KAT6_NAMES,
         datasets: [{
-          data: [
-            stats.jamur_sehat,
-            stats.bb_cacat,
-            stats.bb_tidak_cacat,
-            stats.tidak_layak
-          ],
-          backgroundColor: ['#34C759','#8B5CF6','#007AFF','#FF3B30'],
+          data: chartValues,
+          backgroundColor: chartColors,
           borderWidth: 3,
           borderColor: '#FFFFFF',
           hoverOffset: 6
         }]
       },
       options: {
-        responsive: true, maintainAspectRatio: false, cutout: '76%',
-        onHover: (e, els) => { if (cl) cl.classList[els.length > 0 ? 'add' : 'remove']('is-hidden'); },
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '74%',
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(255,255,255,0.98)', titleColor: '#0F172A', bodyColor: '#334155', borderColor: 'rgba(226,232,240,0.95)', borderWidth: 1.5, cornerRadius: 12, padding: 10,
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            titleColor: '#0F172A',
+            bodyColor: '#334155',
+            borderColor: 'rgba(226, 232, 240, 0.95)',
+            borderWidth: 1.5,
+            cornerRadius: 12,
+            padding: 10,
             callbacks: {
-              label: ctx => ` ${ctx.parsed} (${stats.total_jamur > 0 ? ((ctx.parsed / stats.total_jamur) * 100).toFixed(1) : 0}%)`
+              label: ctx => ` ${ctx.parsed} jamur (${total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0}%)`
             }
           }
         }
@@ -232,13 +1456,202 @@
     });
   }
 
-  function updateClock() {
-    const now = new Date();
-    const days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
-    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
-    const el = document.getElementById('liveDateBadge');
-    if (el) el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+  // ═══════════════════════════════════════════════════════
+  //  4. TABEL RINGKAS 6 KATEGORI (DI SEBELAH DONUT)
+  // ═══════════════════════════════════════════════════════
+  function renderKat6Table(d) {
+    const tbody = document.getElementById('kat6TableBody');
+    if (!tbody) return;
+
+    const kat6 = d.kat6 || {};
+    const kat6pct = d.kat6_pct || {};
+
+    tbody.innerHTML = KAT6_NAMES.map((name, i) => {
+      const val = kat6[name] || 0;
+      const pct = kat6pct[name] || 0;
+      const color = KAT6_COLORS[i];
+      const box = KAT6_BOXES[i];
+
+      return `
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:7px;">
+              <span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${color}; flex-shrink:0;"></span>
+              <strong style="color:var(--ios-label, #1E293B); font-size:11.5px;">${name}</strong>
+            </div>
+          </td>
+          <td style="text-align:center; font-weight:800; font-size:12px;">${val}</td>
+          <td style="text-align:center; color:#64748B; font-weight:700; font-size:11px;">${pct}%</td>
+          <td style="text-align:center;">
+            <span style="font-size:10px; font-weight:700; padding:2px 7px; border-radius:9999px; background:rgba(0,0,0,0.05); color:#475569;">
+              ${box}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
-  updateClock(); setInterval(updateClock, 1000);
+
+  // ═══════════════════════════════════════════════════════
+  //  5. TABEL AUDIT HARIAN
+  // ═══════════════════════════════════════════════════════
+  function renderPerHariTable(d) {
+    const tbody = document.getElementById('perHariTableBody');
+    const tfoot = document.getElementById('perHariTableFoot');
+    if (!tbody) return;
+
+    const rows = d.per_hari || [];
+    if (rows.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align:center; color:#94A3B8; padding:32px; font-weight:600;">
+            Tidak ada rekaman sesi grading pada periode ini
+          </td>
+        </tr>
+      `;
+      if (tfoot) tfoot.innerHTML = '';
+      return;
+    }
+
+    let sumSehat = 0, sumBbAman = 0, sumBbCacat = 0, sumReject = 0, sumTotal = 0;
+
+    tbody.innerHTML = rows.map((h, idx) => {
+      const total = h.total || 0;
+      const sehat = h.sehat || 0;
+      const bbAman = h.bb_tidak_cacat || 0;
+      const bbCacat = h.bb_cacat || 0;
+      const reject = h.tidak_layak || 0;
+
+      sumSehat += sehat;
+      sumBbAman += bbAman;
+      sumBbCacat += bbCacat;
+      sumReject += reject;
+      sumTotal += total;
+
+      const rateLolos = total > 0 ? (((sehat + bbAman) / total) * 100).toFixed(1) : '0.0';
+
+      return `
+        <tr>
+          <td style="text-align:center; color:#94A3B8; font-weight:700;">${idx + 1}</td>
+          <td><strong>${h.tanggal_fmt || h.tanggal}</strong></td>
+          <td style="color:#15803D; font-weight:800;">${sehat}</td>
+          <td style="color:#1D4ED8; font-weight:800;">${bbAman}</td>
+          <td style="color:#6D28D9; font-weight:800;">${bbCacat}</td>
+          <td style="color:#B91C1C; font-weight:800;">${reject}</td>
+          <td style="font-weight:900; font-size:12.5px;">${total}</td>
+          <td style="text-align:right; font-weight:800; color:#15803D;">${rateLolos}%</td>
+        </tr>
+      `;
+    }).join('');
+
+    if (tfoot) {
+      const totalLolosRate = sumTotal > 0 ? (((sumSehat + sumBbAman) / sumTotal) * 100).toFixed(1) : '0.0';
+      tfoot.innerHTML = `
+        <tr>
+          <td colspan="2" style="text-transform:uppercase; letter-spacing:0.04em;">TOTAL</td>
+          <td style="color:#15803D;">${sumSehat}</td>
+          <td style="color:#1D4ED8;">${sumBbAman}</td>
+          <td style="color:#6D28D9;">${sumBbCacat}</td>
+          <td style="color:#B91C1C;">${sumReject}</td>
+          <td style="font-size:13px;">${sumTotal}</td>
+          <td style="text-align:right; color:#15803D;">${totalLolosRate}%</td>
+        </tr>
+      `;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  6. REKOMENDASI AI BERDASARKAN HASIL SORTIR
+  // ═══════════════════════════════════════════════════════
+  function renderRekomendasi(d) {
+    const el = document.getElementById('rekoGrid');
+    if (!el) return;
+
+    const p = d.percentages || {};
+    const kat6pct = d.kat6_pct || {};
+
+    const sehatPct = parseFloat(p.sehat || 0);
+    const bbCacatPct = parseFloat(p.bb_cacat || 0);
+    const rejectPct = parseFloat(p.tidak_layak || 0);
+    const cobwebPct = parseFloat(kat6pct['Cobweb Disease'] || 0);
+
+    const recos = [
+      {
+        icon: '✅',
+        bg: 'rgba(74, 222, 128, 0.20)',
+        title: 'Kualitas Panen Primer',
+        desc: `${sehatPct}% jamur masuk Kotak 1 (Sehat). ${
+          sehatPct >= 50
+            ? 'Kualitas bibit dan media tanam kumbung dalam kondisi prima.'
+            : 'Perlu peningkatan nutrisi baglog dan kontrol kelembaban udara.'
+        }`
+      },
+      {
+        icon: '🔵',
+        bg: 'rgba(59, 130, 246, 0.20)',
+        title: 'Bacterial Blotch',
+        desc: `BB Tidak Cacat ${p.bb_tidak_cacat || 0}% & BB Cacat ${bbCacatPct}%. ${
+          bbCacatPct > 15
+            ? 'Bercak parah meningkat — kurangi penyiraman langsung ke tudung jamur.'
+            : 'Bakteri bercak terkendali dengan sirkulasi udara yang baik.'
+        }`
+      },
+      {
+        icon: '🕸️',
+        bg: 'rgba(236, 72, 153, 0.20)',
+        title: 'Penyakit Jamur (Cobweb)',
+        desc: `Terdeteksi ${cobwebPct}% jamur terserang Cobweb Disease. ${
+          cobwebPct > 8
+            ? 'Sanitasi ruang kumbung mendesak dilakukan, turunkan kelembaban berlebih.'
+            : 'Spora jamur parasit dalam ambang batas aman.'
+        }`
+      },
+      {
+        icon: '⚠️',
+        bg: 'rgba(239, 68, 68, 0.20)',
+        title: 'Tingkat Penolakan (Reject)',
+        desc: `Total Kotak 4 mencapai ${rejectPct}%. ${
+          rejectPct > 20
+            ? 'Rasio reject tinggi — segera pisahkan baglog yang terkontaminasi.'
+            : 'Rasio reject rendah, pemilahan berjalan sangat efisien.'
+        }`
+      }
+    ];
+
+    el.innerHTML = recos.map(r => `
+      <div class="reko-card">
+        <div class="reko-icon" style="background:${r.bg};">${r.icon}</div>
+        <div class="reko-title">${r.title}</div>
+        <div class="reko-desc">${r.desc}</div>
+      </div>
+    `).join('');
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  7. LIVE CLOCK
+  // ═══════════════════════════════════════════════════════
+  function initClock() {
+    const days   = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const el     = document.getElementById('liveDateBadge');
+
+    function update() {
+      const now = new Date();
+      if (el) {
+        el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
+      }
+    }
+    update();
+    setInterval(update, 1000);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  8. EKSPOR EXCEL
+  // ═══════════════════════════════════════════════════════
+  function eksporExcel() {
+    const dari   = document.getElementById('dariInput')?.value || '';
+    const sampai = document.getElementById('sampaiInput')?.value || '';
+    window.location.href = `/api/export-csv?dari=${encodeURIComponent(dari)}&sampai=${encodeURIComponent(sampai)}`;
+  }
 </script>
 {% endblock %}
