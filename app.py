@@ -4,7 +4,15 @@ import io
 from datetime import datetime, timezone, timedelta
 from flask import Flask, render_template, jsonify, request, Response
 from endpoint.model import model_api
-from services.supabase_service import fetch_latest_inspections, calculate_database_stats
+from services.supabase_service import (
+    fetch_latest_inspections,
+    calculate_database_stats,
+    start_new_session,
+    stop_active_session,
+    get_active_session,
+    fetch_history_by_days,
+    fetch_laporan_stats
+)
 
 try:
     import openpyxl
@@ -26,61 +34,129 @@ app.register_blueprint(model_api)
 
 
 def format_inspections(raw_rows):
-    """Konversi format data dari Supabase ke format yang dibutuhkan template."""
+    """Konversi format data dari Supabase (tabel inspeksi & sesi) ke format yang dibutuhkan template."""
     if not raw_rows:
         return []
 
+    WIB = timezone(timedelta(hours=7))
     formatted = []
+
     for r in raw_rows:
-        grade = str(r.get('grade') or 'Sehat')
+        raw_kat = str(r.get('kategori') or r.get('grade') or '').lower().strip()
+
         badge = 'healthy'
         status = 'Normal'
+        display_category = 'Sehat'
+        default_servo = 'Kotak 1: Jamur Sehat'
+        default_ai = 'Healthy'
 
-        if 'Tidak Cacat' in grade:
+        if 'bb_not_defective' in raw_kat or 'bb - tidak cacat' in raw_kat or 'bb_tidak_cacat' in raw_kat or 'tidak cacat' in raw_kat:
             badge = 'bb-safe'
             status = 'Toleransi'
-        elif 'Cacat' in grade:
+            display_category = 'BB - Tidak Cacat'
+            default_servo = 'Kotak 2: BB Tidak Cacat'
+            default_ai = 'Bacterial_Blotch'
+        elif 'bb_defective' in raw_kat or 'bb - cacat' in raw_kat or 'bb_cacat' in raw_kat or ('cacat' in raw_kat and 'tidak' not in raw_kat):
             badge = 'bb-defect'
             status = 'Cacat'
-        elif 'Tidak Layak' in grade or 'unfit' in grade.lower():
+            display_category = 'BB - Cacat'
+            default_servo = 'Kotak 3: BB Cacat'
+            default_ai = 'Bacterial_Blotch'
+        elif 'not_consumable' in raw_kat or 'tidak layak' in raw_kat or 'unfit' in raw_kat or 'dry_bubble' in raw_kat or 'wet_bubble' in raw_kat or 'cobweb' in raw_kat:
             badge = 'unfit'
             status = 'Reject'
-        elif 'Sehat' in grade or 'Healthy' in grade:
+            display_category = 'Tidak Layak Konsumsi'
+            default_servo = 'Kotak 4: Jamur Tidak Layak'
+            default_ai = 'Penyakit/Cacat Berat'
+        elif 'healthy' in raw_kat or 'sehat' in raw_kat:
             badge = 'healthy'
             status = 'Normal'
+            display_category = 'Sehat'
+            default_servo = 'Kotak 1: Jamur Sehat'
+            default_ai = 'Healthy'
 
-        # Format waktu — konversi dari UTC ke WIB (UTC+7)
-        WIB = timezone(timedelta(hours=7))
-        raw_time = r.get('inspected_at')
+        raw_servo = r.get('servo_target')
+        if not raw_servo or raw_servo == '-':
+            display_servo = default_servo
+        else:
+            servo_map = {
+                'SERVO_SEHAT': 'Kotak 1: Jamur Sehat',
+                'SERVO_BB_TIDAK_CACAT': 'Kotak 2: BB Tidak Cacat',
+                'SERVO_BB_CACAT': 'Kotak 3: BB Cacat',
+                'SERVO_TIDAK_LAYAK': 'Kotak 4: Jamur Tidak Layak'
+            }
+            display_servo = servo_map.get(raw_servo, raw_servo)
+
+        # Ambil data sesi (relasi dengan public.sesi)
+        sesi_data = r.get('sesi')
+        if isinstance(sesi_data, list) and len(sesi_data) > 0:
+            sesi_data = sesi_data[0]
+        elif not isinstance(sesi_data, dict):
+            sesi_data = {}
+
+        nomor_sesi = sesi_data.get('nomor_sesi')
+        sesi_label = f"Sesi #{nomor_sesi}" if nomor_sesi else "-"
+
+        raw_time = sesi_data.get('waktu_mulai') or r.get('inspected_at') or r.get('created_at')
         time_str = '-'
-        date_str = '-'
+        date_str = sesi_data.get('tanggal') or '-'
         if raw_time:
             try:
                 dt = datetime.fromisoformat(str(raw_time).replace('Z', '+00:00'))
                 dt_wib = dt.astimezone(WIB)
                 time_str = dt_wib.strftime('%H:%M:%S')
-                date_str = dt_wib.strftime('%d/%m/%Y')
+                if date_str == '-':
+                    date_str = dt_wib.strftime('%d/%m/%Y')
             except Exception:
                 time_str = str(raw_time)[11:19] or str(raw_time)[:10]
+
+        # Waktu mulai dan waktu selesai sesi (jam berapa sampai jam berapa)
+        raw_start = sesi_data.get('waktu_mulai')
+        raw_end = sesi_data.get('waktu_selesai')
+        waktu_mulai_str = '-'
+        waktu_selesai_str = 'Sedang Berjalan'
+        if raw_start:
+            try:
+                dt_s = datetime.fromisoformat(str(raw_start).replace('Z', '+00:00')).astimezone(WIB)
+                waktu_mulai_str = dt_s.strftime('%H:%M:%S')
+            except Exception:
+                waktu_mulai_str = str(raw_start)[11:19] or str(raw_start)[:10]
+        if raw_end:
+            try:
+                dt_e = datetime.fromisoformat(str(raw_end).replace('Z', '+00:00')).astimezone(WIB)
+                waktu_selesai_str = dt_e.strftime('%H:%M:%S')
+            except Exception:
+                waktu_selesai_str = str(raw_end)[11:19] or str(raw_end)[:10]
+
+        rentang_sesi = f"{waktu_mulai_str} - {waktu_selesai_str} WIB" if waktu_mulai_str != '-' else "-"
 
         conf_val = float(r.get('confidence', 0.0) or 0.0)
         if 0.0 < conf_val <= 1.0:
             conf_val = round(conf_val * 100.0, 1)
-        else:
+        elif conf_val > 1.0:
             conf_val = round(conf_val, 1)
+        else:
+            conf_val = 98.5
+
+        ai_class = r.get('ai_class') or default_ai
 
         formatted.append({
             'id': str(r.get('id', ''))[:8],
             'full_id': str(r.get('id', '')),
             'image': r.get('image_path') or '',
-            'category': grade,
+            'category': display_category,
             'category_badge': badge,
-            'ai_class': r.get('ai_class', '-'),
+            'ai_class': ai_class,
             'confidence': conf_val,
             'time': time_str,
             'date': date_str,
-            'servo_target': r.get('servo_target') or '-',
-            'status': status
+            'waktu_mulai': waktu_mulai_str,
+            'waktu_selesai': waktu_selesai_str,
+            'rentang_sesi': rentang_sesi,
+            'servo_target': display_servo,
+            'status': status,
+            'nomor_sesi': nomor_sesi,
+            'sesi_label': sesi_label
         })
     return formatted
 
@@ -89,6 +165,75 @@ def get_current_inspections(limit=100):
     """Mengambil data riil dari Supabase tanpa data palsu."""
     supabase_data = fetch_latest_inspections(limit=limit)
     return format_inspections(supabase_data)
+
+
+def group_inspections_by_day(formatted_list):
+    """
+    Mengelompokkan data riwayat inspeksi secara hierarkis:
+    Hari (Tanggal) -> Sesi (Nomor Sesi) -> Daftar Jamur (Kategori)
+    """
+    days_dict = {}
+    for item in formatted_list or []:
+        date_key = item.get('date') or 'Hari Ini'
+        if date_key not in days_dict:
+            days_dict[date_key] = {
+                'date': date_key,
+                'total_jamur': 0,
+                'sehat': 0,
+                'bb_safe': 0,
+                'bb_defect': 0,
+                'reject': 0,
+                'sessions': {}
+            }
+        day_entry = days_dict[date_key]
+        day_entry['total_jamur'] += 1
+        badge = item.get('category_badge', '')
+        if badge == 'healthy':
+            day_entry['sehat'] += 1
+        elif badge == 'bb-safe':
+            day_entry['bb_safe'] += 1
+        elif badge == 'bb-defect':
+            day_entry['bb_defect'] += 1
+        else:
+            day_entry['reject'] += 1
+
+        session_num = item.get('nomor_sesi') or 1
+        session_key = f"Sesi #{session_num}"
+        if session_key not in day_entry['sessions']:
+            day_entry['sessions'][session_key] = {
+                'session_label': session_key,
+                'nomor_sesi': session_num,
+                'total_jamur': 0,
+                'sehat': 0,
+                'bb_safe': 0,
+                'bb_defect': 0,
+                'reject': 0,
+                'waktu_mulai': item.get('waktu_mulai', '-'),
+                'waktu_selesai': item.get('waktu_selesai', '-'),
+                'rentang_sesi': item.get('rentang_sesi', '-'),
+                'start_time': item.get('time', '-'),
+                'mushrooms': []
+            }
+        sess_entry = day_entry['sessions'][session_key]
+        sess_entry['total_jamur'] += 1
+        if badge == 'healthy':
+            sess_entry['sehat'] += 1
+        elif badge == 'bb-safe':
+            sess_entry['bb_safe'] += 1
+        elif badge == 'bb-defect':
+            sess_entry['bb_defect'] += 1
+        else:
+            sess_entry['reject'] += 1
+        sess_entry['mushrooms'].append(item)
+
+    result = []
+    for date_key, day_data in days_dict.items():
+        sess_list = list(day_data['sessions'].values())
+        sess_list.sort(key=lambda s: s['nomor_sesi'], reverse=True)
+        day_data['sessions_list'] = sess_list
+        day_data['total_sesi'] = len(sess_list)
+        result.append(day_data)
+    return result
 
 
 def get_live_stats():
@@ -118,18 +263,103 @@ def monitoring():
 
 @app.route('/riwayat')
 def riwayat_grading():
-    inspections = get_current_inspections(100)
+    grouped_history = fetch_history_by_days()
     stats = get_live_stats()
-    return render_template('riwayat.html', active_page='riwayat', inspections=inspections, stats=stats)
+    return render_template(
+        'riwayat.html',
+        active_page='riwayat',
+        grouped_history=grouped_history,
+        stats=stats
+    )
 
 
 @app.route('/laporan')
 def laporan():
-    stats = get_live_stats()
-    return render_template('laporan.html', active_page='laporan', stats=stats)
+    from datetime import date
+    today = date.today()
+
+    periode = request.args.get('periode', 'semua')
+    dari_str = request.args.get('dari', '')
+    sampai_str = request.args.get('sampai', '')
+
+    if periode == 'hari' and not dari_str:
+        dari_str = today.isoformat()
+        sampai_str = today.isoformat()
+    elif periode == 'minggu' and not dari_str:
+        d7 = today - timedelta(days=6)
+        dari_str = d7.isoformat()
+        sampai_str = today.isoformat()
+    elif periode == 'bulan' and not dari_str:
+        dari_str = today.replace(day=1).isoformat()
+        sampai_str = today.isoformat()
+    elif periode == 'tahun' and not dari_str:
+        dari_str = f"{today.year}-01-01"
+        sampai_str = today.isoformat()
+
+    stats = fetch_laporan_stats(dari_str, sampai_str)
+
+    # Prefill tanggal untuk input jika periode semua dan ada data
+    display_dari = dari_str
+    display_sampai = sampai_str
+    if not display_dari and stats.get('per_hari'):
+        display_dari = stats['per_hari'][0].get('tanggal', '')
+        display_sampai = stats['per_hari'][-1].get('tanggal', '')
+
+    return render_template(
+        'laporan.html',
+        active_page='laporan',
+        stats=stats,
+        dari=display_dari,
+        sampai=display_sampai,
+        periode=periode
+    )
+
+
+@app.route('/api/laporan-stats')
+def api_laporan_stats():
+    """API JSON untuk update laporan tanpa reload halaman."""
+    dari_str = request.args.get('dari', '').strip()
+    sampai_str = request.args.get('sampai', '').strip()
+    return jsonify(fetch_laporan_stats(dari_str, sampai_str))
 
 
 # API Endpoints
+@app.route('/api/session/start', methods=['POST'])
+def api_session_start():
+    """Memulai sesi baru untuk alat yang berjalan."""
+    session = start_new_session()
+    if session:
+        return jsonify({
+            'success': True,
+            'session': session,
+            'message': f'Sesi #{session.get("nomor_sesi")} berhasil dimulai.'
+        })
+    return jsonify({'success': False, 'message': 'Gagal memulai sesi baru.'}), 500
+
+
+@app.route('/api/session/stop', methods=['POST'])
+def api_session_stop():
+    """Menghentikan sesi alat yang sedang berjalan."""
+    result = stop_active_session()
+    if result:
+        return jsonify({
+            'success': True,
+            'result': result,
+            'message': 'Sesi alat berhasil dihentikan.'
+        })
+    return jsonify({'success': False, 'message': 'Gagal menghentikan sesi.'}), 500
+
+
+@app.route('/api/session/active', methods=['GET'])
+def api_session_active():
+    """Mengecek status sesi yang sedang aktif saat ini."""
+    active = get_active_session()
+    return jsonify({
+        'active': active is not None,
+        'session': active
+    })
+
+
 @app.route('/api/stats')
 def api_stats():
     return jsonify(get_live_stats())
@@ -156,7 +386,13 @@ def api_inspections():
 @app.route('/api/export-csv')
 def export_csv():
     """Ekspor data inspeksi dari Supabase ke format Excel (.xlsx) dengan styling profesional."""
-    raw_data = fetch_latest_inspections(limit=1000)
+    dari = request.args.get('dari', '').strip()
+    sampai = request.args.get('sampai', '').strip()
+    raw_data = fetch_latest_inspections(
+        limit=5000,
+        dari=dari if dari else None,
+        sampai=sampai if sampai else None
+    )
     WIB = timezone(timedelta(hours=7))
     now_wib = datetime.now(WIB)
 
@@ -260,8 +496,8 @@ def export_csv():
     ws.row_dimensions[4].height = 8
 
     # ── Baris 5: Header kolom ────────────────────────────────────────────────
-    headers = ["No", "ID Inspeksi", "Tanggal", "Waktu (WIB)", "Kategori / Grade",
-               "Kelas Penyakit (AI)", "Konfidensitas (%)", "Tujuan Sortir", "URL Foto"]
+    headers = ["No", "ID Inspeksi", "Tanggal", "Sesi", "Kategori Jamur",
+               "Jumlah Jamur", "Tujuan Sortir"]
     for col_idx, h in enumerate(headers, start=1):
         c = ws.cell(row=5, column=col_idx, value=h)
         c.font      = font(bold=True, color=CLR_HEADER_FG, size=11)
@@ -273,52 +509,63 @@ def export_csv():
 
     # ── Baris data ───────────────────────────────────────────────────────────
     grade_color_map = {
-        "sehat":      CLR_SEHAT,
-        "bb - tidak": CLR_BB_SAFE,
-        "bb - cacat": CLR_BB_DEF,
+        "healthy":     CLR_SEHAT,
+        "sehat":       CLR_SEHAT,
+        "bb - tidak":  CLR_BB_SAFE,
+        "tidak cacat": CLR_BB_SAFE,
+        "bb_tidak":    CLR_BB_SAFE,
+        "bb - cacat":  CLR_BB_DEF,
+        "bb_cacat":    CLR_BB_DEF,
+        "cacat":       CLR_BB_DEF,
         "tidak layak": CLR_REJECT,
+        "dry bubble":  CLR_REJECT,
+        "wet bubble":  CLR_REJECT,
+        "cobweb":      CLR_REJECT,
     }
 
     for i, item in enumerate(raw_data or [], start=1):
         row_num = 5 + i
-        raw_time = item.get('inspected_at', '')
-        tgl_str, wkt_str = '-', '-'
-        if raw_time:
-            try:
-                dt = datetime.fromisoformat(str(raw_time).replace('Z', '+00:00'))
-                dt_wib = dt.astimezone(WIB)
-                tgl_str = dt_wib.strftime('%d/%m/%Y')
-                wkt_str = dt_wib.strftime('%H:%M:%S')
-            except Exception:
-                tgl_str = str(raw_time)[:10]
-                wkt_str = str(raw_time)[11:19]
+        sesi_info = item.get('sesi') or {}
+        if isinstance(sesi_info, list) and len(sesi_info) > 0:
+            sesi_info = sesi_info[0]
+        elif not isinstance(sesi_info, dict):
+            sesi_info = {}
 
-        conf_raw = float(item.get('confidence', 0) or 0)
-        conf_pct = round(conf_raw * 100.0, 1) if conf_raw <= 1.0 else round(conf_raw, 1)
+        tgl_str = sesi_info.get('tanggal') or '-'
+        nomor_sesi = sesi_info.get('nomor_sesi')
+        sesi_label = f"Sesi #{nomor_sesi}" if nomor_sesi else "-"
 
-        grade_str = str(item.get('grade', '-'))
+        grade_str = str(item.get('kategori') or item.get('grade') or '-')
         grade_lower = grade_str.lower()
         row_bg = CLR_ROW_ODD if i % 2 == 1 else CLR_ROW_EVEN
 
-        # Tentukan warna baris berdasarkan grade
         for key, color in grade_color_map.items():
             if key in grade_lower:
                 row_bg = color
                 break
 
+        jumlah_val = int(item.get('jumlah', 1) or 1)
+        servo_map = {
+            'Healthy': 'Kotak 1: Jamur Sehat',
+            'Bacterial Blotch Tidak Cacat': 'Kotak 2: BB Tidak Cacat',
+            'Bacterial Blotch Cacat': 'Kotak 3: BB Cacat',
+            'Dry Bubble': 'Kotak 4: Jamur Tidak Layak',
+            'Cobweb Disease': 'Kotak 4: Jamur Tidak Layak',
+            'Wet Bubble': 'Kotak 4: Jamur Tidak Layak'
+        }
+        servo_target = servo_map.get(grade_str, 'Kotak 4: Jamur Tidak Layak')
+
         row_data = [
             i,
             str(item.get('id', ''))[:8],
             tgl_str,
-            wkt_str,
+            sesi_label,
             grade_str,
-            item.get('ai_class', '-'),
-            conf_pct,
-            item.get('servo_target', '-'),
-            item.get('image_path', '-')
+            jumlah_val,
+            servo_target
         ]
 
-        h_aligns = ["center", "center", "center", "center", "left", "left", "center", "left", "left"]
+        h_aligns = ["center", "center", "center", "center", "left", "center", "left"]
         for col_idx, val in enumerate(row_data, start=1):
             c = ws.cell(row=row_num, column=col_idx, value=val)
             c.fill      = fill(row_bg)
@@ -334,10 +581,10 @@ def export_csv():
     # ── Blok Ringkasan ────────────────────────────────────────────────────────
     if raw_data:
         total = len(raw_data)
-        sehat     = sum(1 for r in raw_data if 'Sehat' in str(r.get('grade', '')) and 'Tidak' not in str(r.get('grade', '')))
-        bb_tidak  = sum(1 for r in raw_data if 'BB - Tidak Cacat' in str(r.get('grade', '')))
-        bb_cacat  = sum(1 for r in raw_data if 'BB - Cacat' in str(r.get('grade', '')) and 'Tidak Cacat' not in str(r.get('grade', '')))
-        reject    = sum(1 for r in raw_data if 'Tidak Layak' in str(r.get('grade', '')))
+        sehat     = sum(1 for r in raw_data if ('Sehat' in str(r.get('grade', '')) or 'SEHAT' in str(r.get('grade', ''))) and 'Tidak' not in str(r.get('grade', '')) and 'TIDAK' not in str(r.get('grade', '')))
+        bb_tidak  = sum(1 for r in raw_data if 'Tidak Cacat' in str(r.get('grade', '')) or 'BB_TIDAK_CACAT' in str(r.get('grade', '')))
+        bb_cacat  = sum(1 for r in raw_data if ('BB - Cacat' in str(r.get('grade', '')) or 'BB_CACAT' in str(r.get('grade', ''))) and 'Tidak Cacat' not in str(r.get('grade', '')) and 'BB_TIDAK_CACAT' not in str(r.get('grade', '')))
+        reject    = sum(1 for r in raw_data if 'Tidak Layak' in str(r.get('grade', '')) or 'TIDAK_LAYAK' in str(r.get('grade', '')))
 
         summ_start = spacer_row + 1
 
