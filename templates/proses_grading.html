@@ -84,6 +84,7 @@
       <button class="btn-camera-toggle" id="btnAnalyzeCamera" type="button" title="Jepret dan klasifikasikan gambar">📸
         Jepret &amp; Klasifikasi</button>
 
+
       <button class="btn-camera-toggle" id="btnUploadImage" type="button" title="Upload gambar dari perangkat">📁 Upload
         Gambar</button>
       <input type="file" id="uploadImageInput" accept="image/*" hidden>
@@ -95,6 +96,17 @@
         </svg>
         <span id="btnToggleText">Buka Kamera</span>
       </button>
+    </div>
+
+    <!-- Auto-Capture Status Bar -->
+    <div id="autoCaptureBar" style="display:none; align-items:center; gap:10px; margin: 6px 0 0 0; padding: 7px 14px; background: rgba(74,222,128,0.10); border: 1.5px solid rgba(74,222,128,0.35); border-radius: 10px; font-size: 12px; color: #166534;">
+      <span style="display:flex;align-items:center;gap:5px;">
+        <span id="autoCaptureIndicator" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#4ADE80;animation:pulseGreen 1.2s infinite;"></span>
+        <strong>Auto-Capture Aktif</strong>
+      </span>
+      <span style="color:#374151;">— Mendeteksi objek...</span>
+      <span id="autoCaptureCountdown" style="margin-left:auto; font-weight:700; color:#2D6A4F; font-size:13px;"></span>
+      <button onclick="stopAutoCapture()" style="border:none;background:rgba(239,68,68,0.12);color:#DC2626;font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;cursor:pointer;">Stop</button>
     </div>
 
     <p id="liveObjDetectionStatus" class="detection-status" role="status" aria-live="polite">
@@ -453,6 +465,9 @@
         console.warn('Gagal memulai sesi alat otomatis:', e);
       }
 
+      // Otomatis aktifkan auto-capture setelah kamera berhasil dibuka
+      startAutoCapture();
+
     } catch (error) {
       console.error('Gagal membuka webcam:', error);
 
@@ -543,6 +558,9 @@
     } catch (e) {
       console.warn('Gagal request stop sesi:', e);
     }
+
+    // Hentikan auto-capture ikut saat kamera dimatikan
+    if (typeof autoCaptureActive !== 'undefined' && autoCaptureActive) stopAutoCapture();
   }
 
   // ==========================================
@@ -930,7 +948,179 @@
     }, 5000);
   }
 
-  // Inject CSS animasi toast
+  // ========================================================
+  // AUTO-CAPTURE: DETEKSI OBJEK OTOMATIS
+  // ========================================================
+  let autoCaptureActive = false;
+  let autoCaptureInterval = null;
+  let autoCaptureCanvas = null;
+  let autoCaptureCtx = null;
+  let prevFrameData = null;
+  let objectDetectedFrames = 0;
+  let autoCaptureCountdownVal = 0;
+  let autoCaptureCountdownTimer = null;
+  let isAnalyzing = false;
+  let cooldownActive = false;
+
+  // Sensitivitas: semakin kecil = lebih sensitif
+  const MOTION_THRESHOLD = 30;        // beda pixel per channel dianggap bergerak
+  const MOTION_RATIO_MIN = 0.04;      // minimal 4% area berubah → ada objek
+  const MOTION_RATIO_MAX = 0.90;      // abaikan jika >90% (tangan lewat cepat)
+  const DETECT_CONFIRM_FRAMES = 5;    // berapa frame berturut-turut harus ada objek
+  const COOLDOWN_AFTER_CAPTURE = 4;   // detik cooldown setelah jepret, agar tidak spam
+  const FRAME_INTERVAL_MS = 200;      // cek setiap 200ms
+
+  function startAutoCapture() {
+    if (!liveWebcamStream) {
+      if (window.Swal?.fire) {
+        window.Swal.fire({
+          icon: 'warning',
+          title: 'Kamera Belum Aktif',
+          text: 'Nyalakan kamera terlebih dahulu sebelum mengaktifkan Auto-Capture.',
+          confirmButtonText: 'Buka Kamera',
+          showCancelButton: true,
+          cancelButtonText: 'Batal',
+          confirmButtonColor: '#2D6A4F',
+          cancelButtonColor: '#94A3B8'
+        }).then(r => { if (r.isConfirmed) startRealtimeCamera(); });
+      }
+      return;
+    }
+
+    autoCaptureActive = true;
+    prevFrameData = null;
+    objectDetectedFrames = 0;
+    cooldownActive = false;
+
+    // Setup canvas sekali
+    if (!autoCaptureCanvas) {
+      autoCaptureCanvas = document.createElement('canvas');
+      autoCaptureCtx = autoCaptureCanvas.getContext('2d');
+    }
+
+    // Update UI
+    const bar = document.getElementById('autoCaptureBar');
+    if (bar) bar.style.display = 'flex';
+
+    const detStatus = document.getElementById('liveObjDetectionStatus');
+    if (detStatus) detStatus.textContent = '🔍 Auto-Capture aktif — mendeteksi objek di depan kamera...';
+
+    autoCaptureInterval = setInterval(runAutoCaptureTick, FRAME_INTERVAL_MS);
+  }
+
+  function stopAutoCapture() {
+    autoCaptureActive = false;
+    if (autoCaptureInterval) { clearInterval(autoCaptureInterval); autoCaptureInterval = null; }
+    if (autoCaptureCountdownTimer) { clearInterval(autoCaptureCountdownTimer); autoCaptureCountdownTimer = null; }
+    prevFrameData = null;
+    objectDetectedFrames = 0;
+    cooldownActive = false;
+
+    const bar = document.getElementById('autoCaptureBar');
+    const countdown = document.getElementById('autoCaptureCountdown');
+    if (bar) bar.style.display = 'none';
+    if (countdown) countdown.textContent = '';
+
+    const detStatus = document.getElementById('liveObjDetectionStatus');
+    if (detStatus) detStatus.textContent = 'Auto-Capture dihentikan. Klik tombol untuk memulai kembali.';
+  }
+
+  function runAutoCaptureTick() {
+    if (!autoCaptureActive || !liveWebcamStream || cooldownActive || isAnalyzing) return;
+
+    const video = document.getElementById('webcamRealtimeVideo');
+    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth) return;
+
+    // Gunakan resolusi kecil untuk perbandingan frame (lebih cepat)
+    const W = 160, H = 120;
+    autoCaptureCanvas.width = W;
+    autoCaptureCanvas.height = H;
+    autoCaptureCtx.drawImage(video, 0, 0, W, H);
+    const currentFrame = autoCaptureCtx.getImageData(0, 0, W, H).data;
+
+    if (!prevFrameData) {
+      prevFrameData = currentFrame.slice();
+      return;
+    }
+
+    // Hitung perbedaan pixel
+    let changedPixels = 0;
+    const totalPixels = W * H;
+    for (let i = 0; i < currentFrame.length; i += 4) {
+      const dr = Math.abs(currentFrame[i]   - prevFrameData[i]);
+      const dg = Math.abs(currentFrame[i+1] - prevFrameData[i+1]);
+      const db = Math.abs(currentFrame[i+2] - prevFrameData[i+2]);
+      if ((dr + dg + db) / 3 > MOTION_THRESHOLD) changedPixels++;
+    }
+    prevFrameData = currentFrame.slice();
+
+    const motionRatio = changedPixels / totalPixels;
+    const objectPresent = motionRatio >= MOTION_RATIO_MIN && motionRatio <= MOTION_RATIO_MAX;
+
+    // Update status bar
+    const detStatus = document.getElementById('liveObjDetectionStatus');
+    const countdownEl = document.getElementById('autoCaptureCountdown');
+
+    if (objectPresent) {
+      objectDetectedFrames++;
+      const pct = Math.round(motionRatio * 100);
+      if (detStatus) detStatus.textContent = `🟢 Objek terdeteksi (gerakan: ${pct}%) — konfirmasi ${objectDetectedFrames}/${DETECT_CONFIRM_FRAMES}...`;
+
+      if (objectDetectedFrames >= DETECT_CONFIRM_FRAMES) {
+        // TRIGGER JEPRET OTOMATIS!
+        objectDetectedFrames = 0;
+        isAnalyzing = true;
+        cooldownActive = true;
+        if (detStatus) detStatus.textContent = '📸 Objek terkonfirmasi — menjepret otomatis...';
+
+        // Ambil frame beresolusi penuh
+        const fullCanvas = document.createElement('canvas');
+        fullCanvas.width = video.videoWidth;
+        fullCanvas.height = video.videoHeight;
+        fullCanvas.getContext('2d').drawImage(video, 0, 0);
+        fullCanvas.toBlob(async (frame) => {
+          if (frame) {
+            await sendImageToModel(frame, 'auto-capture.jpg');
+          }
+          isAnalyzing = false;
+
+          // Cooldown: tunggu N detik sebelum deteksi lagi
+          autoCaptureCountdownVal = COOLDOWN_AFTER_CAPTURE;
+          if (countdownEl) countdownEl.textContent = `Cooldown ${autoCaptureCountdownVal}s`;
+          if (autoCaptureCountdownTimer) clearInterval(autoCaptureCountdownTimer);
+          autoCaptureCountdownTimer = setInterval(() => {
+            autoCaptureCountdownVal--;
+            if (countdownEl) countdownEl.textContent = autoCaptureCountdownVal > 0 ? `Cooldown ${autoCaptureCountdownVal}s` : '';
+            if (autoCaptureCountdownVal <= 0) {
+              clearInterval(autoCaptureCountdownTimer);
+              autoCaptureCountdownTimer = null;
+              cooldownActive = false;
+              prevFrameData = null; // reset baseline
+              if (detStatus && autoCaptureActive) detStatus.textContent = '🔍 Auto-Capture aktif — mendeteksi objek di depan kamera...';
+            }
+          }, 1000);
+        }, 'image/jpeg', 0.9);
+      }
+    } else {
+      if (objectDetectedFrames > 0) objectDetectedFrames = Math.max(0, objectDetectedFrames - 1);
+      if (detStatus && autoCaptureActive && !cooldownActive && !isAnalyzing) {
+        detStatus.textContent = '🔍 Auto-Capture aktif — menunggu objek di depan kamera...';
+      }
+    }
+  }
+
+  // Hentikan auto-capture jika kamera dimatikan
+  const _origStopCamera = stopRealtimeCamera;
+  window._origStopCamera = _origStopCamera;
+
+  // Patch btnToggleCamera: hentikan auto-capture otomatis saat kamera dimatikan
+  document.getElementById('btnToggleCamera')?.addEventListener('click', () => {
+    if (autoCaptureActive && liveWebcamStream) {
+      setTimeout(() => { if (autoCaptureActive && !liveWebcamStream) stopAutoCapture(); }, 300);
+    }
+  }, true);
+
+  // Inject CSS untuk animasi pulse hijau pada indikator auto-capture
   if (!document.getElementById('toastAnimStyle')) {
     const style = document.createElement('style');
     style.id = 'toastAnimStyle';
@@ -942,6 +1132,10 @@
       @keyframes toastSlideOut {
         from { opacity: 1; transform: translateY(0) scale(1); }
         to   { opacity: 0; transform: translateY(16px) scale(0.95); }
+      }
+      @keyframes pulseGreen {
+        0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(74,222,128,0.6); }
+        50% { opacity: 0.8; transform: scale(1.15); box-shadow: 0 0 0 5px rgba(74,222,128,0); }
       }
     `;
     document.head.appendChild(style);

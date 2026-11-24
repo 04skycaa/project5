@@ -9,6 +9,63 @@
      Sesuai dengan estetika gradasi cream-putih & kristal akrilik
      ══════════════════════════════════════════════════════════════ */
 
+  /* Scroll container riwayat */
+  #historyContainer {
+    height: 240px;
+    max-height: 240px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    padding-right: 8px;
+    padding-bottom: 14px;
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar — WebKit (Matching Global Frosted Glass / Warm Latte Theme) */
+  #historyContainer::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  #historyContainer::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  #historyContainer::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.40);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 9999px;
+    margin: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.60);
+    box-shadow: inset 0 1px 3px rgba(160, 120, 80, 0.06);
+  }
+
+  #historyContainer::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(235, 205, 175, 0.90) 0%, rgba(205, 165, 125, 0.95) 100%);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    box-shadow:
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.95),
+      0 2px 6px rgba(140, 95, 45, 0.20);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+  }
+
+  #historyContainer::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(245, 195, 140, 1) 0%, rgba(215, 150, 90, 1) 100%);
+    box-shadow:
+      0 0 10px rgba(215, 150, 90, 0.50),
+      inset 0 1px 2px rgba(255, 255, 255, 1);
+  }
+
+  /* Firefox */
+  #historyContainer {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(205, 170, 130, 0.85) rgba(255, 255, 255, 0.30);
+  }
+
   /* Level 1: Kartu Kelompok Hari */
   .day-group-card {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.14) 100%);
@@ -186,11 +243,37 @@
   /* Level 2: Kontainer Dropdown Sesi (Translucent Glass) */
   .sessions-dropdown-container {
     display: none;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px 22px 22px 22px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid rgba(255, 255, 255, 0.55);
+  }
+
+  .sessions-dropdown-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .sessions-dropdown-container::-webkit-scrollbar-button {
+    display: none !important;
+  }
+
+  .sessions-dropdown-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.30);
+    border-radius: 9999px;
+  }
+
+  .sessions-dropdown-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(235, 205, 175, 0.90) 0%, rgba(205, 165, 125, 0.95) 100%);
+    border-radius: 9999px;
+    box-shadow: 0 1px 4px rgba(140, 95, 45, 0.15);
+  }
+
+  .sessions-dropdown-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(245, 195, 140, 1) 0%, rgba(215, 150, 90, 1) 100%);
   }
 
   .sessions-dropdown-container.active {
@@ -927,7 +1010,7 @@
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       </div>
-      <div><span class="stat-info-title">Reject Total</span>
+      <div><span class="stat-info-title">Tidak Layak</span>
         <h2 class="stat-value">{{ stats.tidak_layak }}</h2>
       </div>
     </div>
@@ -952,15 +1035,18 @@
 
     <!-- Periode Custom Frosted Glass Dropdown -->
     <div class="custom-dropdown-container" id="periodeDropdownContainer">
-      <button type="button" class="custom-dropdown-trigger" id="periodeDropdownTrigger" onclick="togglePeriodeDropdown(event)">
-        <svg class="dropdown-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <button type="button" class="custom-dropdown-trigger" id="periodeDropdownTrigger"
+        onclick="togglePeriodeDropdown(event)">
+        <svg class="dropdown-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
           <line x1="16" y1="2" x2="16" y2="6" />
           <line x1="8" y1="2" x2="8" y2="6" />
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
         <span id="periodeDropdownLabel" class="dropdown-label">Semua</span>
-        <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
@@ -972,7 +1058,10 @@
             <span class="item-icon">📋</span>
             <span class="item-text">Semua</span>
           </div>
-          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
+            stroke-width="2.8">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
         </div>
 
         <div class="custom-dropdown-item" data-val="today" onclick="selectPeriodeOption('today', 'Hari Ini')">
@@ -980,7 +1069,10 @@
             <span class="item-icon">📅</span>
             <span class="item-text">Hari Ini</span>
           </div>
-          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
+            stroke-width="2.8">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
         </div>
 
         <div class="custom-dropdown-item" data-val="7days" onclick="selectPeriodeOption('7days', '7 Hari Terakhir')">
@@ -988,7 +1080,10 @@
             <span class="item-icon">📆</span>
             <span class="item-text">7 Hari Terakhir</span>
           </div>
-          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
+            stroke-width="2.8">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
         </div>
 
         <div class="custom-dropdown-item" data-val="bulan" onclick="selectPeriodeOption('bulan', 'Bulan Ini')">
@@ -996,7 +1091,10 @@
             <span class="item-icon">🗓️</span>
             <span class="item-text">Bulan Ini</span>
           </div>
-          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
+            stroke-width="2.8">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
         </div>
       </div>
     </div>
@@ -1074,7 +1172,7 @@
             {% if day.bb_safe > 0 %}<span class="cat-mini-chip bb-safe">{{ day.bb_safe }} BB Aman</span>{% endif %}
             {% if day.bb_defect > 0 %}<span class="cat-mini-chip bb-defect">{{ day.bb_defect }} BB Cacat</span>{% endif
             %}
-            {% if day.reject > 0 %}<span class="cat-mini-chip unfit">{{ day.reject }} Reject</span>{% endif %}
+            {% if day.reject > 0 %}<span class="cat-mini-chip unfit">{{ day.reject }} Tidak Layak</span>{% endif %}
           </div>
 
           <button type="button" class="btn-toggle-drilldown"
@@ -1199,7 +1297,7 @@
         <span class="modal-kpi-val" style="color:#7C3AED;" id="modalBbDefect">0</span>
       </div>
       <div class="modal-kpi-item">
-        <span class="modal-kpi-lbl">Reject</span>
+        <span class="modal-kpi-lbl">Tidak Layak</span>
         <span class="modal-kpi-val" style="color:#EF4444;" id="modalReject">0</span>
       </div>
     </div>
@@ -1386,7 +1484,7 @@
   function togglePeriodeDropdown(e) {
     if (e) e.stopPropagation();
     const trigger = document.getElementById('periodeDropdownTrigger');
-    const menu    = document.getElementById('periodeDropdownMenu');
+    const menu = document.getElementById('periodeDropdownMenu');
     if (!trigger || !menu) return;
 
     const isOpen = menu.classList.contains('show');
@@ -1400,7 +1498,7 @@
 
   function closePeriodeDropdown() {
     const trigger = document.getElementById('periodeDropdownTrigger');
-    const menu    = document.getElementById('periodeDropdownMenu');
+    const menu = document.getElementById('periodeDropdownMenu');
     if (trigger) trigger.classList.remove('open');
     if (menu) menu.classList.remove('show');
   }
