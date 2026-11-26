@@ -62,10 +62,6 @@
     <p>Pantau kamera real-time dan rekomendasi penanganan jamur.</p>
   </div>
   <div class="header-actions">
-    <div class="status-badge-online">
-      <span class="pulse-dot"></span>
-      <span>Sistem Otomatis Aktif</span>
-    </div>
     <div class="date-badge" id="liveDateBadge">–</div>
   </div>
 </section>
@@ -98,23 +94,12 @@
       </button>
     </div>
 
-    <!-- Auto-Capture Status Bar -->
-    <div id="autoCaptureBar" style="display:none; align-items:center; gap:10px; margin: 6px 0 0 0; padding: 7px 14px; background: rgba(74,222,128,0.10); border: 1.5px solid rgba(74,222,128,0.35); border-radius: 10px; font-size: 12px; color: #166534;">
-      <span style="display:flex;align-items:center;gap:5px;">
-        <span id="autoCaptureIndicator" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#4ADE80;animation:pulseGreen 1.2s infinite;"></span>
-        <strong>Auto-Capture Aktif</strong>
-      </span>
-      <span style="color:#374151;">— Mendeteksi objek...</span>
-      <span id="autoCaptureCountdown" style="margin-left:auto; font-weight:700; color:#2D6A4F; font-size:13px;"></span>
-      <button onclick="stopAutoCapture()" style="border:none;background:rgba(239,68,68,0.12);color:#DC2626;font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;cursor:pointer;">Stop</button>
-    </div>
-
     <p id="liveObjDetectionStatus" class="detection-status" role="status" aria-live="polite">
       Menunggu gambar (jepret atau upload)
     </p>
 
     <div class="camera-stream-wrapper">
-      <div class="camera-stream-viewport" id="cameraStreamViewport" title="Klik untuk mengaktifkan kamera real-time">
+      <div class="camera-stream-viewport" id="cameraStreamViewport" title="Klik untuk memulai grading">
         <!-- Live Real-time Video Stream from User's Webcam -->
         <video id="webcamRealtimeVideo" autoplay playsinline muted
           style="display:none; width: 100%; height: 100%; object-fit: contain;"></video>
@@ -127,7 +112,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
-            <span>Klik untuk Kamera Real-time</span>
+            <span>Klik untuk memulai grading</span>
           </div>
         </div>
 

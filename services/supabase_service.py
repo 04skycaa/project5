@@ -267,26 +267,25 @@ def save_inspection(
         active_sesi = get_or_create_active_session()
         if active_sesi and "id" in active_sesi:
             sesi_id = active_sesi["id"]
+    if not sesi_id:
+        print("[ERROR] Inspeksi tidak disimpan: sesi aktif tidak tersedia.")
+        return None
 
     nama_kategori = map_to_detail_kategori(ai_class, grade)
     kategori_map = get_detail_kategori_map()
     kategori_id = kategori_map.get(nama_kategori)
+    if not kategori_id:
+        print(f"[ERROR] Inspeksi tidak disimpan: kategori '{nama_kategori}' tidak ditemukan.")
+        return None
 
     saved_row = None
     try:
-        # Cek apakah baris dengan (sesi_id, kategori_id) sudah ada di tabel inspeksi
-        query = client.table("inspeksi").select("id, jumlah")
-        if sesi_id:
-            query = query.eq("sesi_id", sesi_id)
-        else:
-            query = query.is_("sesi_id", "null")
-
-        if kategori_id:
-            query = query.eq("kategori_id", kategori_id)
-        else:
-            query = query.eq("kategori", nama_kategori)
-
-        existing_resp = query.limit(1).execute()
+        existing_resp = client.table("inspeksi") \
+            .select("jumlah") \
+            .eq("sesi_id", sesi_id) \
+            .eq("kategori_id", kategori_id) \
+            .limit(1) \
+            .execute()
 
         if existing_resp.data and len(existing_resp.data) > 0:
             # Baris sudah ada -> update jumlah = jumlah + 1
@@ -294,10 +293,16 @@ def save_inspection(
             new_count = int(curr_row.get("jumlah", 0)) + 1
             upd_resp = client.table("inspeksi") \
                 .update({"jumlah": new_count, "kategori": nama_kategori}) \
-                .eq("id", curr_row["id"]) \
+                .eq("sesi_id", sesi_id) \
+                .eq("kategori_id", kategori_id) \
                 .execute()
             saved_row = upd_resp.data[0] if upd_resp.data else curr_row
-            saved_row["jumlah"] = new_count
+            saved_row.update({
+                "jumlah": new_count,
+                "kategori": nama_kategori,
+                "sesi_id": sesi_id,
+                "kategori_id": kategori_id
+            })
         else:
             # Baris belum ada -> buat baru dengan jumlah = 1
             insert_payload = {
@@ -311,17 +316,10 @@ def save_inspection(
 
     except Exception as e:
         print(f"[ERROR] Gagal menyimpan/menambah inspeksi ke Supabase: {e}")
-        import uuid
-        saved_row = {
-            "id": str(uuid.uuid4()),
-            "kategori": nama_kategori,
-            "sesi_id": sesi_id,
-            "kategori_id": kategori_id,
-            "jumlah": 1,
-            "db_pending": True
-        }
+        return None
 
     # Tempelkan metadata lokal untuk kebutuhan respon JSON & UI
+    saved_row["id"] = f"{sesi_id}:{kategori_id}"
     saved_row["nama_kategori"] = nama_kategori
     saved_row["grade"] = grade
     saved_row["ai_class"] = ai_class
@@ -345,43 +343,42 @@ def fetch_latest_inspections(limit: int = 100, dari: str = None, sampai: str = N
     client = get_supabase()
     if client is None:
         return []
+    if limit is not None and limit <= 0:
+        return []
 
     try:
-        query = client.table("inspeksi") \
-            .select("id, kategori, jumlah, sesi_id, kategori_id, sesi!inner(id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai)")
+        query = client.table("sesi") \
+            .select("id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai, inspeksi!inner(kategori, jumlah, sesi_id, kategori_id)")
 
         if dari:
-            query = query.gte("sesi.tanggal", dari)
+            query = query.gte("tanggal", dari)
         if sampai:
-            query = query.lte("sesi.tanggal", sampai)
+            query = query.lte("tanggal", sampai)
 
-        response = query.order("id", desc=True).limit(limit).execute()
-        return response.data or []
+        response = query.order("tanggal", desc=True) \
+            .order("nomor_sesi", desc=True) \
+            .limit(limit) \
+            .execute()
+        rows = []
+        for session in response.data or []:
+            session_info = {
+                "id": session.get("id"),
+                "tanggal": session.get("tanggal"),
+                "nomor_sesi": session.get("nomor_sesi"),
+                "waktu_mulai": session.get("waktu_mulai"),
+                "waktu_selesai": session.get("waktu_selesai")
+            }
+            for inspection in session.get("inspeksi") or []:
+                row = dict(inspection)
+                row["id"] = f"{row.get('sesi_id')}:{row.get('kategori_id')}"
+                row["sesi"] = session_info
+                rows.append(row)
+                if limit is not None and len(rows) >= limit:
+                    return rows
+        return rows
     except Exception as e:
-        # Fallback tanpa inner join jika syntax filter relasi berbeda
-        try:
-            resp = client.table("inspeksi") \
-                .select("id, kategori, jumlah, sesi_id, kategori_id, sesi(id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai)") \
-                .order("id", desc=True) \
-                .limit(limit) \
-                .execute()
-            rows = resp.data or []
-            if dari or sampai:
-                filtered = []
-                for r in rows:
-                    tgl = (r.get("sesi") or {}).get("tanggal")
-                    if not tgl:
-                        continue
-                    if dari and tgl < dari:
-                        continue
-                    if sampai and tgl > sampai:
-                        continue
-                    filtered.append(r)
-                return filtered
-            return rows
-        except Exception as e2:
-            print(f"[ERROR] Gagal mengambil data inspeksi: {e2}")
-            return []
+        print(f"[ERROR] Gagal mengambil data inspeksi: {e}")
+        return []
 
 
 def calculate_database_stats():
@@ -395,7 +392,7 @@ def calculate_database_stats():
 
     if client is not None:
         try:
-            resp_insp = client.table("inspeksi").select("id, kategori, jumlah, sesi_id").execute()
+            resp_insp = client.table("inspeksi").select("kategori, jumlah, sesi_id").execute()
             rows = resp_insp.data or []
         except Exception as e:
             print(f"[ERROR] Gagal mengambil data inspeksi dari Supabase: {e}")
@@ -526,7 +523,7 @@ def fetch_laporan_stats(dari_str: str = "", sampai_str: str = "") -> dict:
 
     try:
         query = client.table("sesi") \
-            .select("id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai, inspeksi(id, kategori, jumlah, kategori_id)")
+            .select("id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai, inspeksi(kategori, jumlah, kategori_id)")
 
         if dari_str and str(dari_str).strip():
             query = query.gte("tanggal", dari_str.strip())
@@ -658,7 +655,7 @@ def fetch_history_by_days():
     try:
         # Ambil seluruh sesi berelasi dengan inspeksi
         resp = client.table("sesi") \
-            .select("id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai, inspeksi(id, kategori, jumlah, kategori_id)") \
+            .select("id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai, inspeksi(kategori, jumlah, kategori_id)") \
             .order("tanggal", desc=True) \
             .order("nomor_sesi", desc=True) \
             .execute()
