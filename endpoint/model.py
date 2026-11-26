@@ -107,20 +107,99 @@ def camera_predict():
     # ══════════════════════════════════════════════════════════════════════════
     # STANDARISASI HASIL PREDIKSI RESNET
     # ══════════════════════════════════════════════════════════════════════════
-    raw_pred = data.get("prediction", "Unknown")
+    raw_pred = data.get("prediction")
+    if raw_pred is None:
+        raw_pred = data.get("predicted_class") or data.get("disease") or "Unknown"
 
-    # Jika model mengembalikan integer indeks, petakan ke label standar
-    if isinstance(raw_pred, int) and raw_pred in RESNET_CLASSES:
-        predicted_class = RESNET_CLASSES[raw_pred]
-    else:
-        # Normalisasi spasi dan strip agar persis cocok dengan grading.py
-        predicted_class = str(raw_pred).strip().replace(" ", "_")
+    confidence_val = data.get("confidence")
 
-    confidence_val = data.get("confidence", 0)
-    if isinstance(confidence_val, (int, float)) and confidence_val <= 1.0:
-        confidence_pct = confidence_val * 100.0
+    # Mapping class_code & varian nama kelas
+    CODE_MAP = {
+        "w0_hl": "Healthy",
+        "w1_bb": "Bacterial_Blotch",
+        "w1_db": "Dry_Bubble",
+        "w1_kw": "Cobweb_Disease",
+        "w1_wb": "Wet_Bubble",
+    }
+    NAME_MAP = {
+        "healthy": "Healthy",
+        "bacterial_blotch": "Bacterial_Blotch",
+        "bacterial blotch": "Bacterial_Blotch",
+        "dry_bubble": "Dry_Bubble",
+        "dry bubble": "Dry_Bubble",
+        "cobweb": "Cobweb_Disease",
+        "cobweb_disease": "Cobweb_Disease",
+        "cobweb disease": "Cobweb_Disease",
+        "wet_bubble": "Wet_Bubble",
+        "wet bubble": "Wet_Bubble",
+    }
+
+    # Jika raw_pred adalah dictionary (misal: {'class_code': 'w1_kw', 'class_name': 'Cobweb_Disease', 'confidence': 47.87})
+    if isinstance(raw_pred, dict):
+        if confidence_val is None and "confidence" in raw_pred:
+            confidence_val = raw_pred["confidence"]
+        cand = (
+            raw_pred.get("class_name")
+            or raw_pred.get("disease")
+            or raw_pred.get("class_code")
+            or raw_pred.get("predicted_class")
+            or raw_pred.get("prediction")
+            or "Unknown"
+        )
+    elif isinstance(raw_pred, int) and raw_pred in RESNET_CLASSES:
+        cand = RESNET_CLASSES[raw_pred]
     else:
-        confidence_pct = float(confidence_val)
+        cand = str(raw_pred).strip()
+
+    cand_str = str(cand).strip()
+    if cand_str in CODE_MAP:
+        predicted_class = CODE_MAP[cand_str]
+    elif cand_str.lower() in NAME_MAP:
+        predicted_class = NAME_MAP[cand_str.lower()]
+    elif cand_str.lower().replace(" ", "_") in NAME_MAP:
+        predicted_class = NAME_MAP[cand_str.lower().replace(" ", "_")]
+    else:
+        predicted_class = cand_str.replace(" ", "_")
+
+    # Standarisasi confidence
+    if confidence_val is None:
+        confidence_val = 0
+    try:
+        confidence_num = float(confidence_val)
+    except (ValueError, TypeError):
+        confidence_num = 0.0
+
+    if confidence_num > 1.0:
+        confidence_pct = confidence_num
+        confidence_fraction = confidence_num / 100.0
+    else:
+        confidence_pct = confidence_num * 100.0
+        confidence_fraction = confidence_num
+
+    # Standarisasi probabilities untuk frontend
+    probs = data.get("probabilities")
+    if not isinstance(probs, dict) or not probs:
+        probs = data.get("all_predictions")
+    if isinstance(probs, dict) and probs:
+        norm_probs = {}
+        for k, v in probs.items():
+            k_clean = str(k).strip()
+            k_norm = CODE_MAP.get(k_clean, NAME_MAP.get(k_clean.lower().replace(" ", "_"), k_clean.replace(" ", "_")))
+            try:
+                val_f = float(v)
+                norm_probs[k_norm] = round(val_f / 100.0 if val_f > 1.0 else val_f, 4)
+            except (ValueError, TypeError):
+                norm_probs[k_norm] = 0.0
+        if predicted_class not in norm_probs:
+            norm_probs[predicted_class] = round(confidence_fraction, 4)
+        data["probabilities"] = norm_probs
+    else:
+        data["probabilities"] = {predicted_class: round(confidence_fraction, 4)}
+
+    # Update payload data agar frontend proses_grading.html selalu menerima format valid
+    data["status"] = "success"
+    data["prediction"] = predicted_class
+    data["confidence"] = round(confidence_fraction, 4)
 
     # ══════════════════════════════════════════════════════════════════════════
     # ANALISIS PCV (HANYA jika prediksi == "Bacterial_Blotch")

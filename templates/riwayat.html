@@ -11,13 +11,140 @@
 
   /* Scroll container riwayat */
   #historyContainer {
-    height: 240px;
-    max-height: 240px;
+    height: 320px;
+    max-height: 320px;
     overflow-y: scroll;
     overflow-x: hidden;
     padding-right: 8px;
     padding-bottom: 14px;
     scroll-behavior: smooth;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     SPLIT 2-KOLOM: TABEL & SEARCH (3/5 KIRI) + CARD INFO 2-KOLOM (2/5 KANAN)
+     ══════════════════════════════════════════════════════════════ */
+  .riwayat-split-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 14px;
+    align-items: stretch;
+    margin-top: 4px;
+  }
+
+  /* Kolom Tabel & Search (Kiri - Luas) */
+  .riwayat-table-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .riwayat-table-col .riwayat-filter-bar {
+    margin-bottom: 0;
+    padding: 8px 12px;
+  }
+
+  .riwayat-table-col .riwayat-table-card {
+    margin-top: 0;
+    padding: 14px 18px;
+    flex: 1;
+  }
+
+  /* Kolom Card Info (Kanan - Tidak Ditaruh di Bawah): 2 Kolom Vertikal */
+  .riwayat-cards-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 250px;
+  }
+
+  .riwayat-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    grid-auto-rows: minmax(100px, auto);
+    align-content: start;
+  }
+
+  .riwayat-cards-grid .stat-card {
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 10px 8px !important;
+    border-radius: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    gap: 5px !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  }
+
+  .riwayat-cards-grid .stat-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .riwayat-cards-grid .stat-icon {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
+    flex-shrink: 0 !important;
+  }
+
+  .riwayat-cards-grid .stat-icon svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  .riwayat-cards-grid .stat-icon.indigo {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #4F46E5 !important;
+  }
+
+  .riwayat-cards-grid .stat-value {
+    width: 100%;
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    color: var(--ios-label, #1E293B) !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+    text-align: center;
+  }
+
+  .riwayat-cards-grid .stat-info-title {
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    color: var(--ios-secondary-label, #475569) !important;
+    line-height: 1.2 !important;
+    text-align: center;
+    white-space: normal !important;
+  }
+
+  @media (max-width: 992px) {
+    .riwayat-split-layout {
+      grid-template-columns: 1fr;
+    }
+    .riwayat-cards-col {
+      width: 100%;
+      height: auto;
+    }
+    .riwayat-cards-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .riwayat-cards-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   /* Custom scrollbar — WebKit (Matching Global Frosted Glass / Warm Latte Theme) */
@@ -101,13 +228,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 24px;
+    padding: clamp(10px, 1.5vw, 18px) clamp(10px, 2vw, 24px);
     cursor: pointer;
     user-select: none;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.08) 100%);
     transition: background 0.2s ease;
-    flex-wrap: wrap;
-    gap: 12px;
+    flex-wrap: nowrap;
+    gap: clamp(4px, 0.7vw, 10px);
   }
 
   .day-row-header:hover {
@@ -117,57 +244,80 @@
   .day-title-info {
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: clamp(4px, 0.8vw, 10px);
+    flex: 0 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+
+  .day-row-header > div:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
   }
 
   .day-date-title {
-    font-size: 16px;
+    font-size: clamp(11px, 1.4vw, 16px);
     font-weight: 800;
     color: var(--ios-label, #1E293B);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: clamp(4px, 0.6vw, 8px);
     letter-spacing: -0.01em;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   /* Pills Info Hari (Frosted Glass) */
   .pill-count {
-    font-size: 11.5px;
+    font-size: clamp(9px, 1vw, 11.5px);
     font-weight: 700;
-    padding: 4px 12px;
+    padding: 3px clamp(4px, 0.8vw, 10px);
     border-radius: 9999px;
     background: rgba(45, 106, 79, 0.12);
     border: 1px solid rgba(45, 106, 79, 0.25);
     color: #1B4332;
     backdrop-filter: blur(8px);
     box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85);
+    min-width: 0;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .pill-session-count {
-    font-size: 11.5px;
+    font-size: clamp(9px, 1vw, 11.5px);
     font-weight: 700;
-    padding: 4px 12px;
+    padding: 3px clamp(4px, 0.8vw, 10px);
     border-radius: 9999px;
     background: rgba(0, 122, 255, 0.12);
     border: 1px solid rgba(0, 122, 255, 0.25);
     color: #0056B3;
     backdrop-filter: blur(8px);
     box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85);
+    min-width: 0;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* Mini Category Chips (Glass Pill) */
   .category-chips-summary {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: clamp(2px, 0.5vw, 6px);
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
   }
 
   .cat-mini-chip {
-    font-size: 11px;
+    font-size: clamp(8px, 0.9vw, 11px);
     font-weight: 700;
-    padding: 3.5px 10px;
+    padding: 3px clamp(3px, 0.7vw, 8px);
     border-radius: 9999px;
     display: inline-flex;
     align-items: center;
@@ -176,6 +326,11 @@
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), inset 0 1px 1px rgba(255, 255, 255, 0.85);
     transition: transform 0.15s ease;
+    min-width: 0;
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .cat-mini-chip:hover {
@@ -211,8 +366,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6.5px 16px;
-    font-size: 12px;
+    padding: 6px clamp(6px, 1vw, 14px);
+    font-size: clamp(9px, 0.9vw, 12px);
     font-weight: 700;
     border-radius: 9999px;
     border: 1px solid rgba(255, 255, 255, 0.85);
@@ -223,6 +378,8 @@
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
     transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .btn-toggle-drilldown:hover {
@@ -947,78 +1104,16 @@
   </div>
 </section>
 
-<!-- Summary KPI Cards -->
-<section class="stats-grid riwayat-summary">
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon emerald">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-          <polyline points="22 4 12 14.01 9 11.01" />
-        </svg>
-      </div>
-      <div><span class="stat-info-title">Total Diperiksa</span>
-        <h2 class="stat-value">{{ stats.total_jamur }}</h2>
-      </div>
-    </div>
-  </div>
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon green">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-        </svg>
-      </div>
-      <div><span class="stat-info-title">Jamur Sehat</span>
-        <h2 class="stat-value">{{ stats.jamur_sehat }}</h2>
-      </div>
-    </div>
-  </div>
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon blue">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      </div>
-      <div><span class="stat-info-title">BB Total</span>
-        <h2 class="stat-value">{{ stats.bb_total }}</h2>
-      </div>
-    </div>
-  </div>
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon purple">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="20" x2="18" y2="10" />
-          <line x1="12" y1="20" x2="12" y2="4" />
-          <line x1="6" y1="20" x2="6" y2="14" />
-        </svg>
-      </div>
-      <div><span class="stat-info-title">Total Sesi</span>
-        <h2 class="stat-value">{{ stats.total_sesi }}</h2>
-      </div>
-    </div>
-  </div>
-  <div class="stat-card glass-card-subtle">
-    <div class="stat-card-header">
-      <div class="stat-icon red">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-      </div>
-      <div><span class="stat-info-title">Tidak Layak</span>
-        <h2 class="stat-value">{{ stats.tidak_layak }}</h2>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- ══════════════════════════════════════════════════════════════
+     SPLIT LAYOUT: TABEL & SEARCH (3/5) & CARD INFO (2/5)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="riwayat-split-layout">
 
-<!-- Search Box + Date Picker + Periode Dropdown -->
-<div class="riwayat-filter-bar glass-card-subtle">
+  <!-- KOLOM 1 (Porsi 3/5 = 60%): Search Bar + Tabel Riwayat -->
+  <div class="riwayat-table-col">
+
+    <!-- Search Box + Date Picker + Periode Dropdown -->
+    <div class="riwayat-filter-bar glass-card-subtle">
   <div class="filter-bar-row">
 
     <!-- Text Search -->
@@ -1253,6 +1348,89 @@
       total jamur di database)</span>
   </div>
 </div>
+<!-- AKHIR KOLOM TABEL (3/5) -->
+</div>
+
+  <!-- KOLOM 2: Card Info 2-Kolom (Memanjang ke Bawah) -->
+  <div class="riwayat-cards-col">
+    <section class="riwayat-cards-grid">
+      <!-- 1. Total Jamur -->
+      <div class="stat-card glass-card-subtle">
+        <div class="stat-icon emerald">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+        </div>
+        <h2 class="stat-value">{{ stats.total_jamur }}</h2>
+        <span class="stat-info-title">Total Jamur</span>
+      </div>
+
+      <!-- 2. Total Sesi -->
+      <div class="stat-card glass-card-subtle">
+        <div class="stat-icon indigo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+        </div>
+        <h2 class="stat-value">{{ stats.total_sesi }}</h2>
+        <span class="stat-info-title">Total Sesi</span>
+      </div>
+
+      <!-- 3. Jamur Sehat -->
+      <div class="stat-card glass-card-subtle">
+        <div class="stat-icon green">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+        </div>
+        <h2 class="stat-value">{{ stats.jamur_sehat }}</h2>
+        <span class="stat-info-title">Jamur Sehat</span>
+      </div>
+
+      <!-- 4. BB Tidak Cacat -->
+      <div class="stat-card glass-card-subtle">
+        <div class="stat-icon blue">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <h2 class="stat-value">{{ stats.bb_tidak_cacat }}</h2>
+        <span class="stat-info-title">BB Tidak Cacat</span>
+      </div>
+
+      <!-- 5. BB Cacat -->
+      <div class="stat-card glass-card-subtle">
+        <div class="stat-icon purple">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <h2 class="stat-value">{{ stats.bb_cacat }}</h2>
+        <span class="stat-info-title">BB Cacat</span>
+      </div>
+
+      <!-- 6. Tidak Layak -->
+      <div class="stat-card glass-card-subtle">
+        <div class="stat-icon red">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+        </div>
+        <h2 class="stat-value">{{ stats.tidak_layak }}</h2>
+        <span class="stat-info-title">Tidak Layak</span>
+      </div>
+    </section>
+  </div>
+
+</div>
+<!-- AKHIR RIWAYAT-SPLIT-LAYOUT -->
 
 <!-- ══════════════════════════════════════════════════════════════
      POP-UP MODAL (DIAGRAM DONAT & TABEL RINCIAN KATEGORI)

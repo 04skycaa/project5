@@ -699,16 +699,14 @@
         detStatus.textContent = 'Analisis selesai. Rekomendasi telah diperbarui.';
       }
 
-      // Alert animasi jika data berhasil tersimpan ke Supabase
-      if (payload.saved_record && payload.saved_record.id) {
-        const shortId = payload.saved_record.id.substring(0, 8);
-        const grade = payload.grade || 'Sehat';
-        const conf = payload.confidence !== undefined
-          ? (payload.confidence <= 1 ? (payload.confidence * 100).toFixed(1) : payload.confidence.toFixed(1))
-          : '-';
-        const sessionNum = payload.sesi_info?.nomor_sesi;
-        showDatabaseSavedToast(shortId, grade, conf, sessionNum);
-      }
+      // Alert animasi keren gaya iPhone Dynamic Island dari atas saat model berhasil memproses
+      const shortId = (payload.saved_record && payload.saved_record.id) ? payload.saved_record.id.substring(0, 8) : null;
+      const grade = payload.grade || 'Sehat';
+      const conf = payload.confidence !== undefined
+        ? (payload.confidence <= 1 ? (payload.confidence * 100).toFixed(1) : payload.confidence.toFixed(1))
+        : '-';
+      const sessionNum = payload.sesi_info?.nomor_sesi;
+      showIPhoneDynamicIsland(payload, shortId, grade, conf, sessionNum);
     } catch (error) {
       if (requestId !== predictionRequestId) return;
       console.error('Klasifikasi gagal:', error);
@@ -877,75 +875,126 @@
   }
 
   // ========================================================
-  // TOAST NOTIFIKASI TERSIMPAN KE DATABASE
+  // NOTIFIKASI IPHONE DYNAMIC ISLAND (SLIDE DARI ATAS)
   // ========================================================
-  function showDatabaseSavedToast(shortId, grade, conf, sessionNum) {
-    // Hapus toast lama jika ada
-    const old = document.getElementById('dbSavedToast');
-    if (old) old.remove();
+  function showIPhoneDynamicIsland(payload, shortId, grade, conf, sessionNum) {
+    // Hapus notif lama jika masih aktif
+    const existing = document.getElementById('iphoneDynamicIsland');
+    if (existing) {
+      existing.remove();
+    }
 
-    const gradeColors = {
-      'Sehat': '#34C759',
-      'BB - Tidak Cacat': '#007AFF',
-      'BB - Cacat': '#8B5CF6',
-      'Tidak Layak Konsumsi': '#FF3B30'
-    };
-    const color = gradeColors[grade] || '#34C759';
+    const diagnosis = formatPredictionLabel(payload?.prediction || 'Jamur Terdeteksi');
+    const displayGrade = grade || payload?.grade || 'Sehat';
+    const displayConf = conf || (payload?.confidence !== undefined
+      ? (payload.confidence <= 1 ? (payload.confidence * 100).toFixed(1) : payload.confidence.toFixed(1))
+      : '-');
+    const displayId = shortId || (payload?.saved_record?.id ? payload.saved_record.id.substring(0, 8) : null);
+    const displaySession = sessionNum || payload?.sesi_info?.nomor_sesi;
+    const servoTarget = payload?.servo_target || 'Box Sortir';
 
-    const toast = document.createElement('div');
-    toast.id = 'dbSavedToast';
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
-      z-index: 9999;
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      background: rgba(255,255,255,0.97);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1.5px solid rgba(52,199,89,0.3);
-      border-left: 4px solid ${color};
-      border-radius: 16px;
-      padding: 14px 18px;
-      min-width: 280px;
-      max-width: 340px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
-      animation: toastSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
-      cursor: pointer;
+    // Skema warna khas iOS & disesuaikan untuk tema White Frosted Glass:
+    let color = '#16A34A'; // Hijau stroke
+    let textColor = '#15803D';
+    let bgColor = 'rgba(34, 197, 94, 0.12)';
+    let borderColor = 'rgba(34, 197, 94, 0.35)';
+    let glowColor = 'rgba(34, 197, 94, 0.22)';
+    let gradeBadgeText = displayGrade;
+
+    const lowerGrade = displayGrade.toLowerCase();
+    if (lowerGrade.includes('sehat')) {
+      color = '#16A34A';
+      textColor = '#15803D';
+      bgColor = 'rgba(34, 197, 94, 0.12)';
+      borderColor = 'rgba(34, 197, 94, 0.35)';
+      glowColor = 'rgba(34, 197, 94, 0.22)';
+      gradeBadgeText = 'Sehat';
+    } else if (lowerGrade.includes('tidak cacat') || lowerGrade.includes('bb aman')) {
+      color = '#0284C7';
+      textColor = '#0369A1';
+      bgColor = 'rgba(14, 165, 233, 0.12)';
+      borderColor = 'rgba(14, 165, 233, 0.35)';
+      glowColor = 'rgba(14, 165, 233, 0.22)';
+      gradeBadgeText = 'BB Aman';
+    } else if (lowerGrade.includes('cacat')) {
+      color = '#7C3AED';
+      textColor = '#6D28D9';
+      bgColor = 'rgba(124, 58, 237, 0.12)';
+      borderColor = 'rgba(124, 58, 237, 0.35)';
+      glowColor = 'rgba(124, 58, 237, 0.22)';
+      gradeBadgeText = 'BB Cacat';
+    } else if (lowerGrade.includes('tidak layak') || lowerGrade.includes('reject')) {
+      color = '#DC2626';
+      textColor = '#B91C1C';
+      bgColor = 'rgba(239, 68, 68, 0.12)';
+      borderColor = 'rgba(239, 68, 68, 0.35)';
+      glowColor = 'rgba(239, 68, 68, 0.22)';
+      gradeBadgeText = 'Tidak Layak';
+    }
+
+    const island = document.createElement('div');
+    island.id = 'iphoneDynamicIsland';
+    island.className = 'ios-notification-banner';
+    island.setAttribute('role', 'alert');
+    island.innerHTML = `
+      <div class="ios-banner-header">
+        <div class="ios-header-left">
+          <div class="ios-app-icon" style="background: linear-gradient(135deg, #007AFF 0%, #0056B3 100%);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <span class="ios-header-name">Informasi Grading</span>
+        </div>
+        <div class="ios-header-right">
+          <span class="ios-header-time">baru saja</span>
+          <button class="ios-close-btn" title="Tutup" aria-label="Tutup">✕</button>
+        </div>
+      </div>
+      <div class="ios-banner-body">
+        <div class="ios-body-title">
+          <span class="ios-diagnosis-text">${diagnosis}</span>
+          <span class="ios-body-badge" style="background:${bgColor}; color:${textColor}; border: 1px solid ${borderColor};">
+            ${gradeBadgeText}
+          </span>
+        </div>
+        <div class="ios-body-text">
+          Akurasi: <strong>${displayConf}%</strong> &nbsp;·&nbsp; ${servoTarget}${displaySession ? ` &nbsp;·&nbsp; Sesi #${displaySession}` : ''}
+          ${displayId ? `<div class="ios-body-cloud"><span>☁️</span> Tersimpan ke database <strong>#${displayId}</strong> ✓</div>` : ''}
+        </div>
+      </div>
     `;
 
-    const sesiStr = sessionNum ? `Sesi #${sessionNum} &nbsp;·&nbsp; ` : '';
-    toast.innerHTML = `
-      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:${color}22;display:flex;align-items:center;justify-content:center;margin-top:1px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-          <polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:0.82rem;font-weight:700;color:#0F172A;margin-bottom:3px;display:flex;align-items:center;gap:6px;">
-          <span>✅ Tersimpan ke Database</span>
-        </div>
-        <div style="font-size:0.76rem;color:#334155;line-height:1.5;">
-          ID: <strong>#${shortId}</strong> &nbsp;·&nbsp; ${sesiStr}Grade: <strong style="color:${color};">${grade}</strong><br>
-          Akurasi: <strong>${conf}%</strong> &nbsp;·&nbsp; Supabase (Data Sesi Tersinkron) ✓
-        </div>
-      </div>
-      <button onclick="document.getElementById('dbSavedToast').remove()" style="border:none;background:none;cursor:pointer;color:#94A3B8;font-size:16px;padding:0;line-height:1;flex-shrink:0;margin-top:-2px;">✕</button>
-    `;
+    document.body.appendChild(island);
 
-    // Auto-dismiss setelah 5 detik
-    document.body.appendChild(toast);
-    toast.addEventListener('click', () => toast.remove());
-
-    setTimeout(() => {
-      if (toast.parentNode) {
-        toast.style.animation = 'toastSlideOut 0.35s ease-in forwards';
-        setTimeout(() => toast.remove(), 350);
+    // Animasi Dismiss (geser & menciut ke atas khas iOS banner)
+    const dismissIsland = () => {
+      if (!island.classList.contains('dismissing')) {
+        island.classList.add('dismissing');
+        setTimeout(() => {
+          if (island.parentNode) island.parentNode.removeChild(island);
+        }, 360);
       }
-    }, 5000);
+    };
+
+    island.addEventListener('click', dismissIsland);
+    const closeBtn = island.querySelector('.ios-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissIsland();
+      });
+    }
+
+    // Auto dismiss setelah 5 detik
+    setTimeout(dismissIsland, 5000);
+  }
+
+  // Kompatibilitas alias fungsi lama
+  function showDatabaseSavedToast(shortId, grade, conf, sessionNum) {
+    showIPhoneDynamicIsland({ grade, confidence: conf, saved_record: { id: shortId }, sesi_info: { nomor_sesi: sessionNum } }, shortId, grade, conf, sessionNum);
   }
 
   // ========================================================
@@ -1120,11 +1169,172 @@
     }
   }, true);
 
-  // Inject CSS untuk animasi pulse hijau pada indikator auto-capture
+  // Inject CSS untuk animasi pulse hijau auto-capture & notifikasi Apple Dynamic Island
   if (!document.getElementById('toastAnimStyle')) {
     const style = document.createElement('style');
     style.id = 'toastAnimStyle';
     style.textContent = `
+      #iphoneDynamicIsland.ios-notification-banner {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 999999;
+        display: flex;
+        flex-direction: column;
+        background: rgba(255, 255, 255, 0.90);
+        backdrop-filter: blur(28px) saturate(190%);
+        -webkit-backdrop-filter: blur(28px) saturate(190%);
+        border: 1.2px solid rgba(255, 255, 255, 0.95);
+        border-radius: 18px;
+        padding: 10px 16px 12px 16px;
+        min-width: 310px;
+        width: min(92vw, 390px);
+        box-shadow: 
+          0 16px 38px -4px rgba(140, 100, 60, 0.16),
+          0 4px 14px rgba(0, 0, 0, 0.05),
+          inset 0 1px 2px rgba(255, 255, 255, 1),
+          inset 0 -1px 2px rgba(210, 175, 130, 0.1);
+        color: #0F172A;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+        cursor: pointer;
+        user-select: none;
+        animation: dynamicIslandDrop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        overflow: hidden;
+      }
+      #iphoneDynamicIsland.ios-notification-banner:hover {
+        transform: translateX(-50%) scale(1.015);
+        box-shadow: 
+          0 20px 44px -4px rgba(140, 100, 60, 0.22),
+          0 6px 18px rgba(0, 0, 0, 0.08),
+          inset 0 1.5px 2px rgba(255, 255, 255, 1);
+      }
+      #iphoneDynamicIsland.ios-notification-banner.dismissing {
+        animation: dynamicIslandDismiss 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        pointer-events: none;
+      }
+      .ios-banner-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 7px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      }
+      .ios-header-left {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .ios-app-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0, 122, 255, 0.32);
+        flex-shrink: 0;
+      }
+      .ios-header-name {
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: #475569;
+        letter-spacing: 0.01em;
+      }
+      .ios-header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ios-header-time {
+        font-size: 0.70rem;
+        color: #94A3B8;
+        font-weight: 400;
+      }
+      .ios-close-btn {
+        background: none;
+        border: none;
+        color: #94A3B8;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 0 2px;
+        line-height: 1;
+        transition: color 0.2s ease, transform 0.2s ease;
+      }
+      .ios-close-btn:hover {
+        color: #0F172A;
+        transform: scale(1.15);
+      }
+      .ios-banner-body {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .ios-body-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        line-height: 1.3;
+      }
+      .ios-diagnosis-text {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #0F172A;
+        letter-spacing: -0.01em;
+      }
+      .ios-body-badge {
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 8px;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+      }
+      .ios-body-text {
+        font-size: 0.80rem;
+        color: #334155;
+        line-height: 1.45;
+      }
+      .ios-body-cloud {
+        font-size: 0.75rem;
+        color: #0284C7;
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 500;
+      }
+      @keyframes dynamicIslandDrop {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, -40px) scale(0.8);
+          filter: blur(8px);
+        }
+        65% {
+          opacity: 1;
+          transform: translate(-50%, 4px) scale(1.02);
+          filter: blur(0px);
+        }
+        100% {
+          opacity: 1;
+          transform: translate(-50%, 0) scale(1);
+          filter: blur(0px);
+        }
+      }
+      @keyframes dynamicIslandDismiss {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, 0) scale(1);
+          filter: blur(0px);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -36px) scale(0.8);
+          filter: blur(8px);
+        }
+      }
       @keyframes toastSlideIn {
         from { opacity: 0; transform: translateY(20px) scale(0.95); }
         to   { opacity: 1; transform: translateY(0) scale(1); }

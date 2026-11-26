@@ -45,7 +45,7 @@ function initTrendChart() {
 
   // Create smooth Apple-like gradients
   const chartCtx = ctx.getContext('2d');
-  
+
   const greenGradient = chartCtx.createLinearGradient(0, 0, 0, 220);
   greenGradient.addColorStop(0, 'rgba(16, 185, 129, 0.45)');
   greenGradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
@@ -263,7 +263,7 @@ function initDonutChart() {
           boxPadding: 4,
           usePointStyle: true,
           callbacks: {
-            label: function(context) {
+            label: function (context) {
               const value = context.parsed || 0;
               const total = 1248;
               const pct = ((value / total) * 100).toFixed(1);
