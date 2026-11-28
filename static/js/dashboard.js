@@ -13,13 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* 1. Real-time Live Clock */
 function initLiveClock() {
-  const dateElement = document.getElementById('liveDateBadge');
+  const dateElement = document.querySelector('#spaPageHost #liveDateBadge') || document.getElementById('liveDateBadge');
   if (!dateElement) return;
+
+  if (window._dashboardClockInterval) {
+    clearInterval(window._dashboardClockInterval);
+    window._dashboardClockInterval = null;
+  }
 
   const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
   function update() {
+    if (!dateElement.isConnected) {
+      if (window._dashboardClockInterval) {
+        clearInterval(window._dashboardClockInterval);
+        window._dashboardClockInterval = null;
+      }
+      return;
+    }
     const now = new Date();
     const dayName = days[now.getDay()];
     const date = now.getDate();
@@ -32,7 +44,7 @@ function initLiveClock() {
   }
 
   update();
-  setInterval(update, 1000);
+  window._dashboardClockInterval = setInterval(update, 1000);
 }
 
 /* 2. Tren Hasil Grading Area Chart (Chart.js) */

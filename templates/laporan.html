@@ -15,6 +15,7 @@
     gap: 10px;
     flex-wrap: wrap;
     padding: 12px 20px;
+    margin-top: 16px;
     margin-bottom: 22px;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.20) 100%);
     backdrop-filter: blur(20px) saturate(180%);
@@ -1059,7 +1060,7 @@
   <div class="laporan-chart-card">
     <div class="chart-card-header">
       <div>
-        <h4 class="chart-card-title">📈 Tren Volume per Grade</h4>
+        <h4 class="chart-card-title">Tren Volume per Grade</h4>
         <p class="chart-card-sub">Distribusi 4 kotak hasil sortir per hari</p>
       </div>
     </div>
@@ -1072,7 +1073,7 @@
   <div class="laporan-chart-card">
     <div class="chart-card-header">
       <div>
-        <h4 class="chart-card-title">🍩 Rincian 6 Kategori Penyakit</h4>
+        <h4 class="chart-card-title">Rincian 6 Kategori Penyakit</h4>
         <p class="chart-card-sub">Proporsi detail penyakit yang terdeteksi model AI</p>
       </div>
     </div>
@@ -1138,18 +1139,6 @@
       </tfoot>
     </table>
   </div>
-</div>
-
-<!-- Rekomendasi Operasional AI -->
-<div class="section-label-row">
-  <span class="section-label-title">
-    💡 Evaluasi &amp; Rekomendasi Operasional
-  </span>
-  <span style="font-size:11px; color:#94A3B8; font-weight:600;">Analisis otomatis berbasis distribusi data</span>
-</div>
-
-<div class="laporan-reko-grid" id="rekoGrid">
-  <!-- Populated via JS renderRekomendasi -->
 </div>
 
 <!-- Initial Data JSON -->
@@ -1381,7 +1370,6 @@
     renderDonutChart(d);
     renderKat6Table(d);
     renderPerHariTable(d);
-    renderRekomendasi(d);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -1602,7 +1590,7 @@
     if (rows.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align:center; color:#94A3B8; padding:32px; font-weight:600;">
+          <td colspan="7" style="text-align:center; color:#94A3B8; padding:32px; font-weight:600;">
             Tidak ada rekaman sesi grading pada periode ini
           </td>
         </tr>
@@ -1626,8 +1614,6 @@
       sumReject += reject;
       sumTotal += total;
 
-      const rateLolos = total > 0 ? (((sehat + bbAman) / total) * 100).toFixed(1) : '0.0';
-
       return `
         <tr>
           <td style="text-align:center; color:#94A3B8; font-weight:700;">${idx + 1}</td>
@@ -1637,13 +1623,11 @@
           <td style="color:#6D28D9; font-weight:800;">${bbCacat}</td>
           <td style="color:#B91C1C; font-weight:800;">${reject}</td>
           <td style="font-weight:900; font-size:12.5px;">${total}</td>
-          <td style="text-align:right; font-weight:800; color:#15803D;">${rateLolos}%</td>
         </tr>
       `;
     }).join('');
 
     if (tfoot) {
-      const totalLolosRate = sumTotal > 0 ? (((sumSehat + sumBbAman) / sumTotal) * 100).toFixed(1) : '0.0';
       tfoot.innerHTML = `
         <tr>
           <td colspan="2" style="text-transform:uppercase; letter-spacing:0.04em;">TOTAL</td>
@@ -1652,91 +1636,37 @@
           <td style="color:#6D28D9;">${sumBbCacat}</td>
           <td style="color:#B91C1C;">${sumReject}</td>
           <td style="font-size:13px;">${sumTotal}</td>
-          <td style="text-align:right; color:#15803D;">${totalLolosRate}%</td>
         </tr>
       `;
     }
   }
 
   // ═══════════════════════════════════════════════════════
-  //  6. REKOMENDASI AI BERDASARKAN HASIL SORTIR
-  // ═══════════════════════════════════════════════════════
-  function renderRekomendasi(d) {
-    const el = document.getElementById('rekoGrid');
-    if (!el) return;
-
-    const p = d.percentages || {};
-    const kat6pct = d.kat6_pct || {};
-
-    const sehatPct = parseFloat(p.sehat || 0);
-    const bbCacatPct = parseFloat(p.bb_cacat || 0);
-    const rejectPct = parseFloat(p.tidak_layak || 0);
-    const cobwebPct = parseFloat(kat6pct['Cobweb Disease'] || 0);
-
-    const recos = [
-      {
-        icon: '✅',
-        bg: 'rgba(74, 222, 128, 0.20)',
-        title: 'Kualitas Panen Primer',
-        desc: `${sehatPct}% jamur masuk Kotak 1 (Sehat). ${sehatPct >= 50
-          ? 'Kualitas bibit dan media tanam kumbung dalam kondisi prima.'
-          : 'Perlu peningkatan nutrisi baglog dan kontrol kelembaban udara.'
-          }`
-      },
-      {
-        icon: '🔵',
-        bg: 'rgba(59, 130, 246, 0.20)',
-        title: 'Bacterial Blotch',
-        desc: `BB Tidak Cacat ${p.bb_tidak_cacat || 0}% & BB Cacat ${bbCacatPct}%. ${bbCacatPct > 15
-          ? 'Bercak parah meningkat — kurangi penyiraman langsung ke tudung jamur.'
-          : 'Bakteri bercak terkendali dengan sirkulasi udara yang baik.'
-          }`
-      },
-      {
-        icon: '🕸️',
-        bg: 'rgba(236, 72, 153, 0.20)',
-        title: 'Penyakit Jamur (Cobweb)',
-        desc: `Terdeteksi ${cobwebPct}% jamur terserang Cobweb Disease. ${cobwebPct > 8
-          ? 'Sanitasi ruang kumbung mendesak dilakukan, turunkan kelembaban berlebih.'
-          : 'Spora jamur parasit dalam ambang batas aman.'
-          }`
-      },
-      {
-        icon: '⚠️',
-        bg: 'rgba(239, 68, 68, 0.20)',
-        title: 'Tingkat Tidak Layak',
-        desc: `Total Kotak 4 mencapai ${rejectPct}%. ${rejectPct > 20
-          ? 'Persentase tidak layak tinggi — segera pisahkan baglog yang terkontaminasi.'
-          : 'Persentase tidak layak rendah, pemilahan berjalan sangat efisien.'
-          }`
-      }
-    ];
-
-    el.innerHTML = recos.map(r => `
-      <div class="reko-card">
-        <div class="reko-icon" style="background:${r.bg};">${r.icon}</div>
-        <div class="reko-title">${r.title}</div>
-        <div class="reko-desc">${r.desc}</div>
-      </div>
-    `).join('');
-  }
-
-  // ═══════════════════════════════════════════════════════
-  //  7. LIVE CLOCK
+  //  6. LIVE CLOCK
   // ═══════════════════════════════════════════════════════
   function initClock() {
     const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const el = document.getElementById('liveDateBadge');
+    const el = document.querySelector('#spaPageHost #liveDateBadge') || document.getElementById('liveDateBadge');
+
+    if (window._laporanClockInterval) {
+      clearInterval(window._laporanClockInterval);
+      window._laporanClockInterval = null;
+    }
 
     function update() {
-      const now = new Date();
-      if (el) {
-        el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
+      if (!el || !el.isConnected) {
+        if (window._laporanClockInterval) {
+          clearInterval(window._laporanClockInterval);
+          window._laporanClockInterval = null;
+        }
+        return;
       }
+      const now = new Date();
+      el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
     }
     update();
-    setInterval(update, 1000);
+    window._laporanClockInterval = setInterval(update, 1000);
   }
 
   // ═══════════════════════════════════════════════════════

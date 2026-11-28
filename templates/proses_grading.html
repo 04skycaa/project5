@@ -322,7 +322,7 @@
       const now = new Date();
       const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-      const el = document.getElementById('liveDateBadge');
+      const el = document.querySelector('#persistentGradingHost #liveDateBadge') || document.getElementById('liveDateBadge');
       if (el) {
         el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
       }

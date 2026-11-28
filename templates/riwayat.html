@@ -11,9 +11,10 @@
 
   /* Scroll container riwayat */
   #historyContainer {
-    height: 320px;
-    max-height: 320px;
-    overflow-y: scroll;
+    height: calc(100vh - 292px);
+    min-height: 260px;
+    max-height: 600px;
+    overflow-y: auto;
     overflow-x: hidden;
     padding-right: 8px;
     padding-bottom: 14px;
@@ -28,7 +29,7 @@
     grid-template-columns: minmax(0, 1fr) 250px;
     gap: 14px;
     align-items: stretch;
-    margin-top: 4px;
+    margin-top: 16px;
   }
 
   /* Kolom Tabel & Search (Kiri - Luas) */
@@ -132,10 +133,12 @@
     .riwayat-split-layout {
       grid-template-columns: 1fr;
     }
+
     .riwayat-cards-col {
       width: 100%;
       height: auto;
     }
+
     .riwayat-cards-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -250,7 +253,7 @@
     flex-wrap: nowrap;
   }
 
-  .day-row-header > div:last-child {
+  .day-row-header>div:last-child {
     flex: 1 1 auto;
     min-width: 0;
     justify-content: flex-end;
@@ -400,7 +403,7 @@
   /* Level 2: Kontainer Dropdown Sesi (Translucent Glass) */
   .sessions-dropdown-container {
     display: none;
-    max-height: 200px;
+    max-height: 240px;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 16px 22px 22px 22px;
@@ -1110,242 +1113,244 @@
 
     <!-- Search Box + Date Picker + Periode Dropdown -->
     <div class="riwayat-filter-bar glass-card-subtle">
-  <div class="filter-bar-row">
+      <div class="filter-bar-row">
 
-    <!-- Text Search -->
-    <div class="search-box" style="flex:1; min-width:180px;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2">
-        <circle cx="11" cy="11" r="8" />
-        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      </svg>
-      <input type="text" id="searchTextInput" placeholder="Cari tanggal atau nomor sesi…" class="search-input"
-        oninput="onTextSearch(this.value)">
-    </div>
-
-    <div class="filter-bar-divider"></div>
-
-    <!-- Periode Custom Frosted Glass Dropdown -->
-    <div class="custom-dropdown-container" id="periodeDropdownContainer">
-      <button type="button" class="custom-dropdown-trigger" id="periodeDropdownTrigger"
-        onclick="togglePeriodeDropdown(event)">
-        <svg class="dropdown-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2.2">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-        <span id="periodeDropdownLabel" class="dropdown-label">Semua</span>
-        <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2.5">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-
-      <!-- Floating Glass Menu -->
-      <div class="custom-dropdown-menu" id="periodeDropdownMenu">
-        <div class="custom-dropdown-item active" data-val="semua" onclick="selectPeriodeOption('semua', 'Semua')">
-          <div class="item-left">
-            <span class="item-icon">📋</span>
-            <span class="item-text">Semua</span>
-          </div>
-          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
-            stroke-width="2.8">
-            <polyline points="20 6 9 17 4 12"></polyline>
+        <!-- Text Search -->
+        <div class="search-box" style="flex:1; min-width:180px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
+          <input type="text" id="searchTextInput" placeholder="Cari tanggal atau nomor sesi…" class="search-input"
+            oninput="onTextSearch(this.value)">
         </div>
 
-        <div class="custom-dropdown-item" data-val="today" onclick="selectPeriodeOption('today', 'Hari Ini')">
-          <div class="item-left">
-            <span class="item-icon">📅</span>
-            <span class="item-text">Hari Ini</span>
-          </div>
-          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
-            stroke-width="2.8">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </div>
+        <div class="filter-bar-divider"></div>
 
-        <div class="custom-dropdown-item" data-val="7days" onclick="selectPeriodeOption('7days', '7 Hari Terakhir')">
-          <div class="item-left">
-            <span class="item-icon">📆</span>
-            <span class="item-text">7 Hari Terakhir</span>
-          </div>
-          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
-            stroke-width="2.8">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </div>
-
-        <div class="custom-dropdown-item" data-val="bulan" onclick="selectPeriodeOption('bulan', 'Bulan Ini')">
-          <div class="item-left">
-            <span class="item-icon">🗓️</span>
-            <span class="item-text">Bulan Ini</span>
-          </div>
-          <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
-            stroke-width="2.8">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Date Picker (selalu tampil di samping dropdown) -->
-    <label class="date-picker-glass" id="datePickerWrap" title="Pilih tanggal spesifik">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-        style="color:#64748B;flex-shrink:0;">
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-      </svg>
-      <input type="date" id="datePickerInput" class="date-input-glass" onchange="onDatePick(this.value)">
-    </label>
-
-    <!-- Clear All Filters -->
-    <button class="btn-clear-filter" onclick="clearAllFilters()" title="Reset semua filter">×</button>
-
-    <!-- Status Info -->
-    <div class="filter-status-bar" id="filterStatusBar">
-      <span class="fs-count" id="fsCount">{{ grouped_history|length }}</span> hari ditampilkan
-    </div>
-
-  </div>
-</div>
-
-<!-- Hierarki Riwayat: Per Hari -> Dropdown Sesi -> Pop-up & Diagram Donat -->
-<div class="glass-card-subtle riwayat-table-card">
-  <div class="card-title-row">
-    <div>
-      <h3>Daftar Riwayat Jamur per Hari</h3>
-      <p style="font-size: 13px; color: var(--ios-tertiary-label); margin-top: 3px;">
-        Klik <strong>Detail Sesi</strong> untuk membuka dropdown sesi, lalu klik <strong>Diagram &amp; Hasil
-          Sesi</strong> untuk melihat diagram per kategori.
-      </p>
-    </div>
-    <a href="/api/export-csv" class="btn-outline-glass"
-      style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="7 10 12 15 17 10" />
-        <line x1="12" y1="15" x2="12" y2="3" />
-      </svg>
-      Ekspor Excel
-    </a>
-  </div>
-
-  <div style="margin-top: 18px;" id="historyContainer">
-    {% for day in grouped_history %}
-    {% set day_idx = loop.index %}
-    {% set day_num = loop.index0 %}
-    <!-- LEVEL 1: KARTU HARI / TANGGAL -->
-    <div class="day-group-card" data-date="{{ day.date }}" data-raw-date="{{ day.raw_date }}"
-      id="dayCard-{{ day_idx }}">
-      <div class="day-row-header" onclick="toggleDay('daySessions-{{ day_idx }}', 'dayIcon-{{ day_idx }}')">
-        <div class="day-title-info">
-          <div class="day-date-title">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.2">
+        <!-- Periode Custom Frosted Glass Dropdown -->
+        <div class="custom-dropdown-container" id="periodeDropdownContainer">
+          <button type="button" class="custom-dropdown-trigger" id="periodeDropdownTrigger"
+            onclick="togglePeriodeDropdown(event)">
+            <svg class="dropdown-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.2">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
               <line x1="16" y1="2" x2="16" y2="6" />
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            <span>{{ day.date }}</span>
-          </div>
-          <span class="pill-count">Total: {{ day.total_jamur }} Jamur</span>
-          <span class="pill-session-count">{{ day.total_sesi }} Sesi</span>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <!-- Ringkasan Kategori Hari Ini -->
-          <div class="category-chips-summary">
-            {% if day.sehat > 0 %}<span class="cat-mini-chip healthy">{{ day.sehat }} Sehat</span>{% endif %}
-            {% if day.bb_safe > 0 %}<span class="cat-mini-chip bb-safe">{{ day.bb_safe }} BB Aman</span>{% endif %}
-            {% if day.bb_defect > 0 %}<span class="cat-mini-chip bb-defect">{{ day.bb_defect }} BB Cacat</span>{% endif
-            %}
-            {% if day.reject > 0 %}<span class="cat-mini-chip unfit">{{ day.reject }} Tidak Layak</span>{% endif %}
-          </div>
-
-          <button type="button" class="btn-toggle-drilldown"
-            onclick="event.stopPropagation(); toggleDay('daySessions-{{ day_idx }}', 'dayIcon-{{ day_idx }}')">
-            <span>Detail Sesi</span>
-            <svg class="chevron-arrow {% if loop.first %}rotated{% endif %}" id="dayIcon-{{ day_idx }}" width="13"
-              height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="6 9 12 15 18 9" />
+            <span id="periodeDropdownLabel" class="dropdown-label">Semua</span>
+            <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
+
+          <!-- Floating Glass Menu -->
+          <div class="custom-dropdown-menu" id="periodeDropdownMenu">
+            <div class="custom-dropdown-item active" data-val="semua" onclick="selectPeriodeOption('semua', 'Semua')">
+              <div class="item-left">
+                <span class="item-icon">📋</span>
+                <span class="item-text">Semua</span>
+              </div>
+              <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
+                stroke-width="2.8">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+
+            <div class="custom-dropdown-item" data-val="today" onclick="selectPeriodeOption('today', 'Hari Ini')">
+              <div class="item-left">
+                <span class="item-icon">📅</span>
+                <span class="item-text">Hari Ini</span>
+              </div>
+              <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
+                stroke-width="2.8">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+
+            <div class="custom-dropdown-item" data-val="7days"
+              onclick="selectPeriodeOption('7days', '7 Hari Terakhir')">
+              <div class="item-left">
+                <span class="item-icon">📆</span>
+                <span class="item-text">7 Hari Terakhir</span>
+              </div>
+              <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
+                stroke-width="2.8">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+
+            <div class="custom-dropdown-item" data-val="bulan" onclick="selectPeriodeOption('bulan', 'Bulan Ini')">
+              <div class="item-left">
+                <span class="item-icon">🗓️</span>
+                <span class="item-text">Bulan Ini</span>
+              </div>
+              <svg class="item-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F"
+                stroke-width="2.8">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
         </div>
+
+        <!-- Date Picker (selalu tampil di samping dropdown) -->
+        <label class="date-picker-glass" id="datePickerWrap" title="Pilih tanggal spesifik">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            style="color:#64748B;flex-shrink:0;">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <input type="date" id="datePickerInput" class="date-input-glass" onchange="onDatePick(this.value)">
+        </label>
+
+        <!-- Clear All Filters -->
+        <button class="btn-clear-filter" onclick="clearAllFilters()" title="Reset semua filter">×</button>
+
+        <!-- Status Info -->
+        <div class="filter-status-bar" id="filterStatusBar">
+          <span class="fs-count" id="fsCount">{{ grouped_history|length }}</span> hari ditampilkan
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Hierarki Riwayat: Per Hari -> Dropdown Sesi -> Pop-up & Diagram Donat -->
+    <div class="glass-card-subtle riwayat-table-card">
+      <div class="card-title-row">
+        <div>
+          <h3>Daftar Riwayat Jamur per Hari</h3>
+          <p style="font-size: 13px; color: var(--ios-tertiary-label); margin-top: 3px;">
+            Klik <strong>Detail Sesi</strong> untuk membuka dropdown sesi, lalu klik <strong>Diagram &amp; Hasil
+              Sesi</strong> untuk melihat diagram per kategori.
+          </p>
+        </div>
+        <a href="/api/export-csv" class="btn-outline-glass"
+          style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Ekspor Excel
+        </a>
       </div>
 
-      <!-- LEVEL 2: DAFTAR SESI DI HARI TERSEBUT (DROPDOWN) -->
-      <div class="sessions-dropdown-container {% if loop.first %}active{% endif %}" id="daySessions-{{ day_idx }}">
-        <div
-          style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 4px;">
-          <span
-            style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.06em;">
-            DAFTAR SESI ALAT (TANGGAL: {{ day.date }})
-          </span>
-          <span style="font-size: 12px; color: #64748B; font-weight: 500;">Pilih sesi untuk melihat pop-up
-            diagram</span>
-        </div>
+      <div style="margin-top: 18px;" id="historyContainer">
+        {% for day in grouped_history %}
+        {% set day_idx = loop.index %}
+        {% set day_num = loop.index0 %}
+        <!-- LEVEL 1: KARTU HARI / TANGGAL -->
+        <div class="day-group-card" data-date="{{ day.date }}" data-raw-date="{{ day.raw_date }}"
+          id="dayCard-{{ day_idx }}">
+          <div class="day-row-header" onclick="toggleDay('daySessions-{{ day_idx }}', 'dayIcon-{{ day_idx }}')">
+            <div class="day-title-info">
+              <div class="day-date-title">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>{{ day.date }}</span>
+              </div>
+              <span class="pill-count">Total: {{ day.total_jamur }} Jamur</span>
+              <span class="pill-session-count">{{ day.total_sesi }} Sesi</span>
+            </div>
 
-        {% for sess in day.sessions_list %}
-        {% set sess_num = loop.index0 %}
-        <div class="session-subcard" data-session="{{ sess.session_label }}">
-          <!-- Info Ringkas Sesi -->
-          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <span class="sess-badge-pill">{{ sess.session_label }}</span>
-            <span class="sess-time-pill">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span>Waktu Sesi: <strong style="color:#2D6A4F;">{{ sess.rentang_sesi }}</strong></span>
-            </span>
-            <span class="sess-total-pill">
-              {{ sess.total_jamur }} Jamur
-            </span>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <!-- Ringkasan Kategori Hari Ini -->
+              <div class="category-chips-summary">
+                {% if day.sehat > 0 %}<span class="cat-mini-chip healthy">{{ day.sehat }} Sehat</span>{% endif %}
+                {% if day.bb_safe > 0 %}<span class="cat-mini-chip bb-safe">{{ day.bb_safe }} BB Aman</span>{% endif %}
+                {% if day.bb_defect > 0 %}<span class="cat-mini-chip bb-defect">{{ day.bb_defect }} BB Cacat</span>{%
+                endif
+                %}
+                {% if day.reject > 0 %}<span class="cat-mini-chip unfit">{{ day.reject }} Tidak Layak</span>{% endif %}
+              </div>
+
+              <button type="button" class="btn-toggle-drilldown"
+                onclick="event.stopPropagation(); toggleDay('daySessions-{{ day_idx }}', 'dayIcon-{{ day_idx }}')">
+                <span>Detail Sesi</span>
+                <svg class="chevron-arrow {% if loop.first %}rotated{% endif %}" id="dayIcon-{{ day_idx }}" width="13"
+                  height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <!-- Tombol Pop-up Diagram Donat & Rincian -->
-            <button type="button" class="btn-session-popup" data-day="{{ day_num }}" data-sess="{{ sess_num }}"
-              onclick="openSessionByIndex(this)">
-              <span>Detail</span>
-            </button>
+          <!-- LEVEL 2: DAFTAR SESI DI HARI TERSEBUT (DROPDOWN) -->
+          <div class="sessions-dropdown-container {% if loop.first %}active{% endif %}" id="daySessions-{{ day_idx }}">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 4px;">
+              <span
+                style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.06em;">
+                DAFTAR SESI ALAT (TANGGAL: {{ day.date }})
+              </span>
+              <span style="font-size: 12px; color: #64748B; font-weight: 500;">Pilih sesi untuk melihat pop-up
+                diagram</span>
+            </div>
+
+            {% for sess in day.sessions_list %}
+            {% set sess_num = loop.index0 %}
+            <div class="session-subcard" data-session="{{ sess.session_label }}">
+              <!-- Info Ringkas Sesi -->
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span class="sess-badge-pill">{{ sess.session_label }}</span>
+                <span class="sess-time-pill">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span>Waktu Sesi: <strong style="color:#2D6A4F;">{{ sess.rentang_sesi }}</strong></span>
+                </span>
+                <span class="sess-total-pill">
+                  {{ sess.total_jamur }} Jamur
+                </span>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <!-- Tombol Pop-up Diagram Donat & Rincian -->
+                <button type="button" class="btn-session-popup" data-day="{{ day_num }}" data-sess="{{ sess_num }}"
+                  onclick="openSessionByIndex(this)">
+                  <span>Detail</span>
+                </button>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <!-- TAMPILAN JIKA BELUM ADA DATA -->
+        <div style="text-align:center;padding:48px 20px;color:#64748B;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8">
+              <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
+              <polyline points="14 2 14 8 20 8" />
+              <path d="M2 15h10" />
+              <path d="m9 18 3-3-3-3" />
+            </svg>
+            <strong style="color:#334155;font-size:1.05rem;">Belum Ada Riwayat Sesi Pemeriksaan di Database
+              Supabase</strong>
+            <span style="font-size:0.85rem;color:#64748B;max-width:480px;line-height:1.5;">
+              Data sesi dan jumlah jamur per kategori akan otomatis tercatat di sini saat alat dijalankan pada menu
+              <strong>Proses Grading</strong>.
+            </span>
           </div>
         </div>
         {% endfor %}
       </div>
-    </div>
-    {% else %}
-    <!-- TAMPILAN JIKA BELUM ADA DATA -->
-    <div style="text-align:center;padding:48px 20px;color:#64748B;">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8">
-          <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
-          <polyline points="14 2 14 8 20 8" />
-          <path d="M2 15h10" />
-          <path d="m9 18 3-3-3-3" />
-        </svg>
-        <strong style="color:#334155;font-size:1.05rem;">Belum Ada Riwayat Sesi Pemeriksaan di Database
-          Supabase</strong>
-        <span style="font-size:0.85rem;color:#64748B;max-width:480px;line-height:1.5;">
-          Data sesi dan jumlah jamur per kategori akan otomatis tercatat di sini saat alat dijalankan pada menu
-          <strong>Proses Grading</strong>.
-        </span>
+
+      <div class="table-pagination">
+        <span class="pagination-info">Menampilkan {{ grouped_history|length }} hari pemeriksaan ({{ stats.total_jamur }}
+          total jamur di database)</span>
       </div>
     </div>
-    {% endfor %}
+    <!-- AKHIR KOLOM TABEL (3/5) -->
   </div>
-
-  <div class="table-pagination">
-    <span class="pagination-info">Menampilkan {{ grouped_history|length }} hari pemeriksaan ({{ stats.total_jamur }}
-      total jamur di database)</span>
-  </div>
-</div>
-<!-- AKHIR KOLOM TABEL (3/5) -->
-</div>
 
   <!-- KOLOM 2: Card Info 2-Kolom (Memanjang ke Bawah) -->
   <div class="riwayat-cards-col">
@@ -1390,7 +1395,7 @@
       <div class="stat-card glass-card-subtle">
         <div class="stat-icon blue">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
         </div>
         <h2 class="stat-value">{{ stats.bb_tidak_cacat }}</h2>
@@ -1401,9 +1406,9 @@
       <div class="stat-card glass-card-subtle">
         <div class="stat-icon purple">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
         </div>
         <h2 class="stat-value">{{ stats.bb_cacat }}</h2>
@@ -1524,7 +1529,8 @@
                 <td style="text-align:center; font-weight:800; color:#2D6A4F; font-size:13.5px;"
                   id="modalTableTotalJumlah">0</td>
                 <td id="modalTableTotalPersen" style="text-align:center; font-weight:800; color:#1B4332;">0%</td>
-                <td id="modalCategoryCount" style="text-align:center; color:#64748B; font-size:11px; font-weight:700;">0 Kategori</td>
+                <td id="modalCategoryCount" style="text-align:center; color:#64748B; font-size:11px; font-weight:700;">0
+                  Kategori</td>
               </tr>
             </tfoot>
           </table>
@@ -1540,277 +1546,289 @@
     </div>
   </div>
 </div>
-{% endblock %}
 
-{% block extra_scripts %}
-<!-- Data JSON riwayat yang di-render aman untuk linter IDE -->
+<!-- Data JSON riwayat di dalam block content agar ikut termuat saat navigasi SPA -->
 <script id="historyDataJson" type="application/json">
   {{ grouped_history|tojson|safe }}
 </script>
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
-  // Jam Realtime Indonesia (WIB)
-  function updateClock() {
-    const el = document.getElementById('liveDateBadge');
-    if (!el) return;
-    const now = new Date();
-    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const dStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-    const tStr = `${String(now.getHours()).padStart(2, '0')}.${String(now.getMinutes()).padStart(2, '0')}.${String(now.getSeconds()).padStart(2, '0')} WIB`;
-    el.textContent = `${dStr} • ${tStr}`;
-  }
-  updateClock(); setInterval(updateClock, 1000);
-
-  // Toggle Level 1 -> Level 2 (Buka Dropdown Sesi per Hari)
-  function toggleDay(sessionsContainerId, iconId) {
-    const container = document.getElementById(sessionsContainerId);
-    const icon = document.getElementById(iconId);
-    if (!container) return;
-    const isExpanded = container.classList.contains('active');
-    if (isExpanded) {
-      container.classList.remove('active');
-      if (icon) icon.classList.remove('rotated');
-    } else {
-      container.classList.add('active');
-      if (icon) icon.classList.add('rotated');
-    }
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // DATE PICKER + PERIODE DROPDOWN + TEXT SEARCH SYSTEM
-  // ══════════════════════════════════════════════════════════════
-  let _textQuery = '';
-  let _dateFilter = '';      // "YYYY-MM-DD" or ''
-  let _quickFilter = 'semua'; // 'semua' | 'today' | '7days' | 'bulan'
-
-  function applyFilters() {
-    const dayCards = document.querySelectorAll('.day-group-card');
-    const today = new Date().toISOString().slice(0, 10);
-    let visible = 0;
-
-    dayCards.forEach(card => {
-      const rawDate = card.dataset.rawDate || '';
-      let show = true;
-
-      // 1. Text search — cari di data-date + konten sesi di dalam card
-      if (_textQuery) {
-        // Ambil teks yang relevan: tanggal dari attribute + text semua .session-subcard
-        const q = _textQuery.toLowerCase().replace(/#/g, '').trim();
-
-        // Cek tanggal (data-date)
-        const dateAttr = (card.dataset.date || '').toLowerCase();
-        // Cek teks isi card (hapus # agar "sesi 1" cocok "Sesi #1")
-        const cardText = card.innerText.toLowerCase().replace(/#/g, '');
-
-        show = dateAttr.includes(q) || cardText.includes(q);
-      }
-
-      // 2. Date picker
-      if (_dateFilter && show) {
-        show = rawDate === _dateFilter;
-      }
-
-      // 3. Quick filter
-      if (!_dateFilter && _quickFilter !== 'semua' && show) {
-        if (_quickFilter === 'today') {
-          show = rawDate === today;
-        } else if (_quickFilter === '7days') {
-          const d7 = new Date();
-          d7.setDate(d7.getDate() - 6);
-          show = rawDate >= d7.toISOString().slice(0, 10);
-        } else if (_quickFilter === 'bulan') {
-          show = rawDate.startsWith(today.slice(0, 7));
+  (function () {
+    // Jam Realtime Indonesia (WIB)
+    function updateClock() {
+      if (!document.getElementById('historyContainer')) {
+        if (window._riwayatClockInterval) {
+          clearInterval(window._riwayatClockInterval);
+          window._riwayatClockInterval = null;
         }
+        return;
       }
+      const el = document.querySelector('#spaPageHost #liveDateBadge') || document.getElementById('liveDateBadge');
+      if (!el) return;
+      const now = new Date();
+      const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      const dStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+      const tStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
+      el.textContent = `${dStr} • ${tStr}`;
+    }
+    updateClock();
+    if (window._riwayatClockInterval) clearInterval(window._riwayatClockInterval);
+    window._riwayatClockInterval = setInterval(updateClock, 1000);
 
-      card.style.display = show ? '' : 'none';
-      if (show) visible++;
-
-      // Auto-expand matched cards when searching
-      if (show && _textQuery) {
-        const sessContainer = card.querySelector('.sessions-dropdown-container');
-        if (sessContainer) sessContainer.classList.add('active');
+    // Toggle Level 1 -> Level 2 (Buka Dropdown Sesi per Hari)
+    function toggleDay(sessionsContainerId, iconId) {
+      const container = document.getElementById(sessionsContainerId);
+      const icon = document.getElementById(iconId);
+      if (!container) return;
+      const isExpanded = container.classList.contains('active');
+      if (isExpanded) {
+        container.classList.remove('active');
+        if (icon) icon.classList.remove('rotated');
+      } else {
+        container.classList.add('active');
+        if (icon) icon.classList.add('rotated');
       }
-    });
-
-    // Update status bar
-    const fsCount = document.getElementById('fsCount');
-    if (fsCount) fsCount.textContent = visible;
-
-    // No results hint
-    let hint = document.getElementById('noResultsHint');
-    if (!hint) {
-      hint = document.createElement('div');
-      hint.id = 'noResultsHint';
-      hint.className = 'no-results-hint';
-      hint.innerHTML = '🔍 Tidak ada data yang cocok. <button onclick="clearAllFilters()" style="background:none;border:none;color:#2D6A4F;font-weight:700;cursor:pointer;">Reset Filter</button>';
-      const container = document.getElementById('historyContainer');
-      if (container) container.appendChild(hint);
     }
-    hint.style.display = visible === 0 ? 'block' : 'none';
-  }
 
-  // ═══════════════════════════════════════════════════════
-  //  CUSTOM FROSTED GLASS DROPDOWN CONTROLLER
-  // ═══════════════════════════════════════════════════════
-  function togglePeriodeDropdown(e) {
-    if (e) e.stopPropagation();
-    const trigger = document.getElementById('periodeDropdownTrigger');
-    const menu = document.getElementById('periodeDropdownMenu');
-    if (!trigger || !menu) return;
+    // ══════════════════════════════════════════════════════════════
+    // DATE PICKER + PERIODE DROPDOWN + TEXT SEARCH SYSTEM
+    // ══════════════════════════════════════════════════════════════
+    let _textQuery = '';
+    let _dateFilter = '';      // "YYYY-MM-DD" or ''
+    let _quickFilter = 'semua'; // 'semua' | 'today' | '7days' | 'bulan'
 
-    const isOpen = menu.classList.contains('show');
-    if (isOpen) {
+    function applyFilters() {
+      const dayCards = document.querySelectorAll('.day-group-card');
+      const today = new Date().toISOString().slice(0, 10);
+      let visible = 0;
+
+      dayCards.forEach(card => {
+        const rawDate = card.dataset.rawDate || '';
+        let show = true;
+
+        // 1. Text search — cari di data-date + konten sesi di dalam card
+        if (_textQuery) {
+          // Ambil teks yang relevan: tanggal dari attribute + text semua .session-subcard
+          const q = _textQuery.toLowerCase().replace(/#/g, '').trim();
+
+          // Cek tanggal (data-date)
+          const dateAttr = (card.dataset.date || '').toLowerCase();
+          // Cek teks isi card (hapus # agar "sesi 1" cocok "Sesi #1")
+          const cardText = card.innerText.toLowerCase().replace(/#/g, '');
+
+          show = dateAttr.includes(q) || cardText.includes(q);
+        }
+
+        // 2. Date picker
+        if (_dateFilter && show) {
+          show = rawDate === _dateFilter;
+        }
+
+        // 3. Quick filter
+        if (!_dateFilter && _quickFilter !== 'semua' && show) {
+          if (_quickFilter === 'today') {
+            show = rawDate === today;
+          } else if (_quickFilter === '7days') {
+            const d7 = new Date();
+            d7.setDate(d7.getDate() - 6);
+            show = rawDate >= d7.toISOString().slice(0, 10);
+          } else if (_quickFilter === 'bulan') {
+            show = rawDate.startsWith(today.slice(0, 7));
+          }
+        }
+
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+
+        // Auto-expand matched cards when searching
+        if (show && _textQuery) {
+          const sessContainer = card.querySelector('.sessions-dropdown-container');
+          if (sessContainer) sessContainer.classList.add('active');
+        }
+      });
+
+      // Update status bar
+      const fsCount = document.getElementById('fsCount');
+      if (fsCount) fsCount.textContent = visible;
+
+      // No results hint
+      let hint = document.getElementById('noResultsHint');
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'noResultsHint';
+        hint.className = 'no-results-hint';
+        hint.innerHTML = '🔍 Tidak ada data yang cocok. <button onclick="clearAllFilters()" style="background:none;border:none;color:#2D6A4F;font-weight:700;cursor:pointer;">Reset Filter</button>';
+        const container = document.getElementById('historyContainer');
+        if (container) container.appendChild(hint);
+      }
+      hint.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  CUSTOM FROSTED GLASS DROPDOWN CONTROLLER
+    // ═══════════════════════════════════════════════════════
+    function togglePeriodeDropdown(e) {
+      if (e) e.stopPropagation();
+      const trigger = document.getElementById('periodeDropdownTrigger');
+      const menu = document.getElementById('periodeDropdownMenu');
+      if (!trigger || !menu) return;
+
+      const isOpen = menu.classList.contains('show');
+      if (isOpen) {
+        closePeriodeDropdown();
+      } else {
+        trigger.classList.add('open');
+        menu.classList.add('show');
+      }
+    }
+
+    function closePeriodeDropdown() {
+      const trigger = document.getElementById('periodeDropdownTrigger');
+      const menu = document.getElementById('periodeDropdownMenu');
+      if (trigger) trigger.classList.remove('open');
+      if (menu) menu.classList.remove('show');
+    }
+
+    function selectPeriodeOption(val, label) {
+      const labelEl = document.getElementById('periodeDropdownLabel');
+      if (labelEl) labelEl.textContent = label;
+
+      document.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.val === val);
+      });
+
       closePeriodeDropdown();
-    } else {
-      trigger.classList.add('open');
-      menu.classList.add('show');
+      onPeriodeChange(val);
     }
-  }
 
-  function closePeriodeDropdown() {
-    const trigger = document.getElementById('periodeDropdownTrigger');
-    const menu = document.getElementById('periodeDropdownMenu');
-    if (trigger) trigger.classList.remove('open');
-    if (menu) menu.classList.remove('show');
-  }
-
-  function selectPeriodeOption(val, label) {
-    const labelEl = document.getElementById('periodeDropdownLabel');
-    if (labelEl) labelEl.textContent = label;
-
-    document.querySelectorAll('.custom-dropdown-item').forEach(item => {
-      item.classList.toggle('active', item.dataset.val === val);
-    });
-
-    closePeriodeDropdown();
-    onPeriodeChange(val);
-  }
-
-  document.addEventListener('click', (e) => {
-    const container = document.getElementById('periodeDropdownContainer');
-    if (container && !container.contains(e.target)) {
-      closePeriodeDropdown();
+    if (!window._riwayatDocClickBound) {
+      window._riwayatDocClickBound = true;
+      document.addEventListener('click', (e) => {
+        const container = document.getElementById('periodeDropdownContainer');
+        if (container && !container.contains(e.target)) {
+          closePeriodeDropdown();
+        }
+      });
     }
-  });
 
-  function onTextSearch(val) {
-    _textQuery = val;
-    applyFilters();
-  }
+    function onTextSearch(val) {
+      _textQuery = val;
+      applyFilters();
+    }
 
-  function onDatePick(val) {
-    _dateFilter = val;
-    const wrap = document.getElementById('datePickerWrap');
-    if (wrap) wrap.classList.toggle('has-value', !!val);
-    // Reset custom dropdown ke Semua saat tanggal dipilih manual
-    if (val) {
+    function onDatePick(val) {
+      _dateFilter = val;
+      const wrap = document.getElementById('datePickerWrap');
+      if (wrap) wrap.classList.toggle('has-value', !!val);
+      // Reset custom dropdown ke Semua saat tanggal dipilih manual
+      if (val) {
+        _quickFilter = 'semua';
+        const labelEl = document.getElementById('periodeDropdownLabel');
+        if (labelEl) labelEl.textContent = 'Semua';
+        document.querySelectorAll('.custom-dropdown-item').forEach(item => {
+          item.classList.toggle('active', item.dataset.val === 'semua');
+        });
+      }
+      applyFilters();
+    }
+
+    function onPeriodeChange(val) {
+      // Clear date picker saat periode dipilih
+      _dateFilter = '';
+      const dp = document.getElementById('datePickerInput');
+      if (dp) dp.value = '';
+      const wrap = document.getElementById('datePickerWrap');
+      if (wrap) wrap.classList.remove('has-value');
+      _quickFilter = val;
+      applyFilters();
+    }
+
+    function clearAllFilters() {
+      _textQuery = '';
+      _dateFilter = '';
       _quickFilter = 'semua';
+      const ti = document.getElementById('searchTextInput');
+      if (ti) ti.value = '';
+      const dp = document.getElementById('datePickerInput');
+      if (dp) dp.value = '';
+      const wrap = document.getElementById('datePickerWrap');
+      if (wrap) wrap.classList.remove('has-value');
+
       const labelEl = document.getElementById('periodeDropdownLabel');
       if (labelEl) labelEl.textContent = 'Semua';
       document.querySelectorAll('.custom-dropdown-item').forEach(item => {
         item.classList.toggle('active', item.dataset.val === 'semua');
       });
+
+      applyFilters();
     }
-    applyFilters();
-  }
 
-  function onPeriodeChange(val) {
-    // Clear date picker saat periode dipilih
-    _dateFilter = '';
-    const dp = document.getElementById('datePickerInput');
-    if (dp) dp.value = '';
-    const wrap = document.getElementById('datePickerWrap');
-    if (wrap) wrap.classList.remove('has-value');
-    _quickFilter = val;
-    applyFilters();
-  }
+    // Legacy alias
+    function filterHistory(q) { onTextSearch(q); }
 
-  function clearAllFilters() {
-    _textQuery = '';
-    _dateFilter = '';
-    _quickFilter = 'semua';
-    const ti = document.getElementById('searchTextInput');
-    if (ti) ti.value = '';
-    const dp = document.getElementById('datePickerInput');
-    if (dp) dp.value = '';
-    const wrap = document.getElementById('datePickerWrap');
-    if (wrap) wrap.classList.remove('has-value');
+    // ══════════════════════════════════════════════════════════════
+    // POP-UP MODAL & CHART.JS DOUGHNUT CHART LOGIC
+    // ══════════════════════════════════════════════════════════════
+    const historyDataEl = document.getElementById('historyDataJson');
+    const HISTORY_DATA = historyDataEl ? JSON.parse(historyDataEl.textContent || '[]') : [];
 
-    const labelEl = document.getElementById('periodeDropdownLabel');
-    if (labelEl) labelEl.textContent = 'Semua';
-    document.querySelectorAll('.custom-dropdown-item').forEach(item => {
-      item.classList.toggle('active', item.dataset.val === 'semua');
-    });
-
-    applyFilters();
-  }
-
-  // Legacy alias
-  function filterHistory(q) { onTextSearch(q); }
-
-  // ══════════════════════════════════════════════════════════════
-  // POP-UP MODAL & CHART.JS DOUGHNUT CHART LOGIC
-  // ══════════════════════════════════════════════════════════════
-  const historyDataEl = document.getElementById('historyDataJson');
-  const HISTORY_DATA = historyDataEl ? JSON.parse(historyDataEl.textContent || '[]') : [];
-  let sessionChartInstance = null;
-
-  function openSessionByIndex(btn) {
-    if (!btn || !btn.dataset) return;
-    const dayIdx = parseInt(btn.dataset.day, 10);
-    const sessIdx = parseInt(btn.dataset.sess, 10);
-    const sess = HISTORY_DATA?.[dayIdx]?.sessions_list?.[sessIdx];
-    if (sess) {
-      openSessionModal(sess);
+    function openSessionByIndex(btn) {
+      if (!btn || !btn.dataset) return;
+      const dayIdx = parseInt(btn.dataset.day, 10);
+      const sessIdx = parseInt(btn.dataset.sess, 10);
+      const sess = HISTORY_DATA?.[dayIdx]?.sessions_list?.[sessIdx];
+      if (sess) {
+        openSessionModal(sess);
+      }
     }
-  }
 
-  function openSessionModal(sessionData) {
-    if (!sessionData) return;
+    function openSessionModal(sessionData) {
+      if (!sessionData) return;
 
-    // 1. Update Judul dan Subtitle Modal
-    const titleEl = document.getElementById('modalSessionTitle');
-    const subtitleEl = document.getElementById('modalSessionSubtitle');
-    if (titleEl) titleEl.textContent = `Hasil Grading ${sessionData.session_label || 'Sesi'}`;
-    if (subtitleEl) subtitleEl.textContent = `Tanggal: ${sessionData.tanggal || '-'} • Waktu: ${sessionData.rentang_sesi || '-'}`;
+      // 1. Update Judul dan Subtitle Modal
+      const titleEl = document.getElementById('modalSessionTitle');
+      const subtitleEl = document.getElementById('modalSessionSubtitle');
+      if (titleEl) titleEl.textContent = `Hasil Grading ${sessionData.session_label || 'Sesi'}`;
+      if (subtitleEl) subtitleEl.textContent = `Tanggal: ${sessionData.tanggal || '-'} • Waktu: ${sessionData.rentang_sesi || '-'}`;
 
-    // 2. Update KPI Strip
-    const totalEl = document.getElementById('modalTotalJamur');
-    const sehatEl = document.getElementById('modalSehat');
-    const bbSafeEl = document.getElementById('modalBbSafe');
-    const bbDefectEl = document.getElementById('modalBbDefect');
-    const rejectEl = document.getElementById('modalReject');
-    const centerTotalEl = document.getElementById('chartCenterTotalNum');
-    const tableTotalEl = document.getElementById('modalTableTotalJumlah');
-    const tablePercentEl = document.getElementById('modalTableTotalPersen');
-    const categoryCountEl = document.getElementById('modalCategoryCount');
+      // 2. Update KPI Strip
+      const totalEl = document.getElementById('modalTotalJamur');
+      const sehatEl = document.getElementById('modalSehat');
+      const bbSafeEl = document.getElementById('modalBbSafe');
+      const bbDefectEl = document.getElementById('modalBbDefect');
+      const rejectEl = document.getElementById('modalReject');
+      const centerTotalEl = document.getElementById('chartCenterTotalNum');
+      const tableTotalEl = document.getElementById('modalTableTotalJumlah');
+      const tablePercentEl = document.getElementById('modalTableTotalPersen');
+      const categoryCountEl = document.getElementById('modalCategoryCount');
 
-    const totalCount = sessionData.total_jamur || 0;
-    const rows = Array.isArray(sessionData.kategori_rows) ? sessionData.kategori_rows : [];
-    if (totalEl) totalEl.textContent = totalCount;
-    if (centerTotalEl) centerTotalEl.textContent = totalCount;
-    if (tableTotalEl) tableTotalEl.textContent = totalCount;
-    if (tablePercentEl) tablePercentEl.textContent = totalCount > 0 ? '100%' : '0%';
-    if (categoryCountEl) categoryCountEl.textContent = `${rows.length} Kategori`;
-    if (sehatEl) sehatEl.textContent = sessionData.sehat || 0;
-    if (bbSafeEl) bbSafeEl.textContent = sessionData.bb_safe || 0;
-    if (bbDefectEl) bbDefectEl.textContent = sessionData.bb_defect || 0;
-    if (rejectEl) rejectEl.textContent = sessionData.reject || 0;
+      const totalCount = sessionData.total_jamur || 0;
+      const rows = Array.isArray(sessionData.kategori_rows) ? sessionData.kategori_rows : [];
+      if (totalEl) totalEl.textContent = totalCount;
+      if (centerTotalEl) centerTotalEl.textContent = totalCount;
+      if (tableTotalEl) tableTotalEl.textContent = totalCount;
+      if (tablePercentEl) tablePercentEl.textContent = totalCount > 0 ? '100%' : '0%';
+      if (categoryCountEl) categoryCountEl.textContent = `${rows.length} Kategori`;
+      if (sehatEl) sehatEl.textContent = sessionData.sehat || 0;
+      if (bbSafeEl) bbSafeEl.textContent = sessionData.bb_safe || 0;
+      if (bbDefectEl) bbDefectEl.textContent = sessionData.bb_defect || 0;
+      if (rejectEl) rejectEl.textContent = sessionData.reject || 0;
 
-    // 3. Render Tabel Rincian Kategori dari data sessionData.kategori_rows
-    const tbody = document.getElementById('modalCategoryTableBody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      rows.forEach((r, idx) => {
-        const tr = document.createElement('tr');
-        tr.style.background = 'rgba(255, 255, 255, 0.35)';
-        tr.style.transition = 'background 0.15s ease';
-        tr.onmouseenter = () => { tr.style.background = 'rgba(255, 255, 255, 0.65)'; };
-        tr.onmouseleave = () => { tr.style.background = 'rgba(255, 255, 255, 0.35)'; };
+      // 3. Render Tabel Rincian Kategori dari data sessionData.kategori_rows
+      const tbody = document.getElementById('modalCategoryTableBody');
+      if (tbody) {
+        tbody.innerHTML = '';
+        rows.forEach((r, idx) => {
+          const tr = document.createElement('tr');
+          tr.style.background = 'rgba(255, 255, 255, 0.35)';
+          tr.style.transition = 'background 0.15s ease';
+          tr.onmouseenter = () => { tr.style.background = 'rgba(255, 255, 255, 0.65)'; };
+          tr.onmouseleave = () => { tr.style.background = 'rgba(255, 255, 255, 0.35)'; };
 
-        tr.innerHTML = `
+          tr.innerHTML = `
           <td style="text-align:center; color:#64748B; font-weight:700;">${idx + 1}</td>
           <td>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -1824,106 +1842,126 @@
             <span class="badge-grade ${r.badge}" style="font-size:11px; padding:3px 9px;">${r.status}</span>
           </td>
         `;
-        tbody.appendChild(tr);
+          tbody.appendChild(tr);
+        });
+      }
+
+      // 4. Inisialisasi / Perbarui Diagram Donat (Chart.js)
+      renderSessionDoughnutChart(sessionData);
+
+      // 5. Buka Modal
+      const modal = document.getElementById('sessionDetailModal');
+      if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function renderSessionDoughnutChart(sessionData) {
+      const canvas = document.getElementById('sessionDoughnutCanvas');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      if (window._riwayatSessionChart) {
+        window._riwayatSessionChart.destroy();
+        window._riwayatSessionChart = null;
+      }
+
+      const labels = sessionData.chart_labels || ['Healthy', 'Bacterial Blotch Tidak Cacat', 'Bacterial Blotch Cacat', 'Dry Bubble', 'Cobweb Disease', 'Wet Bubble'];
+      let values = sessionData.chart_values || [0, 0, 0, 0, 0, 0];
+      const colors = sessionData.chart_colors || ['#4ADE80', '#3B82F6', '#7C3AED', '#F59E0B', '#EC4899', '#EF4444'];
+
+      const totalVal = values.reduce((a, b) => a + b, 0);
+
+      let chartData = values;
+      let chartColors = colors;
+      if (totalVal === 0) {
+        chartData = [1];
+        chartColors = ['#E2E8F0'];
+      }
+
+      const ctx = canvas.getContext('2d');
+      window._riwayatSessionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: totalVal === 0 ? ['Belum ada jamur'] : labels,
+          datasets: [{
+            data: chartData,
+            backgroundColor: chartColors,
+            borderWidth: 2.5,
+            borderColor: '#FFFFFF',
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '70%',
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              enabled: totalVal > 0,
+              backgroundColor: 'rgba(30, 41, 59, 0.85)',
+              titleFont: { weight: 'bold' },
+              padding: 10,
+              cornerRadius: 10,
+              callbacks: {
+                label: function (context) {
+                  const val = context.raw || 0;
+                  const pct = totalVal > 0 ? ((val / totalVal) * 100).toFixed(1) : 0;
+                  return ` ${context.label}: ${val} Jamur (${pct}%)`;
+                }
+              }
+            }
+          },
+          animation: {
+            animateRotate: true,
+            animateScale: true,
+            duration: 500
+          }
+        }
       });
     }
 
-    // 4. Inisialisasi / Perbarui Diagram Donat (Chart.js)
-    renderSessionDoughnutChart(sessionData);
-
-    // 5. Buka Modal
-    const modal = document.getElementById('sessionDetailModal');
-    if (modal) {
-      modal.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-  }
-
-  function renderSessionDoughnutChart(sessionData) {
-    const canvas = document.getElementById('sessionDoughnutCanvas');
-    if (!canvas) return;
-
-    if (sessionChartInstance) {
-      sessionChartInstance.destroy();
-      sessionChartInstance = null;
-    }
-
-    const labels = sessionData.chart_labels || ['Healthy', 'Bacterial Blotch Tidak Cacat', 'Bacterial Blotch Cacat', 'Dry Bubble', 'Cobweb Disease', 'Wet Bubble'];
-    let values = sessionData.chart_values || [0, 0, 0, 0, 0, 0];
-    const colors = sessionData.chart_colors || ['#4ADE80', '#3B82F6', '#7C3AED', '#F59E0B', '#EC4899', '#EF4444'];
-
-    const totalVal = values.reduce((a, b) => a + b, 0);
-
-    let chartData = values;
-    let chartColors = colors;
-    if (totalVal === 0) {
-      chartData = [1];
-      chartColors = ['#E2E8F0'];
-    }
-
-    const ctx = canvas.getContext('2d');
-    sessionChartInstance = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: totalVal === 0 ? ['Belum ada jamur'] : labels,
-        datasets: [{
-          data: chartData,
-          backgroundColor: chartColors,
-          borderWidth: 2.5,
-          borderColor: '#FFFFFF',
-          hoverOffset: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '70%',
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            enabled: totalVal > 0,
-            backgroundColor: 'rgba(30, 41, 59, 0.85)',
-            titleFont: { weight: 'bold' },
-            padding: 10,
-            cornerRadius: 10,
-            callbacks: {
-              label: function (context) {
-                const val = context.raw || 0;
-                const pct = totalVal > 0 ? ((val / totalVal) * 100).toFixed(1) : 0;
-                return ` ${context.label}: ${val} Jamur (${pct}%)`;
-              }
-            }
-          }
-        },
-        animation: {
-          animateRotate: true,
-          animateScale: true,
-          duration: 500
-        }
+    function closeSessionModal(event) {
+      if (event.target.id === 'sessionDetailModal') {
+        closeSessionModalDirect();
       }
-    });
-  }
-
-  function closeSessionModal(event) {
-    if (event.target.id === 'sessionDetailModal') {
-      closeSessionModalDirect();
     }
-  }
 
-  function closeSessionModalDirect() {
-    const modal = document.getElementById('sessionDetailModal');
-    if (modal) {
-      modal.classList.remove('open');
-      document.body.style.overflow = '';
+    function closeSessionModalDirect() {
+      const modal = document.getElementById('sessionDetailModal');
+      if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+      }
     }
-  }
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closeSessionModalDirect();
+    if (!window._riwayatEscBound) {
+      window._riwayatEscBound = true;
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeSessionModalDirect();
+        }
+      });
     }
-  });
+
+    // Expose handlers globally for inline onclick/oninput/onchange attributes
+    window.toggleDay = toggleDay;
+    window.applyFilters = applyFilters;
+    window.togglePeriodeDropdown = togglePeriodeDropdown;
+    window.closePeriodeDropdown = closePeriodeDropdown;
+    window.selectPeriodeOption = selectPeriodeOption;
+    window.onTextSearch = onTextSearch;
+    window.onDatePick = onDatePick;
+    window.onPeriodeChange = onPeriodeChange;
+    window.clearAllFilters = clearAllFilters;
+    window.filterHistory = filterHistory;
+    window.openSessionByIndex = openSessionByIndex;
+    window.openSessionModal = openSessionModal;
+    window.closeSessionModal = closeSessionModal;
+    window.closeSessionModalDirect = closeSessionModalDirect;
+  })();
 </script>
 {% endblock %}

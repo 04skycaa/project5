@@ -22,6 +22,17 @@ try:
 except ImportError:
     OPENPYXL_AVAILABLE = False
 
+SERVO_BY_CATEGORY = {
+    'Healthy': 'Kotak 1: Jamur Sehat',
+    'Bacterial Blotch Tidak Cacat': 'Kotak 2: BB Tidak Cacat',
+    'Bacterial Blotch Cacat': 'Kotak 3: BB Cacat',
+    'Dry Bubble': 'Kotak 4: Jamur Tidak Layak',
+    'Cobweb Disease': 'Kotak 4: Jamur Tidak Layak',
+    'Wet Bubble': 'Kotak 4: Jamur Tidak Layak',
+}
+EXPORT_HEADERS = ["No", "ID Inspeksi", "Tanggal", "Sesi", "Kategori Jamur",
+                  "Jumlah Jamur", "Tujuan Sortir"]
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'mushroom-grading-secret-key-2026')
 app.config['MODEL_API_URL'] = os.getenv(
@@ -556,7 +567,10 @@ def format_inspections(raw_rows):
             display_category = 'BB - Cacat'
             default_servo = 'Kotak 3: BB Cacat'
             default_ai = 'Bacterial_Blotch'
-        elif 'not_consumable' in raw_kat or 'tidak layak' in raw_kat or 'unfit' in raw_kat or 'dry_bubble' in raw_kat or 'wet_bubble' in raw_kat or 'cobweb' in raw_kat:
+        elif any(key in raw_kat for key in (
+            'not_consumable', 'tidak layak', 'tidak_layak', 'unfit',
+            'dry bubble', 'dry_bubble', 'wet bubble', 'wet_bubble', 'cobweb'
+        )):
             badge = 'unfit'
             status = 'Reject'
             display_category = 'Tidak Layak Konsumsi'
@@ -653,6 +667,22 @@ def format_inspections(raw_rows):
             'sesi_label': sesi_label
         })
     return formatted
+
+
+def _export_row(number, item):
+    """Menyusun satu baris ekspor (dipakai oleh XLSX dan CSV)."""
+    sesi_info = item.get('sesi') or {}
+    nomor_sesi = sesi_info.get('nomor_sesi')
+    category = str(item.get('kategori') or '-')
+    return [
+        number,
+        str(item.get('id', '')),
+        sesi_info.get('tanggal') or '-',
+        f"Sesi #{nomor_sesi}" if nomor_sesi else "-",
+        category,
+        int(item.get('jumlah', 0) or 0),
+        SERVO_BY_CATEGORY.get(category, '-'),
+    ]
 
 
 def get_current_inspections(limit=100):
@@ -769,8 +799,7 @@ def riwayat_grading():
 
 @app.route('/laporan')
 def laporan():
-    from datetime import date
-    today = date.today()
+    today = datetime.now(WIB).date()
 
     periode = request.args.get('periode', 'semua')
     dari_str = request.args.get('dari', '')
@@ -898,21 +927,9 @@ def export_csv():
         output.write(b'\xef\xbb\xbf')
         text_buf = io.StringIO()
         writer = csv.writer(text_buf, delimiter=';')
-        writer.writerow(['No', 'Tanggal', 'Waktu (WIB)', 'Kategori', 'Kelas AI', 'Konfidensitas (%)', 'Tujuan Sortir'])
+        writer.writerow(EXPORT_HEADERS)
         for i, item in enumerate(raw_data or [], start=1):
-            raw_time = item.get('inspected_at', '')
-            tgl_str, wkt_str = '-', '-'
-            if raw_time:
-                try:
-                    dt = datetime.fromisoformat(str(raw_time).replace('Z', '+00:00'))
-                    dt_wib = dt.astimezone(WIB)
-                    tgl_str = dt_wib.strftime('%d/%m/%Y')
-                    wkt_str = dt_wib.strftime('%H:%M:%S')
-                except Exception:
-                    pass
-            conf_raw = float(item.get('confidence', 0) or 0)
-            conf_pct = round(conf_raw * 100.0, 1) if conf_raw <= 1.0 else round(conf_raw, 1)
-            writer.writerow([i, tgl_str, wkt_str, item.get('grade', '-'), item.get('ai_class', '-'), conf_pct, item.get('servo_target', '-')])
+            writer.writerow(_export_row(i, item))
         output.write(text_buf.getvalue().encode('utf-8'))
         filename = f"Grading_Jamur_{now_wib.strftime('%Y%m%d_%H%M')}.csv"
         return Response(output.getvalue(), mimetype="text/csv; charset=utf-8",
@@ -955,7 +972,7 @@ def export_csv():
         return Alignment(horizontal=h, vertical=v, wrap_text=wrap)
 
     # ── Lebar kolom ──────────────────────────────────────────────────────────
-    col_widths = [5, 14, 13, 13, 22, 24, 20, 25, 48]
+    col_widths = [5, 18, 16, 16, 30, 18, 28]
     for idx, w in enumerate(col_widths, start=1):
         ws.column_dimensions[get_column_letter(idx)].width = w
 
@@ -980,8 +997,9 @@ def export_csv():
     # ── Baris 3: Info ekspor ─────────────────────────────────────────────────
     ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=NUM_COLS)
     total_records = len(raw_data or [])
+    total_jamur = sum(int(r.get('jumlah', 0) or 0) for r in raw_data or [])
     info_text = (f"Diekspor pada: {now_wib.strftime('%d %B %Y, %H:%M WIB')}     |"
-                 f"     Total Data: {total_records} inspeksi")
+                 f"     Total Jamur: {total_jamur}")
     c = ws.cell(row=3, column=1, value=info_text)
     c.font      = font(bold=False, color="374151", size=10)
     c.fill      = fill("F9FBE7")
@@ -992,9 +1010,7 @@ def export_csv():
     ws.row_dimensions[4].height = 8
 
     # ── Baris 5: Header kolom ────────────────────────────────────────────────
-    headers = ["No", "ID Inspeksi", "Tanggal", "Sesi", "Kategori Jamur",
-               "Jumlah Jamur", "Tujuan Sortir"]
-    for col_idx, h in enumerate(headers, start=1):
+    for col_idx, h in enumerate(EXPORT_HEADERS, start=1):
         c = ws.cell(row=5, column=col_idx, value=h)
         c.font      = font(bold=True, color=CLR_HEADER_FG, size=11)
         c.fill      = fill(CLR_HEADER_BG)
@@ -1021,45 +1037,14 @@ def export_csv():
 
     for i, item in enumerate(raw_data or [], start=1):
         row_num = 5 + i
-        sesi_info = item.get('sesi') or {}
-        if isinstance(sesi_info, list) and len(sesi_info) > 0:
-            sesi_info = sesi_info[0]
-        elif not isinstance(sesi_info, dict):
-            sesi_info = {}
-
-        tgl_str = sesi_info.get('tanggal') or '-'
-        nomor_sesi = sesi_info.get('nomor_sesi')
-        sesi_label = f"Sesi #{nomor_sesi}" if nomor_sesi else "-"
-
-        grade_str = str(item.get('kategori') or item.get('grade') or '-')
-        grade_lower = grade_str.lower()
+        row_data = _export_row(i, item)
+        grade_lower = row_data[4].lower()
         row_bg = CLR_ROW_ODD if i % 2 == 1 else CLR_ROW_EVEN
 
         for key, color in grade_color_map.items():
             if key in grade_lower:
                 row_bg = color
                 break
-
-        jumlah_val = int(item.get('jumlah', 1) or 1)
-        servo_map = {
-            'Healthy': 'Kotak 1: Jamur Sehat',
-            'Bacterial Blotch Tidak Cacat': 'Kotak 2: BB Tidak Cacat',
-            'Bacterial Blotch Cacat': 'Kotak 3: BB Cacat',
-            'Dry Bubble': 'Kotak 4: Jamur Tidak Layak',
-            'Cobweb Disease': 'Kotak 4: Jamur Tidak Layak',
-            'Wet Bubble': 'Kotak 4: Jamur Tidak Layak'
-        }
-        servo_target = servo_map.get(grade_str, 'Kotak 4: Jamur Tidak Layak')
-
-        row_data = [
-            i,
-            str(item.get('id', ''))[:8],
-            tgl_str,
-            sesi_label,
-            grade_str,
-            jumlah_val,
-            servo_target
-        ]
 
         h_aligns = ["center", "center", "center", "center", "left", "center", "left"]
         for col_idx, val in enumerate(row_data, start=1):
@@ -1076,16 +1061,19 @@ def export_csv():
 
     # ── Blok Ringkasan ────────────────────────────────────────────────────────
     if raw_data:
-        total = len(raw_data)
-        sehat     = sum(1 for r in raw_data if ('Sehat' in str(r.get('grade', '')) or 'SEHAT' in str(r.get('grade', ''))) and 'Tidak' not in str(r.get('grade', '')) and 'TIDAK' not in str(r.get('grade', '')))
-        bb_tidak  = sum(1 for r in raw_data if 'Tidak Cacat' in str(r.get('grade', '')) or 'BB_TIDAK_CACAT' in str(r.get('grade', '')))
-        bb_cacat  = sum(1 for r in raw_data if ('BB - Cacat' in str(r.get('grade', '')) or 'BB_CACAT' in str(r.get('grade', ''))) and 'Tidak Cacat' not in str(r.get('grade', '')) and 'BB_TIDAK_CACAT' not in str(r.get('grade', '')))
-        reject    = sum(1 for r in raw_data if 'Tidak Layak' in str(r.get('grade', '')) or 'TIDAK_LAYAK' in str(r.get('grade', '')))
+        def jumlah_kategori(*names):
+            return sum(int(r.get('jumlah', 0) or 0) for r in raw_data if r.get('kategori') in names)
+
+        total     = total_jamur
+        sehat     = jumlah_kategori('Healthy')
+        bb_tidak  = jumlah_kategori('Bacterial Blotch Tidak Cacat')
+        bb_cacat  = jumlah_kategori('Bacterial Blotch Cacat')
+        reject    = jumlah_kategori('Dry Bubble', 'Cobweb Disease', 'Wet Bubble')
 
         summ_start = spacer_row + 1
 
         # Header ringkasan
-        ws.merge_cells(start_row=summ_start, start_column=1, end_row=summ_start, end_column=5)
+        ws.merge_cells(start_row=summ_start, start_column=1, end_row=summ_start, end_column=NUM_COLS)
         c = ws.cell(row=summ_start, column=1, value="📊  RINGKASAN HASIL GRADING")
         c.font      = font(bold=True, color=CLR_TITLE_FG, size=12)
         c.fill      = fill(CLR_HEADER_BG)
@@ -1094,7 +1082,11 @@ def export_csv():
 
         # Sub-header ringkasan
         summ_cols_header = ["Kategori", "Jumlah (unit)", "Persentase (%)", "Destinasi Sortir", "Keterangan"]
-        for col_idx, h in enumerate(summ_cols_header, start=1):
+        # Kolom A (No) sempit, jadi "Kategori" digabung A:B dan "Keterangan" F:G
+        summ_columns = [1, 3, 4, 5, 6]
+        ws.merge_cells(start_row=summ_start + 1, start_column=1, end_row=summ_start + 1, end_column=2)
+        ws.merge_cells(start_row=summ_start + 1, start_column=6, end_row=summ_start + 1, end_column=7)
+        for col_idx, h in zip(summ_columns, summ_cols_header):
             c = ws.cell(row=summ_start + 1, column=col_idx, value=h)
             c.font      = font(bold=True, color=CLR_HEADER_FG, size=10)
             c.fill      = fill(CLR_SUB_BG)
@@ -1115,7 +1107,9 @@ def export_csv():
         for r_idx, (kat, jml, persen, dest, ket, bg) in enumerate(summ_rows, start=summ_start + 2):
             is_total = r_idx == summ_start + 2 + len(summ_rows) - 1
             row_vals = [kat, jml, persen, dest, ket]
-            for col_idx, val in enumerate(row_vals, start=1):
+            ws.merge_cells(start_row=r_idx, start_column=1, end_row=r_idx, end_column=2)
+            ws.merge_cells(start_row=r_idx, start_column=6, end_row=r_idx, end_column=7)
+            for col_idx, val in zip(summ_columns, row_vals):
                 c = ws.cell(row=r_idx, column=col_idx, value=val)
                 c.fill      = fill(bg)
                 c.font      = font(bold=is_total, color=CLR_SUMM_LABEL, size=10)
