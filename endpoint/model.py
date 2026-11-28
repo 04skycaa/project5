@@ -13,17 +13,14 @@ from services.grading import determine_grading
 from services.pcv_analysis import analyze_bacterial_blotch
 from services.supabase_service import (
     save_inspection,
-    get_active_session,
+    save_first_inspection_with_pending_session,
 )
 
 model_api = Blueprint("model_api", __name__)
 
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# MAPPING KELAS RESNET
-# Label persis sama dengan yang divalidasi pada services/grading.py
-# ═══════════════════════════════════════════════════════════════════════════════
+# Mapping kelas ResNet sesuai model CNN
 RESNET_CLASSES = {
     0: "Bacterial_Blotch",
     1: "Cobweb_Disease",
@@ -32,12 +29,7 @@ RESNET_CLASSES = {
     4: "Wet_Bubble",
 }
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# FALLBACK AMAN
-# Jika PCV atau grading gagal akibat gambar blur/rusak/noise berlebih,
-# servo diarahkan ke "SERVO_TIDAK_LAYAK" agar jamur bermasalah tidak lolos
-# ke jalur konsumsi premium / toleransi dan servo fisik tidak menggantung (idle/hang).
-# ═══════════════════════════════════════════════════════════════════════════════
+# Keputusan sortir jika PCV/Grading mengalami kegagalan teknis
 FALLBACK_GRADE = "TIDAK_LAYAK"
 FALLBACK_SERVO = "SERVO_TIDAK_LAYAK"
 
@@ -45,6 +37,9 @@ FALLBACK_SERVO = "SERVO_TIDAK_LAYAK"
 @model_api.post("/api/camera/predict")
 def camera_predict():
     image = request.files.get("image")
+    sesi_id = (request.form.get("sesi_id") or "").strip()
+    pending_session_id = (request.form.get("pending_session_id") or "").strip()
+    detection_id = request.form.get("detection_id") or uuid4().hex
 
     if image is None or not image.filename:
         return jsonify({"error": "Gambar tidak ditemukan."}), 400
@@ -52,12 +47,18 @@ def camera_predict():
     if not image.mimetype or not image.mimetype.startswith("image/"):
         return jsonify({"error": "File harus berupa gambar."}), 400
 
+    if not sesi_id and not pending_session_id:
+        return jsonify({
+            "error": "Sesi tidak aktif atau belum dimulai. Harap mulai sesi terlebih dahulu."
+        }), 400
+
     image_data = image.stream.read(MAX_IMAGE_BYTES + 1)
     if not image_data:
         return jsonify({"error": "Gambar kosong."}), 400
     if len(image_data) > MAX_IMAGE_BYTES:
         return jsonify({"error": "Ukuran gambar maksimal 10 MB."}), 413
 
+    # Kirim ke backend inference ResNet
     boundary = uuid4().hex
     filename = secure_filename(image.filename) or "image.jpg"
     content_type = image.mimetype or "application/octet-stream"
@@ -107,99 +108,18 @@ def camera_predict():
     # ══════════════════════════════════════════════════════════════════════════
     # STANDARISASI HASIL PREDIKSI RESNET
     # ══════════════════════════════════════════════════════════════════════════
-    raw_pred = data.get("prediction")
-    if raw_pred is None:
-        raw_pred = data.get("predicted_class") or data.get("disease") or "Unknown"
+    raw_pred = data.get("prediction", "Unknown")
 
-    confidence_val = data.get("confidence")
-
-    # Mapping class_code & varian nama kelas
-    CODE_MAP = {
-        "w0_hl": "Healthy",
-        "w1_bb": "Bacterial_Blotch",
-        "w1_db": "Dry_Bubble",
-        "w1_kw": "Cobweb_Disease",
-        "w1_wb": "Wet_Bubble",
-    }
-    NAME_MAP = {
-        "healthy": "Healthy",
-        "bacterial_blotch": "Bacterial_Blotch",
-        "bacterial blotch": "Bacterial_Blotch",
-        "dry_bubble": "Dry_Bubble",
-        "dry bubble": "Dry_Bubble",
-        "cobweb": "Cobweb_Disease",
-        "cobweb_disease": "Cobweb_Disease",
-        "cobweb disease": "Cobweb_Disease",
-        "wet_bubble": "Wet_Bubble",
-        "wet bubble": "Wet_Bubble",
-    }
-
-    # Jika raw_pred adalah dictionary (misal: {'class_code': 'w1_kw', 'class_name': 'Cobweb_Disease', 'confidence': 47.87})
-    if isinstance(raw_pred, dict):
-        if confidence_val is None and "confidence" in raw_pred:
-            confidence_val = raw_pred["confidence"]
-        cand = (
-            raw_pred.get("class_name")
-            or raw_pred.get("disease")
-            or raw_pred.get("class_code")
-            or raw_pred.get("predicted_class")
-            or raw_pred.get("prediction")
-            or "Unknown"
-        )
-    elif isinstance(raw_pred, int) and raw_pred in RESNET_CLASSES:
-        cand = RESNET_CLASSES[raw_pred]
+    if isinstance(raw_pred, int) and raw_pred in RESNET_CLASSES:
+        predicted_class = RESNET_CLASSES[raw_pred]
     else:
-        cand = str(raw_pred).strip()
+        predicted_class = str(raw_pred).strip().replace(" ", "_")
 
-    cand_str = str(cand).strip()
-    if cand_str in CODE_MAP:
-        predicted_class = CODE_MAP[cand_str]
-    elif cand_str.lower() in NAME_MAP:
-        predicted_class = NAME_MAP[cand_str.lower()]
-    elif cand_str.lower().replace(" ", "_") in NAME_MAP:
-        predicted_class = NAME_MAP[cand_str.lower().replace(" ", "_")]
+    confidence_val = data.get("confidence", 0)
+    if isinstance(confidence_val, (int, float)) and confidence_val <= 1.0:
+        confidence_pct = confidence_val * 100.0
     else:
-        predicted_class = cand_str.replace(" ", "_")
-
-    # Standarisasi confidence
-    if confidence_val is None:
-        confidence_val = 0
-    try:
-        confidence_num = float(confidence_val)
-    except (ValueError, TypeError):
-        confidence_num = 0.0
-
-    if confidence_num > 1.0:
-        confidence_pct = confidence_num
-        confidence_fraction = confidence_num / 100.0
-    else:
-        confidence_pct = confidence_num * 100.0
-        confidence_fraction = confidence_num
-
-    # Standarisasi probabilities untuk frontend
-    probs = data.get("probabilities")
-    if not isinstance(probs, dict) or not probs:
-        probs = data.get("all_predictions")
-    if isinstance(probs, dict) and probs:
-        norm_probs = {}
-        for k, v in probs.items():
-            k_clean = str(k).strip()
-            k_norm = CODE_MAP.get(k_clean, NAME_MAP.get(k_clean.lower().replace(" ", "_"), k_clean.replace(" ", "_")))
-            try:
-                val_f = float(v)
-                norm_probs[k_norm] = round(val_f / 100.0 if val_f > 1.0 else val_f, 4)
-            except (ValueError, TypeError):
-                norm_probs[k_norm] = 0.0
-        if predicted_class not in norm_probs:
-            norm_probs[predicted_class] = round(confidence_fraction, 4)
-        data["probabilities"] = norm_probs
-    else:
-        data["probabilities"] = {predicted_class: round(confidence_fraction, 4)}
-
-    # Update payload data agar frontend proses_grading.html selalu menerima format valid
-    data["status"] = "success"
-    data["prediction"] = predicted_class
-    data["confidence"] = round(confidence_fraction, 4)
+        confidence_pct = float(confidence_val)
 
     # ══════════════════════════════════════════════════════════════════════════
     # ANALISIS PCV (HANYA jika prediksi == "Bacterial_Blotch")
@@ -208,42 +128,42 @@ def camera_predict():
 
     if predicted_class == "Bacterial_Blotch":
         try:
-            # Decode buffer gambar byte ke format BGR OpenCV murni (bukan RGB PIL)
             nparr = np.frombuffer(image_data, np.uint8)
             img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
             if img_bgr is None or img_bgr.size == 0:
                 raise ValueError("Format data gambar tidak dapat didecode oleh OpenCV.")
 
-            # Jalankan analisis PCV (HSV Value + Otsu)
             pcv_result = analyze_bacterial_blotch(img_bgr)
 
         except ValueError as pcv_val_err:
-            # Error validasi PCV (misal kontur < MIN_OBJECT_AREA atau gambar blur)
             current_app.logger.warning(f"Validasi PCV gagal: {pcv_val_err}")
-            data.update({
+            # Kegagalan teknis analisis PCV tidak disimpan ke kategori valid
+            return jsonify({
+                "status": "error",
+                "error": f"Analisis PCV gagal: {pcv_val_err}",
                 "grade": FALLBACK_GRADE,
                 "servo_target": FALLBACK_SERVO,
+                "prediction": predicted_class,
+                "confidence": confidence_pct / 100.0 if confidence_pct > 1 else confidence_pct,
+                "probabilities": data.get("probabilities", {}),
                 "pcv_required": True,
-                "pcv_result": None,
-                "error": f"PCV Validation Error: {pcv_val_err}"
-            })
-            # Tetap simpan ke database dengan status fallback
-            _save_record(data, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, None)
-            return jsonify(data), 422
+                "pcv_result": None
+            }), 422
 
         except Exception as pcv_err:
-            # Kesalahan sistem tak terduga pada PCV
             current_app.logger.error(f"Sistem PCV error: {pcv_err}")
-            data.update({
+            return jsonify({
+                "status": "error",
+                "error": f"Kesalahan sistem PCV: {pcv_err}",
                 "grade": FALLBACK_GRADE,
                 "servo_target": FALLBACK_SERVO,
+                "prediction": predicted_class,
+                "confidence": confidence_pct / 100.0 if confidence_pct > 1 else confidence_pct,
+                "probabilities": data.get("probabilities", {}),
                 "pcv_required": True,
-                "pcv_result": None,
-                "error": f"PCV Processing Error: {pcv_err}"
-            })
-            _save_record(data, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, None)
-            return jsonify(data), 500
+                "pcv_result": None
+            }), 500
 
     # ══════════════════════════════════════════════════════════════════════════
     # PENENTUAN GRADING DAN TARGET SERVO
@@ -252,26 +172,30 @@ def camera_predict():
         grading_result = determine_grading(predicted_class, pcv_result=pcv_result)
     except ValueError as grade_val_err:
         current_app.logger.warning(f"Validasi grading gagal: {grade_val_err}")
-        data.update({
+        return jsonify({
+            "status": "error",
+            "error": f"Grading tidak valid: {grade_val_err}",
             "grade": FALLBACK_GRADE,
             "servo_target": FALLBACK_SERVO,
+            "prediction": predicted_class,
+            "confidence": confidence_pct / 100.0 if confidence_pct > 1 else confidence_pct,
+            "probabilities": data.get("probabilities", {}),
             "pcv_required": (predicted_class == "Bacterial_Blotch"),
-            "pcv_result": pcv_result,
-            "error": f"Grading Validation Error: {grade_val_err}"
-        })
-        _save_record(data, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, pcv_result)
-        return jsonify(data), 422
+            "pcv_result": pcv_result
+        }), 422
     except Exception as grade_err:
         current_app.logger.error(f"Sistem grading error: {grade_err}")
-        data.update({
+        return jsonify({
+            "status": "error",
+            "error": f"Kesalahan grading: {grade_err}",
             "grade": FALLBACK_GRADE,
             "servo_target": FALLBACK_SERVO,
+            "prediction": predicted_class,
+            "confidence": confidence_pct / 100.0 if confidence_pct > 1 else confidence_pct,
+            "probabilities": data.get("probabilities", {}),
             "pcv_required": (predicted_class == "Bacterial_Blotch"),
-            "pcv_result": pcv_result,
-            "error": f"Grading Processing Error: {grade_err}"
-        })
-        _save_record(data, predicted_class, confidence_pct, FALLBACK_GRADE, FALLBACK_SERVO, pcv_result)
-        return jsonify(data), 500
+            "pcv_result": pcv_result
+        }), 500
 
     grade = grading_result["grade"]
     servo_target = grading_result["servo_target"]
@@ -282,33 +206,56 @@ def camera_predict():
     data["pcv_result"] = grading_result.get("pcv_result")
 
     # ══════════════════════════════════════════════════════════════════════════
-    # SIMPAN KE SUPABASE (TABEL INSPEKSI & SESI — TANPA SIMPAN GAMBAR)
+    # SIMPAN KE SUPABASE (Sesi aktif ATAU promosikan pending_session atomik)
     # ══════════════════════════════════════════════════════════════════════════
-    _save_record(data, predicted_class, confidence_pct, grade, servo_target, pcv_result)
-
-    return jsonify(data), status
-
-
-def _save_record(data, ai_class, confidence, grade, servo_target, pcv_result):
-    """Menyimpan hasil pemeriksaan ke Supabase DB (tabel inspeksi & sesi) tanpa menyimpan gambar."""
     try:
-        active_sesi = get_active_session()
-        sesi_id = active_sesi.get("id") if active_sesi else None
+        if sesi_id:
+            saved_record = save_inspection(
+                grade=grade,
+                sesi_id=sesi_id,
+                ai_class=predicted_class,
+                confidence=confidence_pct,
+                servo_target=servo_target,
+                pcv_result=pcv_result,
+                detection_id=detection_id
+            )
+        else:
+            saved_record = save_first_inspection_with_pending_session(
+                pending_session_id=pending_session_id,
+                grade=grade,
+                ai_class=predicted_class,
+                confidence=confidence_pct,
+                servo_target=servo_target,
+                pcv_result=pcv_result,
+                detection_id=detection_id
+            )
 
-        inspection_record = save_inspection(
-            grade=grade,
-            sesi_id=sesi_id,
-            ai_class=ai_class,
-            confidence=confidence,
-            servo_target=servo_target,
-            pcv_result=pcv_result
-        )
-        if inspection_record:
-            data["saved_record"] = inspection_record
-            if active_sesi:
-                data["sesi_info"] = {
-                    "nomor_sesi": active_sesi.get("nomor_sesi"),
-                    "tanggal": active_sesi.get("tanggal")
-                }
+        if saved_record.get("saved") is False:
+            return jsonify({
+                "status": "error",
+                "error": saved_record.get("message", "Hasil tidak masuk dalam kategori valid."),
+                "prediction": predicted_class,
+                "grade": grade,
+                "db_saved": False
+            }), 422
+
+        data["saved_record"] = saved_record
+        if saved_record.get("sesi_info"):
+            data["sesi_info"] = saved_record["sesi_info"]
+        data["db_saved"] = True
     except Exception as e:
         current_app.logger.error(f"Gagal simpan inspeksi ke Supabase: {e}")
+        # Jangan kirim sukses palsu! Beritahu klien bahwa data gagal disimpan
+        return jsonify({
+            "status": "error",
+            "error": f"Penyimpanan database gagal: {str(e)}",
+            "prediction": predicted_class,
+            "grade": grade,
+            "confidence": confidence_pct / 100.0 if confidence_pct > 1 else confidence_pct,
+            "probabilities": data.get("probabilities", {}),
+            "servo_target": servo_target,
+            "pcv_result": pcv_result,
+            "db_saved": False
+        }), 500
+
+    return jsonify(data), 200

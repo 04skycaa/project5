@@ -40,6 +40,10 @@ let trendChartInstance = null;
 function initTrendChart() {
   const ctx = document.getElementById('trendChart');
   if (!ctx) return;
+  if (trendChartInstance) {
+    trendChartInstance.destroy();
+    trendChartInstance = null;
+  }
 
   const labels = ['21 Okt', '22 Okt', '23 Okt', '24 Okt', '25 Okt', '26 Okt', '27 Okt'];
 
@@ -203,6 +207,10 @@ let donutChartInstance = null;
 function initDonutChart() {
   const ctx = document.getElementById('donutChart');
   if (!ctx) return;
+  if (donutChartInstance) {
+    donutChartInstance.destroy();
+    donutChartInstance = null;
+  }
 
   const centerLabel = document.querySelector('.donut-center-label');
   const serverStats = window.SERVER_STATS || {};

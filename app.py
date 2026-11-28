@@ -340,7 +340,9 @@ def api_session_start():
 @app.route('/api/session/stop', methods=['POST'])
 def api_session_stop():
     """Menghentikan sesi alat yang sedang berjalan."""
-    result = stop_active_session()
+    data = request.get_json(silent=True) or {}
+    target_sesi_id = data.get('sesi_id') or request.form.get('sesi_id')
+    result = stop_active_session(target_sesi_id=target_sesi_id)
     if result:
         return jsonify({
             'success': True,

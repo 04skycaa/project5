@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   
   <!-- Stylesheet (Cache Busted) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=37.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=38.0">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -47,11 +47,20 @@
         </div>
       </div>
 
+      <!-- Live Global Grading Status Pill in Sidebar (Untuk pemantauan dari halaman mana pun) -->
+      <div id="sidebarGradingIndicator" style="margin: 0 12px 14px 12px; padding: 8px 12px; border-radius: 12px; background: rgba(148, 163, 184, 0.12); border: 1.2px solid rgba(148, 163, 184, 0.25); display: flex; align-items: center; gap: 8px; font-size: 11.5px; transition: all 0.3s ease;">
+        <span id="sidebarStatusDot" class="pulse-dot" style="background: #94A3B8; width:8px; height:8px; flex-shrink:0;"></span>
+        <div style="min-width:0; flex:1;">
+          <div style="font-size:10px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:0.04em;">Status Grading</div>
+          <div id="sidebarStatusText" style="font-weight:600; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Sesi Nonaktif</div>
+        </div>
+      </div>
+
       <!-- Nav Menu (Tanpa Search Bar, Tanpa Header UTAMA & ANALITIK) -->
       <div class="sidebar-nav">
         <ul class="nav-menu">
           <li class="nav-item">
-            <a href="/" class="nav-link {% if active_page == 'dashboard' or not active_page %}active{% endif %}" data-tooltip="Dashboard">
+            <a href="/" class="nav-link spa-link {% if active_page == 'dashboard' or not active_page %}active{% endif %}" data-page="dashboard" data-tooltip="Dashboard">
               <span class="nav-icon-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               </span>
@@ -59,7 +68,7 @@
             </a>
           </li>
           <li class="nav-item">
-            <a href="/proses" class="nav-link {% if active_page == 'proses' %}active{% endif %}" data-tooltip="Proses Grading">
+            <a href="/proses" class="nav-link spa-link {% if active_page == 'proses' %}active{% endif %}" data-page="proses" data-tooltip="Proses Grading">
               <span class="nav-icon-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
               </span>
@@ -67,7 +76,7 @@
             </a>
           </li>
           <li class="nav-item">
-            <a href="/riwayat" class="nav-link {% if active_page == 'riwayat' %}active{% endif %}" data-tooltip="Riwayat Grading">
+            <a href="/riwayat" class="nav-link spa-link {% if active_page == 'riwayat' %}active{% endif %}" data-page="riwayat" data-tooltip="Riwayat Grading">
               <span class="nav-icon-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               </span>
@@ -75,7 +84,7 @@
             </a>
           </li>
           <li class="nav-item">
-            <a href="/laporan" class="nav-link {% if active_page == 'laporan' %}active{% endif %}" data-tooltip="Laporan">
+            <a href="/laporan" class="nav-link spa-link {% if active_page == 'laporan' %}active{% endif %}" data-page="laporan" data-tooltip="Laporan">
               <span class="nav-icon-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               </span>
@@ -99,18 +108,27 @@
     </aside>
 
     <!-- Main Content Body -->
-    <main class="main-content glass-panel">
-      {% block content %}{% endblock %}
+    <main class="main-content glass-panel" id="mainContentPanel">
+      <div id="{% if active_page == 'proses' %}persistentGradingHost{% else %}spaPageHost{% endif %}"
+           {% if active_page == 'proses' %}data-initialized="true"{% endif %}
+           style="display: block;">
+        {% block content %}{% endblock %}
+      </div>
+      {% if active_page == 'proses' %}
+        <div id="spaPageHost" style="display: none;"></div>
+      {% else %}
+        <div id="persistentGradingHost" data-initialized="false" style="display: none;"></div>
+      {% endif %}
     </main>
   </div>
 
-  <!-- ===================== MOBILE BOTTOM TAB BAR (CURVED NOTCH LIKE IMAGE 2) ===================== -->
+  <!-- ===================== MOBILE BOTTOM TAB BAR ===================== -->
   <nav class="mobile-tab-bar" id="mobileTabBar">
     <svg class="tab-bar-svg" preserveAspectRatio="none">
       <path id="tabBarPath" d=""></path>
     </svg>
 
-    <a href="/" class="mobile-tab-item {% if active_page == 'dashboard' or not active_page %}active{% endif %}" title="Dashboard">
+    <a href="/" class="mobile-tab-item spa-link {% if active_page == 'dashboard' or not active_page %}active{% endif %}" data-page="dashboard" title="Dashboard">
       <div class="tab-icon-bubble">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -120,7 +138,7 @@
       <span class="tab-label">Dashboard</span>
     </a>
 
-    <a href="/proses" class="mobile-tab-item {% if active_page == 'proses' %}active{% endif %}" title="Proses Grading">
+    <a href="/proses" class="mobile-tab-item spa-link {% if active_page == 'proses' %}active{% endif %}" data-page="proses" title="Proses Grading">
       <div class="tab-icon-bubble">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
@@ -130,7 +148,7 @@
       <span class="tab-label">Grading</span>
     </a>
 
-    <a href="/riwayat" class="mobile-tab-item {% if active_page == 'riwayat' %}active{% endif %}" title="Riwayat Grading">
+    <a href="/riwayat" class="mobile-tab-item spa-link {% if active_page == 'riwayat' %}active{% endif %}" data-page="riwayat" title="Riwayat Grading">
       <div class="tab-icon-bubble">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
@@ -140,7 +158,7 @@
       <span class="tab-label">Riwayat</span>
     </a>
 
-    <a href="/laporan" class="mobile-tab-item {% if active_page == 'laporan' %}active{% endif %}" title="Laporan">
+    <a href="/laporan" class="mobile-tab-item spa-link {% if active_page == 'laporan' %}active{% endif %}" data-page="laporan" title="Laporan">
       <div class="tab-icon-bubble">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -153,7 +171,10 @@
     </a>
   </nav>
 
-  <!-- Detail Inspection Modal (Apple Glass Sheet) -->
+  <!-- Container Khusus Notifikasi di Luar Halaman Grading -->
+  <div id="globalToastContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 999999; display: flex; flex-direction: column; gap: 8px; pointer-events: none;"></div>
+
+  <!-- Detail Inspection Modal -->
   <div class="modal-overlay" id="detailModal">
     <div class="modal-glass">
       <div class="modal-header">
@@ -205,213 +226,265 @@
   </div>
 
   <!-- Scripts -->
-  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}" data-spa-global="true"></script>
   {% block extra_scripts %}{% endblock %}
 
-  <!-- Mobile Tab Bar Curved Notch Script (Soft Spring & Fluid Lerp Animation) -->
-  <script>
+  <!-- ========================================================
+       SEAMLESS SPA PERSISTENT GRADING CONTROLLER
+       Menjaga 1 instance DOM grading tetap hidup tanpa duplikasi saat pindah halaman
+       ======================================================== -->
+  <div id="spaPageStyles" style="display:none;"></div>
+  <script data-spa-global="true">
     (function () {
-      let currentNotchX = null;
-      let targetNotchX = null;
-      let notchRafId = null;
+      let currentPageName = '{{ active_page or "dashboard" }}';
+      let navigationRequestId = 0;
 
-      function drawNotchPath(X, W, H) {
-        const path = document.getElementById('tabBarPath');
-        if (!path) return;
+      // 1. Live Indicator Status di Sidebar
+      window.addEventListener('gradingSessionChange', (e) => {
+        const { sessionState, session, cameraActive, error } = e.detail || {};
+        const indicator = document.getElementById('sidebarGradingIndicator');
+        const dot = document.getElementById('sidebarStatusDot');
+        const text = document.getElementById('sidebarStatusText');
+        if (!indicator || !dot || !text) return;
 
-        const flatY = 0;
-        const dipY = 32;
-        const cornerR = 24;
-        const notchR = 38;
-
-        const p_start = Math.max(cornerR, X - notchR);
-        const p_end = Math.min(W - cornerR, X + notchR);
-
-        let d = `M 0 ${cornerR} Q 0 ${flatY} ${cornerR} ${flatY} `;
-        if (p_start > cornerR) {
-          d += `L ${p_start} ${flatY} `;
-        }
-        // Lengkungan turun lembut (Cubic Bezier)
-        d += `C ${X - 22} ${flatY}, ${X - 16} ${dipY}, ${X} ${dipY} `;
-        // Lengkungan naik lembut kembali ke garis datar
-        d += `C ${X + 16} ${dipY}, ${X + 22} ${flatY}, ${p_end} ${flatY} `;
-
-        if (p_end < W - cornerR) {
-          d += `L ${W - cornerR} ${flatY} `;
-        }
-        d += `Q ${W} ${flatY} ${W} ${cornerR} `;
-        d += `L ${W} ${H} `;
-        d += `L 0 ${H} Z`;
-
-        path.setAttribute('d', d);
-      }
-
-      function updateMobileNotch(immediate = false) {
-        const bar = document.getElementById('mobileTabBar');
-        if (!bar || window.innerWidth > 960) return;
-
-        const activeItem = bar.querySelector('.mobile-tab-item.active');
-        if (!activeItem) return;
-
-        const barRect = bar.getBoundingClientRect();
-        const itemRect = activeItem.getBoundingClientRect();
-        const W = barRect.width;
-        const H = barRect.height || 68;
-        if (W === 0 || H === 0) return;
-
-        const targetX = itemRect.left + itemRect.width / 2 - barRect.left;
-
-        if (immediate || currentNotchX === null) {
-          if (notchRafId) {
-            cancelAnimationFrame(notchRafId);
-            notchRafId = null;
-          }
-          currentNotchX = targetX;
-          targetNotchX = targetX;
-          drawNotchPath(currentNotchX, W, H);
-          return;
-        }
-
-        targetNotchX = targetX;
-
-        // Fluid spring lerp animation loop (super soft glide)
-        function step() {
-          const dx = targetNotchX - currentNotchX;
-          if (Math.abs(dx) < 0.25) {
-            currentNotchX = targetNotchX;
-            drawNotchPath(currentNotchX, W, H);
-            notchRafId = null;
-            return;
-          }
-
-          // Damping factor 0.16 = pergerakan kurva sangat mulus dan empuk
-          currentNotchX += dx * 0.16;
-          drawNotchPath(currentNotchX, W, H);
-          notchRafId = requestAnimationFrame(step);
-        }
-
-        if (!notchRafId) {
-          notchRafId = requestAnimationFrame(step);
-        }
-      }
-
-      function scheduleNotchUpdate(immediate = false) {
-        updateMobileNotch(immediate);
-        requestAnimationFrame(() => updateMobileNotch(immediate));
-        setTimeout(() => updateMobileNotch(immediate), 60);
-      }
-
-      window.addEventListener('DOMContentLoaded', () => scheduleNotchUpdate(true));
-      window.addEventListener('load', () => scheduleNotchUpdate(true));
-      window.addEventListener('resize', () => scheduleNotchUpdate(true));
-
-      // Animasi pergantian tab dengan soft sliding glide
-      const bar = document.getElementById('mobileTabBar');
-      if (bar) {
-        const items = bar.querySelectorAll('.mobile-tab-item');
-        items.forEach(item => {
-          item.addEventListener('click', () => {
-            items.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            updateMobileNotch(false); // Animasikan transisi cekungan secara halus
-          });
-        });
-      }
-
-      // ========================================================
-      // INITIALIZE CUSTOM APPLE FROSTED GLASS DROPDOWNS
-      // ========================================================
-      function initCustomGlassDropdowns() {
-        document.querySelectorAll('select.ios-select').forEach(select => {
-          if (select.dataset.customDropdownInit) return;
-          select.dataset.customDropdownInit = "true";
-          select.style.display = 'none';
-
-          const wrapper = document.createElement('div');
-          wrapper.className = 'custom-glass-dropdown';
-
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'custom-dropdown-btn';
-
-          const label = document.createElement('span');
-          label.className = 'custom-dropdown-label';
-          label.textContent = select.options[select.selectedIndex]?.text || select.options[0]?.text || '';
-
-          const chevron = document.createElement('span');
-          chevron.className = 'custom-dropdown-chevron';
-          chevron.innerHTML = `
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          `;
-
-          btn.appendChild(label);
-          btn.appendChild(chevron);
-          wrapper.appendChild(btn);
-
-          const menu = document.createElement('div');
-          menu.className = 'custom-dropdown-menu';
-
-          Array.from(select.options).forEach((opt, idx) => {
-            const item = document.createElement('div');
-            item.className = 'custom-dropdown-item' + (idx === select.selectedIndex ? ' active' : '');
-            item.dataset.value = opt.value || opt.text;
-
-            const itemText = document.createElement('span');
-            itemText.className = 'custom-dropdown-text';
-            itemText.textContent = opt.text;
-
-            const itemCheck = document.createElement('span');
-            itemCheck.className = 'custom-dropdown-check';
-            itemCheck.innerHTML = `
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            `;
-
-            item.appendChild(itemText);
-            item.appendChild(itemCheck);
-
-            item.addEventListener('click', (e) => {
-              e.stopPropagation();
-              select.selectedIndex = idx;
-              label.textContent = opt.text;
-
-              menu.querySelectorAll('.custom-dropdown-item').forEach(i => i.classList.remove('active'));
-              item.classList.add('active');
-
-              wrapper.classList.remove('open');
-              select.dispatchEvent(new Event('change', { bubbles: true }));
-            });
-
-            menu.appendChild(item);
-          });
-
-          wrapper.appendChild(menu);
-
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = wrapper.classList.contains('open');
-            document.querySelectorAll('.custom-glass-dropdown.open').forEach(d => {
-              if (d !== wrapper) d.classList.remove('open');
-            });
-            wrapper.classList.toggle('open', !isOpen);
-          });
-
-          select.parentNode.insertBefore(wrapper, select.nextSibling);
-        });
-      }
-
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('.custom-glass-dropdown')) {
-          document.querySelectorAll('.custom-glass-dropdown.open').forEach(d => d.classList.remove('open'));
+        if (error) {
+          indicator.style.background = 'rgba(239, 68, 68, 0.12)';
+          indicator.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+          dot.style.background = '#EF4444';
+          text.style.color = '#DC2626';
+          text.textContent = 'Error: ' + error;
+        } else if (session && cameraActive) {
+          indicator.style.background = 'rgba(74, 222, 128, 0.14)';
+          indicator.style.borderColor = 'rgba(74, 222, 128, 0.35)';
+          dot.style.background = '#22C55E';
+          text.style.color = '#166534';
+          text.textContent = `Sesi #${session.nomor_sesi} (Grading Berjalan)`;
+        } else if (sessionState === 'pending' && cameraActive) {
+          indicator.style.background = 'rgba(245, 158, 11, 0.14)';
+          indicator.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+          dot.style.background = '#F59E0B';
+          text.style.color = '#B45309';
+          text.textContent = 'Sesi Siap (Menunggu Inspeksi)';
+        } else if ((session || sessionState === 'pending') && !cameraActive) {
+          indicator.style.background = 'rgba(245, 158, 11, 0.12)';
+          indicator.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+          dot.style.background = '#F59E0B';
+          text.style.color = '#B45309';
+          text.textContent = session ? `Sesi #${session.nomor_sesi} (Kamera Putus)` : 'Pending (Kamera Putus)';
+        } else {
+          indicator.style.background = 'rgba(148, 163, 184, 0.12)';
+          indicator.style.borderColor = 'rgba(148, 163, 184, 0.25)';
+          dot.style.background = '#94A3B8';
+          text.style.color = '#475569';
+          text.textContent = 'Sesi Nonaktif';
         }
       });
 
-      window.addEventListener('DOMContentLoaded', initCustomGlassDropdowns);
-      window.addEventListener('load', initCustomGlassDropdowns);
-      setTimeout(initCustomGlassDropdowns, 100);
+      // 2. Notifikasi Prediksi HANYA saat di luar halaman grading
+      const shownNotificationIds = new Set();
+      window.addEventListener('gradingPredictionSaved', (e) => {
+        if (currentPageName === 'proses') return;
+
+        const { grade, detectionId } = e.detail || {};
+        if (!grade) return;
+        if (detectionId) {
+          if (shownNotificationIds.has(detectionId)) return;
+          if (shownNotificationIds.size > 500) shownNotificationIds.clear();
+          shownNotificationIds.add(detectionId);
+        }
+
+        const container = document.getElementById('globalToastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+          pointer-events: auto;
+          background: rgba(255, 255, 255, 0.94);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1.5px solid rgba(45, 106, 79, 0.3);
+          border-left: 5px solid #2D6A4F;
+          border-radius: 14px;
+          padding: 12px 18px;
+          min-width: 260px;
+          max-width: 340px;
+          box-shadow: 0 10px 25px -5px rgba(0,0,0,0.12), 0 4px 10px rgba(0,0,0,0.04);
+          font-family: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          animation: toastSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          cursor: pointer;
+        `;
+        toast.innerHTML = `
+          <div style="font-size:20px; line-height:1;">🍄</div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:10px; font-weight:700; color:#2D6A4F; text-transform:uppercase; letter-spacing:0.04em;">Grading Terdeteksi</div>
+            <div style="font-size:13px; font-weight:700; color:#0F172A; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${grade}</div>
+          </div>
+          <button type="button" style="border:none;background:none;color:#94A3B8;cursor:pointer;font-size:14px;">✕</button>
+        `;
+
+        toast.addEventListener('click', () => toast.remove());
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4500);
+      });
+
+      function updateActiveNavLinks(targetPage) {
+        document.querySelectorAll('.spa-link').forEach(link => {
+          link.classList.toggle('active', link.dataset.page === targetPage);
+        });
+      }
+
+      async function loadExternalScriptOnce(src) {
+        if (document.querySelector(`script[src="${src}"]`)) return;
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.onload = resolve;
+          s.onerror = reject;
+          document.body.appendChild(s);
+        });
+      }
+
+      async function executePageScripts(doc, isGradingPage) {
+        // Bersihkan script halaman sebelumnya (kecuali grading & global)
+        document.querySelectorAll('script[data-spa-dynamic-script="true"]').forEach(el => el.remove());
+
+        const scripts = Array.from(doc.querySelectorAll('script'));
+        for (const oldScript of scripts) {
+          if (oldScript.dataset.spaGlobal === 'true') continue;
+          if (oldScript.src && oldScript.src.includes('dashboard.js')) continue;
+          if (oldScript.src && oldScript.src.includes('chart.umd.min.js')) continue;
+
+          if (oldScript.dataset.spaLib === 'swal' || (oldScript.src && oldScript.src.includes('sweetalert2'))) {
+            if (typeof window.Swal === 'undefined' && oldScript.src) {
+              await loadExternalScriptOnce(oldScript.src);
+            }
+            continue;
+          }
+
+          // Skip script grading jika sudah terinisialisasi
+          if (oldScript.dataset.spaGradingScript === 'true' && window.__gradingModuleInitialized) {
+            continue;
+          }
+
+          if (oldScript.type === 'application/json') {
+            // JSON data tag sudah ikut di innerHTML spaPageHost atau cukup di-skip jika di luar
+            continue;
+          }
+
+          if (!oldScript.src && oldScript.textContent.trim()) {
+            const newScript = document.createElement('script');
+            if (!isGradingPage) {
+              newScript.dataset.spaDynamicScript = 'true';
+            }
+            // Jalankan dalam IIFE jika bukan halaman grading agar tidak bentrok const/let antar navigasi
+            // tetapi tetap mempertahankan deklarasi function global yang dipanggil oleh atribut onclick
+            newScript.textContent = oldScript.textContent;
+            document.body.appendChild(newScript);
+          }
+        }
+      }
+
+      // 3. Intercept Navigasi Sidebar dan Mobile Tab
+      async function navigateTo(url, targetPage, pushHistory = true) {
+        if (targetPage === currentPageName && pushHistory) return;
+
+        const reqId = ++navigationRequestId;
+        updateActiveNavLinks(targetPage);
+
+        const gradingHost = document.getElementById('persistentGradingHost');
+        const spaHost = document.getElementById('spaPageHost');
+        const styleHost = document.getElementById('spaPageStyles');
+        if (!gradingHost || !spaHost) {
+          window.location.href = url;
+          return;
+        }
+
+        if (pushHistory) {
+          history.pushState({ page: targetPage }, '', url);
+        }
+        currentPageName = targetPage;
+
+        // KASUS 1: Kembali ke halaman Proses Grading yang sudah ada (1 instance DOM tunggal)
+        if (targetPage === 'proses' && gradingHost.dataset.initialized === 'true') {
+          spaHost.style.display = 'none';
+          gradingHost.style.display = 'block';
+          return;
+        }
+
+        // KASUS 2: Muat halaman tujuan via fetch (untuk /proses pertama kali, atau /, /riwayat, /laporan)
+        try {
+          const resp = await fetch(url, { cache: 'no-store' });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const text = await resp.text();
+          if (reqId !== navigationRequestId) return; // Abaikan jika sudah ada klik navigasi baru
+
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(text, 'text/html');
+
+          if (targetPage === 'proses') {
+            const fetchedGrading = doc.getElementById('persistentGradingHost');
+            if (!fetchedGrading) throw new Error('Kontainer grading tidak ditemukan');
+
+            spaHost.style.display = 'none';
+            gradingHost.innerHTML = fetchedGrading.innerHTML;
+            gradingHost.dataset.initialized = 'true';
+            gradingHost.style.display = 'block';
+
+            await executePageScripts(doc, true);
+            return;
+          }
+
+          // Halaman non-grading (Dashboard, Riwayat, Laporan)
+          gradingHost.style.display = 'none';
+
+          // Muat <style> khusus halaman (misal riwayat.html / laporan.html)
+          if (styleHost) {
+            styleHost.innerHTML = '';
+            doc.head.querySelectorAll('style').forEach(st => {
+              styleHost.appendChild(st.cloneNode(true));
+            });
+          }
+
+          const fetchedPage = doc.getElementById('spaPageHost');
+          spaHost.innerHTML = fetchedPage ? fetchedPage.innerHTML : '';
+          spaHost.style.display = 'block';
+
+          await executePageScripts(doc, false);
+
+          if (targetPage === 'dashboard') {
+            if (typeof initLiveClock === 'function') initLiveClock();
+            if (typeof initTrendChart === 'function') initTrendChart();
+            if (typeof initDonutChart === 'function') initDonutChart();
+            if (typeof initModalHandling === 'function') initModalHandling();
+          }
+        } catch (e) {
+          console.warn('Gagal SPA navigation, fallback ke reload halaman:', e);
+          window.location.href = url;
+        }
+      }
+
+      document.addEventListener('click', (e) => {
+        const link = e.target.closest('.spa-link');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        const page = link.dataset.page;
+        if (href && page) {
+          e.preventDefault();
+          navigateTo(href, page, true);
+        }
+      });
+
+      window.addEventListener('popstate', () => {
+        const path = window.location.pathname;
+        let p = 'dashboard';
+        if (path.includes('proses')) p = 'proses';
+        else if (path.includes('riwayat')) p = 'riwayat';
+        else if (path.includes('laporan')) p = 'laporan';
+        navigateTo(window.location.href, p, false);
+      });
     })();
   </script>
 </body>

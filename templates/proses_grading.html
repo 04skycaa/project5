@@ -59,47 +59,87 @@
 <section class="top-header">
   <div class="header-greeting">
     <h1>Proses Grading</h1>
-    <p>Pantau kamera real-time dan rekomendasi penanganan jamur.</p>
+    <p>Pantau kamera real-time, kontrol sesi inspeksi, dan rekomendasi penanganan jamur.</p>
   </div>
   <div class="header-actions">
+    <!-- Status Sesi Header -->
+    <div id="sessionHeaderBadge" class="status-badge-online"
+      style="background: rgba(100, 116, 139, 0.12); color: #475569; border-color: rgba(100, 116, 139, 0.25);">
+      <span class="pulse-dot" style="background:#94A3B8;"></span>
+      <span id="sessionHeaderText">Tidak Ada Sesi Aktif</span>
+    </div>
     <div class="date-badge" id="liveDateBadge">–</div>
   </div>
 </section>
 
 <!-- Kamera dan hasil deteksi -->
-<section class="proses-mid-grid" id="gradingPage"
-         data-recommendations="{{ recommendation_texts|tojson|forceescape }}">
-  <!-- Live Camera -->
+<section class="proses-mid-grid" id="gradingPage" data-recommendations="{{ recommendation_texts|tojson|forceescape }}">
+  <!-- Live Camera & Session Card -->
   <div class="glass-card-subtle live-camera-card">
-    <div class="card-title-row camera-title-row">
-      <h3>Live Camera</h3>
-      <span class="live-badge" id="cameraStatusBadge"><span class="pulse-dot"></span> LIVE</span>
+    <div class="card-title-row camera-title-row" style="flex-wrap: wrap; gap: 8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <h3>Live Camera</h3>
+        <span class="live-badge" id="cameraStatusBadge"
+          style="background: rgba(148, 163, 184, 0.2); color: #475569;"><span class="pulse-dot"
+            style="background:#94A3B8;"></span> KAMERA SIAGA</span>
+      </div>
+      <!-- Tombol Start & End Sesi (Terpisah dari Kamera) -->
+      <div style="display: flex; gap: 6px; align-items: center; margin-left: auto;">
+        <button class="btn-camera-toggle" id="btnStartSession" type="button" disabled
+          title="Buka dan pastikan kamera siap terlebih dahulu"
+          style="background: rgba(45, 106, 79, 0.14); border-color: rgba(45, 106, 79, 0.35); color: #1B4332; font-weight:700; opacity: 0.5; cursor: not-allowed;">
+          ▶ Mulai Sesi
+        </button>
+        <button class="btn-camera-toggle" id="btnEndSession" type="button"
+          style="background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.35); color: #DC2626; font-weight:700; display:none;">
+          ⏹ Akhiri Sesi
+        </button>
+      </div>
     </div>
 
-    <div class="camera-actions">
+    <!-- Tombol Aksi Kamera & Input -->
+    <div class="camera-actions" style="margin-top: 8px;">
       <button class="btn-camera-toggle" id="btnAnalyzeCamera" type="button" title="Jepret dan klasifikasikan gambar">📸
         Jepret &amp; Klasifikasi</button>
-
 
       <button class="btn-camera-toggle" id="btnUploadImage" type="button" title="Upload gambar dari perangkat">📁 Upload
         Gambar</button>
       <input type="file" id="uploadImageInput" accept="image/*" hidden>
 
-      <button class="btn-camera-toggle" id="btnToggleCamera" title="Mulai / Berhenti Kamera Real-time" type="button">
+      <button class="btn-camera-toggle" id="btnToggleCamera" title="Buka / Tutup Kamera" type="button">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
           <circle cx="12" cy="13" r="4" />
         </svg>
         <span id="btnToggleText">Buka Kamera</span>
       </button>
+
+      <button class="btn-camera-toggle" id="btnToggleAutoCapture" type="button" title="Aktifkan / Hentikan Auto-Capture"
+        style="margin-left:auto;">
+        ⚡ Auto-Capture: <span id="autoCaptureToggleText">Off</span>
+      </button>
+    </div>
+
+    <!-- Auto-Capture Status Bar -->
+    <div id="autoCaptureBar"
+      style="display:none; align-items:center; gap:10px; margin: 6px 0 0 0; padding: 7px 14px; background: rgba(74,222,128,0.10); border: 1.5px solid rgba(74,222,128,0.35); border-radius: 10px; font-size: 12px; color: #166534;">
+      <span style="display:flex;align-items:center;gap:5px;">
+        <span id="autoCaptureIndicator"
+          style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#4ADE80;animation:pulseGreen 1.2s infinite;"></span>
+        <strong>Auto-Capture Aktif</strong>
+      </span>
+      <span id="autoCaptureStatusMsg" style="color:#374151;">— Mendeteksi objek jamur...</span>
+      <span id="autoCaptureCountdown" style="margin-left:auto; font-weight:700; color:#2D6A4F; font-size:13px;"></span>
+      <button type="button" onclick="stopAutoCapture()"
+        style="border:none;background:rgba(239,68,68,0.12);color:#DC2626;font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;cursor:pointer;">Stop</button>
     </div>
 
     <p id="liveObjDetectionStatus" class="detection-status" role="status" aria-live="polite">
-      Menunggu gambar (jepret atau upload)
+      Sesi belum dimulai. Klik "Mulai Sesi" untuk memulai inspeksi.
     </p>
 
     <div class="camera-stream-wrapper">
-      <div class="camera-stream-viewport" id="cameraStreamViewport" title="Klik untuk memulai grading">
+      <div class="camera-stream-viewport" id="cameraStreamViewport" title="Klik untuk mengontrol kamera">
         <!-- Live Real-time Video Stream from User's Webcam -->
         <video id="webcamRealtimeVideo" autoplay playsinline muted
           style="display:none; width: 100%; height: 100%; object-fit: contain;"></video>
@@ -112,14 +152,15 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
-            <span>Klik untuk memulai grading</span>
+            <span>Klik untuk Buka Kamera</span>
           </div>
         </div>
 
         <div class="camera-hud-overlay">
           <div class="camera-hud-top">
-            <span class="hud-tag" id="hudCameraTag">CAM 01 • WEBCAM LIVE</span>
-            <span class="hud-tag rec"><span class="rec-dot"></span> <span id="hudRecTag">REC 30 FPS</span></span>
+            <span class="hud-tag" id="hudCameraTag">CAM 01 • WEBCAM SIAGA</span>
+            <span class="hud-tag rec" id="hudRecBox"><span class="rec-dot"></span> <span
+                id="hudRecTag">STANDBY</span></span>
           </div>
 
           <div class="camera-hud-bottom">
@@ -128,19 +169,14 @@
           </div>
         </div>
       </div>
-
     </div>
 
     <div class="camera-device-control">
       <label for="webcamDeviceSelect">Perangkat Kamera</label>
-
       <select id="webcamDeviceSelect">
         <option value="">Memuat kamera...</option>
       </select>
-
-      <button type="button" id="btnRefreshCamera">
-        Refresh
-      </button>
+      <button type="button" id="btnRefreshCamera">Refresh</button>
     </div>
   </div>
 
@@ -177,7 +213,7 @@
           <div class="diagnosis-copy">
             <span class="diagnosis-kicker">JENIS JAMUR / PENYAKIT</span>
             <strong id="diagnosisName">Belum ada hasil</strong>
-            <span class="diagnosis-status" id="diagnosisStatus">Upload gambar untuk memulai analisis</span>
+            <span class="diagnosis-status" id="diagnosisStatus">Upload atau jepret gambar untuk menganalisis</span>
             <span class="diagnosis-disclaimer">Hasil klasifikasi model AI</span>
           </div>
         </div>
@@ -218,251 +254,530 @@
           </span>
           <span class="sort-result-copy">
             <span>Tujuan sortir</span>
-            <strong id="servoTarget">Tidak dikirim oleh API</strong>
+            <strong id="servoTarget">Belum ada data</strong>
           </span>
         </div>
       </div>
     </div>
   </div>
 </section>
-
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-  // ========================================================
-  // KONFIGURASI
-  // ========================================================
-  const PREDICT_URL = '/api/camera/predict';
-  const MAX_UPLOAD_MB = 10;
-  const BTN_ANALYZE_LABEL = '📸 Jepret & Klasifikasi';
-  const RECOMMENDATIONS = JSON.parse(document.getElementById('gradingPage').dataset.recommendations);
-  let latestResultImageUrl = null;
-  let currentSessionInfo = null;
-  let predictionRequestId = 0;
-  let predictionController = null;
-  const initialResultImage = document.getElementById('latestResultImagePreview');
-  const initialEmptyPreview = document.getElementById('latestResultImageEmpty');
-
-  initialResultImage.addEventListener('error', () => {
-    initialResultImage.hidden = true;
-    initialEmptyPreview.hidden = false;
-  });
-
-  function showImagePreview(imageBlob) {
-    const imagePreview = document.getElementById('latestResultImagePreview');
-    const emptyPreview = document.getElementById('latestResultImageEmpty');
-    if (latestResultImageUrl) URL.revokeObjectURL(latestResultImageUrl);
-    latestResultImageUrl = URL.createObjectURL(imageBlob);
-    imagePreview.src = latestResultImageUrl;
-    imagePreview.alt = 'Gambar yang diunggah';
-    imagePreview.hidden = false;
-    emptyPreview.hidden = true;
-  }
-
-  function showApiDisconnectedAlert() {
-    if (window.Swal?.fire) {
-      window.Swal.fire({
-        icon: 'error',
-        title: 'API tidak terhubung',
-        text: 'Tidak dapat menghubungi API prediksi. Pastikan server API berjalan, lalu coba lagi.',
-        confirmButtonText: 'Mengerti',
-        showClass: { popup: 'swal2-show' },
-        hideClass: { popup: 'swal2-hide' }
-      });
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" data-spa-lib="swal"></script>
+<script data-spa-grading-script="true">
+  (function () {
+    if (window.__gradingModuleInitialized) {
+      console.warn('[GRADING] Instance sudah terinisialisasi, melewati inisialisasi ulang.');
       return;
     }
+    window.__gradingModuleInitialized = true;
 
-    alert('API tidak terhubung. Pastikan server API berjalan, lalu coba lagi.');
-  }
+    // ========================================================
+    // KONFIGURASI DAN STATE
+    // ========================================================
+    const PREDICT_URL = '/api/camera/predict';
+    const MAX_UPLOAD_MB = 10;
+    const BTN_ANALYZE_LABEL = '📸 Jepret & Klasifikasi';
+    const gradingPageEl = document.getElementById('gradingPage');
+    if (!gradingPageEl) return;
+    const RECOMMENDATIONS = JSON.parse(gradingPageEl.dataset.recommendations || '{}');
 
-  // ========================================================
-  // LIVE CLOCK
-  // ========================================================
-  function updateClock() {
-    const now = new Date();
-    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-    const el = document.getElementById('liveDateBadge');
-    if (el) {
-      el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
+    let latestResultImageUrl = null;
+
+    // State Sesi: 'idle' | 'pending' | 'active'
+    let sessionState = 'idle';
+    let pendingSessionToken = null;
+    let activeSessionData = null; // { id, nomor_sesi, tanggal, ... }
+    let sessionEnding = false;
+
+    let liveWebcamStream = null;
+    let cameraStarting = false;
+    let cameraRequestId = 0;
+
+    let inFlightPredictionCount = 0;
+    let activePredictionControllers = new Set();
+
+    const initialResultImage = document.getElementById('latestResultImagePreview');
+    const initialEmptyPreview = document.getElementById('latestResultImageEmpty');
+
+    initialResultImage?.addEventListener('error', () => {
+      initialResultImage.hidden = true;
+      if (initialEmptyPreview) initialEmptyPreview.hidden = false;
+    });
+
+    function showImagePreview(imageBlob) {
+      const imagePreview = document.getElementById('latestResultImagePreview');
+      const emptyPreview = document.getElementById('latestResultImageEmpty');
+      if (latestResultImageUrl) URL.revokeObjectURL(latestResultImageUrl);
+      latestResultImageUrl = URL.createObjectURL(imageBlob);
+      if (imagePreview) {
+        imagePreview.src = latestResultImageUrl;
+        imagePreview.alt = 'Gambar yang diunggah';
+        imagePreview.hidden = false;
+      }
+      if (emptyPreview) emptyPreview.hidden = true;
     }
-    const resultDate = document.getElementById('resultDate');
-    if (resultDate) {
-      resultDate.textContent = now.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'Asia/Jakarta'
-      });
+
+    // ========================================================
+    // LIVE CLOCK
+    // ========================================================
+    function updateClock() {
+      const now = new Date();
+      const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+      const el = document.getElementById('liveDateBadge');
+      if (el) {
+        el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
+      }
+      const resultDate = document.getElementById('resultDate');
+      if (resultDate) {
+        resultDate.textContent = now.toLocaleDateString('id-ID', {
+          day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta'
+        });
+      }
     }
-  }
-  updateClock();
-  setInterval(updateClock, 1000);
+    updateClock();
+    setInterval(updateClock, 1000);
 
-  let liveWebcamStream = null;
-  let cameraStarting = false;
-  let cameraRequestId = 0;
+    // ========================================================
+    // VALIDASI AKTUAL KESIAPAN KAMERA (MediaStream + Video)
+    // ========================================================
+    function isCameraReady() {
+      if (!liveWebcamStream) return false;
+      const tracks = liveWebcamStream.getVideoTracks();
+      if (!tracks || tracks.length === 0) return false;
+      const track = tracks[0];
+      if (track.readyState !== 'live' || !track.enabled) return false;
 
-  // ==========================================
-  // DETEKSI PERANGKAT KAMERA
-  // ==========================================
-  async function loadCameraDevices() {
-    const select = document.getElementById('webcamDeviceSelect');
-
-    if (!select) return;
-
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-
-      const cameras = devices.filter(
-        device => device.kind === 'videoinput'
-      );
-
-      const previousValue = select.value;
-
-      select.innerHTML = '';
-
-      if (!cameras.length) {
-        select.add(new Option('Kamera tidak ditemukan', ''));
-        return;
-      }
-
-      cameras.forEach((camera, index) => {
-        const name = camera.label || `Kamera ${index + 1}`;
-        select.add(new Option(name, camera.deviceId));
-      });
-
-      // Pertahankan pilihan jika perangkat masih tersedia
-      if (cameras.some(c => c.deviceId === previousValue)) {
-        select.value = previousValue;
-      }
-
-      console.table(cameras.map(camera => ({
-        nama: camera.label,
-        deviceId: camera.deviceId
-      })));
-
-    } catch (error) {
-      console.error('Gagal membaca perangkat kamera:', error);
-      select.innerHTML = '<option value="">Gagal membaca kamera</option>';
+      const video = document.getElementById('webcamRealtimeVideo');
+      if (!video) return false;
+      if (video.paused || video.ended) return false;
+      if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return false;
+      if (!video.videoWidth || !video.videoHeight) return false;
+      return true;
     }
-  }
 
-  // ==========================================
-  // MEMULAI KAMERA
-  // ==========================================
-  async function startRealtimeCamera() {
-    if (cameraStarting || liveWebcamStream) return;
+    function getCameraNotReadyReason() {
+      if (cameraStarting) return 'Kamera masih dalam proses menghubungkan. Tunggu hingga video aktif.';
+      if (!liveWebcamStream) return 'Kamera belum dibuka. Silakan klik "Buka Kamera" terlebih dahulu.';
+      const tracks = liveWebcamStream.getVideoTracks();
+      if (!tracks || tracks.length === 0 || tracks[0].readyState !== 'live') {
+        return 'Koneksi kamera terputus atau tidak aktif. Silakan buka ulang kamera.';
+      }
+      const video = document.getElementById('webcamRealtimeVideo');
+      if (!video || video.paused || video.ended || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth || !video.videoHeight) {
+        return 'Video kamera belum menerima frame atau dimensinya belum valid.';
+      }
+      return 'Kamera belum siap digunakan.';
+    }
 
-    const select = document.getElementById('webcamDeviceSelect');
-    const selectedDeviceId = select?.value;
+    function syncSessionButtons() {
+      const btnStart = document.getElementById('btnStartSession');
+      const btnEnd = document.getElementById('btnEndSession');
+      const camReady = isCameraReady();
 
-    cameraStarting = true;
-    const requestId = ++cameraRequestId;
+      if (sessionState === 'idle') {
+        if (btnStart) {
+          btnStart.style.display = 'inline-flex';
+          btnStart.disabled = !camReady;
+          btnStart.style.opacity = camReady ? '1' : '0.5';
+          btnStart.style.cursor = camReady ? 'pointer' : 'not-allowed';
+          btnStart.title = camReady
+            ? 'Mulai sesi inspeksi baru'
+            : getCameraNotReadyReason();
+        }
+        if (btnEnd) btnEnd.style.display = 'none';
+      } else {
+        if (btnStart) btnStart.style.display = 'none';
+        if (btnEnd) btnEnd.style.display = 'inline-flex';
+      }
+    }
 
-    const video = document.getElementById('webcamRealtimeVideo');
-    const placeholder = document.getElementById('cameraFeedPlaceholder');
-    const overlay = document.getElementById('cameraStartOverlay');
-    const btnToggle = document.getElementById('btnToggleCamera');
-    const btnText = document.getElementById('btnToggleText');
-    const statusBadge = document.getElementById('cameraStatusBadge');
-    const hudCamTag = document.getElementById('hudCameraTag');
-    const hudResTag = document.getElementById('hudResolutionTag');
-    const detStatus = document.getElementById('liveObjDetectionStatus');
+    // ========================================================
+    // SINKRONISASI STATUS SESI (IDLE / PENDING / ACTIVE)
+    // ========================================================
+    function updateSessionUI() {
+      const headerBadge = document.getElementById('sessionHeaderBadge');
+      const headerText = document.getElementById('sessionHeaderText');
+      const detStatus = document.getElementById('liveObjDetectionStatus');
+      const camReady = isCameraReady();
 
-    let newStream = null;
-
-    if (btnText) btnText.textContent = 'Menghubungkan...';
-    if (statusBadge) statusBadge.textContent = 'MENGHUBUNGKAN';
-    try {
-      newStream = await navigator.mediaDevices.getUserMedia({
-        video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
-        audio: false
-      });
-
-      if (requestId !== cameraRequestId) {
-        newStream.getTracks().forEach(track => track.stop());
-        return;
+      if (sessionState === 'active' && activeSessionData && activeSessionData.id) {
+        if (headerBadge) {
+          headerBadge.style.background = 'rgba(45, 106, 79, 0.12)';
+          headerBadge.style.color = '#1B4332';
+          headerBadge.style.borderColor = 'rgba(45, 106, 79, 0.3)';
+        }
+        if (headerText) headerText.textContent = `Sesi #${activeSessionData.nomor_sesi} Aktif`;
+        if (detStatus && !camReady) {
+          detStatus.textContent = `Sesi #${activeSessionData.nomor_sesi} aktif. Buka kamera atau upload gambar untuk melanjutkan.`;
+        }
+      } else if (sessionState === 'pending') {
+        if (headerBadge) {
+          headerBadge.style.background = 'rgba(245, 158, 11, 0.14)';
+          headerBadge.style.color = '#B45309';
+          headerBadge.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+        }
+        if (headerText) headerText.textContent = 'Sesi Siap (Menunggu Inspeksi Pertama)';
+        if (detStatus && camReady) {
+          detStatus.textContent = 'Sesi siap. Lakukan jepret/upload/auto-capture pertama untuk mencatat sesi ke database.';
+        }
+      } else {
+        if (headerBadge) {
+          headerBadge.style.background = 'rgba(100, 116, 139, 0.12)';
+          headerBadge.style.color = '#475569';
+          headerBadge.style.borderColor = 'rgba(100, 116, 139, 0.25)';
+        }
+        if (headerText) headerText.textContent = 'Tidak Ada Sesi Aktif';
+        if (detStatus && !camReady) {
+          detStatus.textContent = 'Buka kamera terlebih dahulu, lalu klik "Mulai Sesi" untuk memulai inspeksi.';
+        }
       }
 
-      liveWebcamStream = newStream;
-      video.srcObject = newStream;
+      syncSessionButtons();
 
-      await video.play();
+      // Siarkan state sesi ke komponen global (sidebar indicator di halaman lain)
+      window.dispatchEvent(new CustomEvent('gradingSessionChange', {
+        detail: {
+          sessionState: sessionState,
+          session: activeSessionData,
+          cameraActive: camReady
+        }
+      }));
+    }
 
-      if (requestId !== cameraRequestId) {
-        newStream.getTracks().forEach(track => track.stop());
-        return;
-      }
-
-      video.style.display = 'block';
-
-      if (placeholder) placeholder.style.display = 'none';
-      document.getElementById('cameraStreamViewport')?.classList.add('camera-active');
-      if (overlay) overlay.classList.add('hidden');
-
-      if (btnToggle) btnToggle.classList.add('active');
-      if (btnText) btnText.textContent = 'Hentikan';
-
-      if (statusBadge) {
-        statusBadge.innerHTML =
-          '<span class="pulse-dot"></span> LIVE REALTIME';
-      }
-
-      const track = newStream.getVideoTracks()[0];
-      const settings = track.getSettings();
-
-      await loadCameraDevices();
-      if (requestId !== cameraRequestId) return;
-
-      if (select && settings.deviceId) {
-        select.value = settings.deviceId;
-      }
-
-      if (hudCamTag) {
-        hudCamTag.textContent = track.label || 'KAMERA';
-      }
-
-      if (hudResTag) {
-        hudResTag.textContent =
-          `${settings.width || video.videoWidth}×${settings.height || video.videoHeight}`;
-      }
-
-      if (detStatus) {
-        detStatus.textContent =
-          `Kamera aktif: ${track.label || 'kamera default'}. Menghubungkan sesi...`;
-      }
-
-      // Otomatis mulai sesi baru di database saat kamera dinyalakan
+    async function checkActiveSession() {
       try {
-        const res = await fetch('/api/session/start', { method: 'POST' });
-        const sessData = await res.json();
-        if (sessData.success && sessData.session) {
-          currentSessionInfo = sessData.session;
-          console.log(`[SESI] Sesi #${sessData.session.nomor_sesi} aktif.`);
-          if (detStatus) {
-            detStatus.textContent = `Kamera aktif (Sesi #${sessData.session.nomor_sesi}). Siap untuk klasifikasi.`;
-          }
+        const res = await fetch('/api/session/active');
+        const data = await res.json();
+        if (data.active && data.session) {
+          sessionState = 'active';
+          activeSessionData = data.session;
+          pendingSessionToken = null;
+        } else {
+          sessionState = 'idle';
+          activeSessionData = null;
+          pendingSessionToken = null;
         }
       } catch (e) {
-        console.warn('Gagal memulai sesi alat otomatis:', e);
+        console.warn('Gagal cek sesi aktif:', e);
+      } finally {
+        updateSessionUI();
+      }
+    }
+
+    function handleStartSession() {
+      if (sessionState !== 'idle') return;
+
+      // Validasi ketat kondisi aktual kamera & video
+      if (!isCameraReady()) {
+        const reason = getCameraNotReadyReason();
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Kamera Belum Siap',
+            text: reason,
+            confirmButtonColor: '#2D6A4F'
+          });
+        } else {
+          alert(reason);
+        }
+        syncSessionButtons();
+        return;
       }
 
-      // Otomatis aktifkan auto-capture setelah kamera berhasil dibuka
-      startAutoCapture();
+      // Siapkan PENDING SESSION di frontend (TIDAK membuat row di database dulu)
+      sessionState = 'pending';
+      activeSessionData = null;
+      pendingSessionToken = (crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'pend-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
 
-    } catch (error) {
-      console.error('Gagal membuka webcam:', error);
+      updateSessionUI();
+    }
 
-      if (newStream) {
-        newStream.getTracks().forEach(track => track.stop());
+    async function handleEndSession() {
+      if (sessionEnding || sessionState === 'idle') return;
+
+      if (inFlightPredictionCount > 0) {
+        const confirmEnd = confirm(`Masih ada ${inFlightPredictionCount} prediksi yang sedang berjalan. Yakin ingin mengakhiri sesi sekarang?`);
+        if (!confirmEnd) return;
+        activePredictionControllers.forEach(ctrl => ctrl.abort());
+        activePredictionControllers.clear();
+        inFlightPredictionCount = 0;
       }
 
-      if (requestId !== cameraRequestId) return;
+      // Jika masih PENDING (belum ada inspeksi valid sama sekali), cukup reset frontend tanpa menulis ke DB!
+      if (sessionState === 'pending') {
+        sessionState = 'idle';
+        pendingSessionToken = null;
+        activeSessionData = null;
+        if (autoCaptureActive) stopAutoCapture();
+        updateSessionUI();
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Sesi Dibatalkan',
+            text: 'Sesi diakhiri tanpa inspeksi valid, sehingga tidak ada catatan sesi yang disimpan ke database.',
+            confirmButtonColor: '#2D6A4F'
+          });
+        }
+        return;
+      }
 
-      liveWebcamStream = null;
+      // Jika sudah ACTIVE di database, tutup sesi di Supabase
+      sessionEnding = true;
+      const btnEnd = document.getElementById('btnEndSession');
+      if (btnEnd) {
+        btnEnd.disabled = true;
+        btnEnd.textContent = 'Mengakhiri...';
+      }
+
+      try {
+        const payload = activeSessionData ? { sesi_id: activeSessionData.id } : {};
+        const res = await fetch('/api/session/stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          sessionState = 'idle';
+          activeSessionData = null;
+          pendingSessionToken = null;
+          if (autoCaptureActive) stopAutoCapture();
+          updateSessionUI();
+          if (window.Swal) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Sesi Selesai',
+              text: 'Sesi inspeksi telah berhasil diakhiri.',
+              confirmButtonColor: '#2D6A4F'
+            });
+          }
+        } else {
+          throw new Error(data.message || 'Gagal mengakhiri sesi.');
+        }
+      } catch (err) {
+        console.error('Stop sesi gagal:', err);
+        if (window.Swal) {
+          Swal.fire({ icon: 'error', title: 'Gagal Mengakhiri Sesi', text: err.message });
+        } else {
+          alert('Gagal mengakhiri sesi: ' + err.message);
+        }
+      } finally {
+        sessionEnding = false;
+        if (btnEnd) {
+          btnEnd.disabled = false;
+          btnEnd.textContent = '⏹ Akhiri Sesi';
+        }
+      }
+    }
+
+    document.getElementById('btnStartSession')?.addEventListener('click', handleStartSession);
+    document.getElementById('btnEndSession')?.addEventListener('click', handleEndSession);
+
+    // ========================================================
+    // DETEKSI PERANGKAT KAMERA
+    // ========================================================
+    async function loadCameraDevices() {
+      const select = document.getElementById('webcamDeviceSelect');
+      if (!select) return;
+
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(d => d.kind === 'videoinput');
+        const previousValue = select.value;
+        select.innerHTML = '';
+
+        if (!cameras.length) {
+          select.add(new Option('Kamera tidak ditemukan', ''));
+          return;
+        }
+
+        cameras.forEach((camera, index) => {
+          select.add(new Option(camera.label || `Kamera ${index + 1}`, camera.deviceId));
+        });
+
+        if (cameras.some(c => c.deviceId === previousValue)) {
+          select.value = previousValue;
+        }
+      } catch (error) {
+        console.error('Gagal membaca perangkat kamera:', error);
+        select.innerHTML = '<option value="">Gagal membaca kamera</option>';
+      }
+    }
+
+    document.getElementById('webcamDeviceSelect')?.addEventListener('change', () => {
+      if (liveWebcamStream) {
+        stopRealtimeCamera(false);
+        startRealtimeCamera();
+      }
+    });
+
+    // ========================================================
+    // MEMULAI KAMERA (TERPISAH DARI SESI)
+    // ========================================================
+    function waitForVideoFrame(video, timeoutMs = 4000) {
+      return new Promise((resolve, reject) => {
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+          return resolve();
+        }
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            cleanup();
+            reject(new Error('Video tidak menerima frame dalam batas waktu yang ditentukan.'));
+          }
+        }, timeoutMs);
+
+        function check() {
+          if (settled) return;
+          if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+            settled = true;
+            clearTimeout(timer);
+            cleanup();
+            resolve();
+          }
+        }
+
+        function cleanup() {
+          video.removeEventListener('loadeddata', check);
+          video.removeEventListener('playing', check);
+          video.removeEventListener('resize', check);
+        }
+
+        video.addEventListener('loadeddata', check);
+        video.addEventListener('playing', check);
+        video.addEventListener('resize', check);
+      });
+    }
+
+    async function startRealtimeCamera() {
+      if (cameraStarting || liveWebcamStream) return;
+
+      const select = document.getElementById('webcamDeviceSelect');
+      const selectedDeviceId = select?.value;
+
+      cameraStarting = true;
+      const requestId = ++cameraRequestId;
+      syncSessionButtons();
+
+      const video = document.getElementById('webcamRealtimeVideo');
+      const placeholder = document.getElementById('cameraFeedPlaceholder');
+      const overlay = document.getElementById('cameraStartOverlay');
+      const btnToggle = document.getElementById('btnToggleCamera');
+      const btnText = document.getElementById('btnToggleText');
+      const statusBadge = document.getElementById('cameraStatusBadge');
+      const hudCamTag = document.getElementById('hudCameraTag');
+      const hudResTag = document.getElementById('hudResolutionTag');
+      const detStatus = document.getElementById('liveObjDetectionStatus');
+
+      if (btnText) btnText.textContent = 'Menghubungkan...';
+      if (statusBadge) statusBadge.textContent = 'MENGHUBUNGKAN';
+
+      let newStream = null;
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
+          audio: false
+        });
+
+        if (requestId !== cameraRequestId) {
+          newStream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        liveWebcamStream = newStream;
+        video.srcObject = newStream;
+        await video.play();
+        await waitForVideoFrame(video, 4000);
+
+        if (requestId !== cameraRequestId) {
+          newStream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        const videoTrack = newStream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.addEventListener('ended', () => {
+            console.warn('[KAMERA] Track video terputus.');
+            handleCameraDisconnected();
+          });
+          videoTrack.addEventListener('mute', () => {
+            console.warn('[KAMERA] Track video mute/stalled.');
+            syncSessionButtons();
+          });
+          videoTrack.addEventListener('unmute', () => {
+            syncSessionButtons();
+          });
+        }
+
+        video.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+        document.getElementById('cameraStreamViewport')?.classList.add('camera-active');
+        if (overlay) overlay.classList.add('hidden');
+
+        if (btnToggle) btnToggle.classList.add('active');
+        if (btnText) btnText.textContent = 'Hentikan Kamera';
+
+        if (statusBadge) {
+          statusBadge.style.background = 'rgba(74, 222, 128, 0.2)';
+          statusBadge.style.color = '#166534';
+          statusBadge.innerHTML = '<span class="pulse-dot"></span> LIVE REALTIME';
+        }
+
+        const settings = videoTrack ? videoTrack.getSettings() : {};
+        await loadCameraDevices();
+        if (requestId !== cameraRequestId) return;
+
+        if (select && settings.deviceId) select.value = settings.deviceId;
+        if (hudCamTag) hudCamTag.textContent = videoTrack?.label || 'KAMERA AKTIF';
+        if (hudResTag) hudResTag.textContent = `${video.videoWidth}×${video.videoHeight}`;
+
+        if (detStatus) {
+          if (sessionState === 'active' && activeSessionData) {
+            detStatus.textContent = `Kamera aktif (Sesi #${activeSessionData.nomor_sesi}). Siap untuk klasifikasi.`;
+          } else if (sessionState === 'pending') {
+            detStatus.textContent = 'Kamera tersambung kembali. Sesi siap menerima inspeksi.';
+          } else {
+            detStatus.textContent = 'Kamera siap. Klik "Mulai Sesi" untuk memulai sesi inspeksi.';
+          }
+        }
+
+        updateSessionUI();
+
+      } catch (error) {
+        console.error('Gagal membuka webcam:', error);
+        if (newStream) newStream.getTracks().forEach(t => t.stop());
+        if (requestId !== cameraRequestId) return;
+
+        handleCameraDisconnected(error);
+      } finally {
+        if (requestId === cameraRequestId) {
+          cameraStarting = false;
+          syncSessionButtons();
+        }
+      }
+    }
+
+    // ========================================================
+    // MENGHENTIKAN KAMERA (TIDAK MENGHENTIKAN SESI)
+    // ========================================================
+    function stopRealtimeCamera(updateUI = true) {
+      cameraRequestId++;
+      cameraStarting = false;
+
+      const video = document.getElementById('webcamRealtimeVideo');
+      const placeholder = document.getElementById('cameraFeedPlaceholder');
+      const overlay = document.getElementById('cameraStartOverlay');
+
+      if (liveWebcamStream) {
+        liveWebcamStream.getTracks().forEach(t => t.stop());
+        liveWebcamStream = null;
+      }
 
       if (video) {
         video.pause();
@@ -474,866 +789,509 @@
       document.getElementById('cameraStreamViewport')?.classList.remove('camera-active');
       if (overlay) overlay.classList.remove('hidden');
 
-      if (btnToggle) btnToggle.classList.remove('active');
-      if (btnText) btnText.textContent = 'Buka Kamera';
-
-      if (statusBadge) {
-        statusBadge.textContent = 'KAMERA TIDAK AKTIF';
+      if (updateUI) {
+        document.getElementById('btnToggleCamera')?.classList.remove('active');
+        const btnText = document.getElementById('btnToggleText');
+        if (btnText) btnText.textContent = 'Buka Kamera';
+        const badge = document.getElementById('cameraStatusBadge');
+        if (badge) {
+          badge.style.background = 'rgba(148, 163, 184, 0.2)';
+          badge.style.color = '#475569';
+          badge.innerHTML = '<span class="pulse-dot" style="background:#94A3B8;"></span> KAMERA SIAGA';
+        }
       }
 
-      const messages = {
-        AbortError: 'Webcam gagal memulai. Periksa driver dan koneksi USB.',
-        NotReadableError: 'Webcam sedang digunakan aplikasi lain.',
-        NotAllowedError: 'Izin kamera belum diberikan.',
-        NotFoundError: 'Perangkat kamera tidak ditemukan.',
-        OverconstrainedError: 'Perangkat tidak mendukung konfigurasi kamera.'
-      };
-
-      if (detStatus) {
-        detStatus.textContent =
-          messages[error.name] || error.message;
+      if (autoCaptureActive) {
+        pauseAutoCaptureDueToCamera();
       }
 
-    } finally {
-      if (requestId === cameraRequestId) {
-        cameraStarting = false;
-      }
+      updateSessionUI();
     }
-  }
 
-  // ==========================================
-  // MENGHENTIKAN KAMERA
-  // ==========================================
-  function stopRealtimeCamera() {
-    cameraRequestId++;
-    cameraStarting = false;
-
-    const video = document.getElementById('webcamRealtimeVideo');
-    const placeholder = document.getElementById('cameraFeedPlaceholder');
-    const overlay = document.getElementById('cameraStartOverlay');
-
-    if (liveWebcamStream) {
-      liveWebcamStream.getTracks().forEach(track => track.stop());
+    function handleCameraDisconnected(err = null) {
       liveWebcamStream = null;
+      stopRealtimeCamera(true);
+
+      const detStatus = document.getElementById('liveObjDetectionStatus');
+      const badge = document.getElementById('cameraStatusBadge');
+      if (badge) {
+        badge.style.background = 'rgba(239, 68, 68, 0.15)';
+        badge.style.color = '#DC2626';
+        badge.textContent = 'KAMERA TERPUTUS';
+      }
+
+      let msg = 'Kamera terputus. Sambungkan kembali kamera.';
+      if (err) {
+        const messages = {
+          NotAllowedError: 'Izin kamera ditolak. Berikan izin kamera di browser lalu coba lagi.',
+          NotFoundError: 'Perangkat kamera tidak ditemukan.',
+          NotReadableError: 'Kamera sedang digunakan aplikasi lain.',
+          OverconstrainedError: 'Konfigurasi kamera tidak didukung.'
+        };
+        msg = messages[err.name] || err.message || msg;
+      } else if (sessionState !== 'idle') {
+        msg = 'Kamera terputus. Sesi tetap dipertahankan, sambungkan kembali kamera.';
+      }
+
+      if (detStatus) detStatus.textContent = msg;
+      if (autoCaptureActive) pauseAutoCaptureDueToCamera();
+
+      window.dispatchEvent(new CustomEvent('gradingSessionChange', {
+        detail: {
+          sessionState: sessionState,
+          session: activeSessionData,
+          cameraActive: false,
+          error: sessionState !== 'idle' ? 'Kamera terputus' : null
+        }
+      }));
     }
 
-    if (video) {
-      video.pause();
-      video.srcObject = null;
-      video.style.display = 'none';
-    }
-
-    if (placeholder) placeholder.style.display = 'block';
-    document.getElementById('cameraStreamViewport')?.classList.remove('camera-active');
-    if (overlay) overlay.classList.remove('hidden');
-
-    document.getElementById('btnToggleCamera').classList.remove('active');
-    document.getElementById('btnToggleText').textContent = 'Buka Kamera';
-    document.getElementById('cameraStatusBadge').textContent = 'KAMERA SIAGA';
-
-    // Otomatis tutup sesi alat saat kamera dimatikan
-    try {
-      fetch('/api/session/stop', { method: 'POST' })
-        .then(res => res.json())
-        .then(sessData => {
-          console.log('[SESI] Sesi alat telah dihentikan:', sessData);
-          currentSessionInfo = null;
-        })
-        .catch(e => console.warn('Gagal menghentikan sesi:', e));
-    } catch (e) {
-      console.warn('Gagal request stop sesi:', e);
-    }
-
-    // Hentikan auto-capture ikut saat kamera dimatikan
-    if (typeof autoCaptureActive !== 'undefined' && autoCaptureActive) stopAutoCapture();
-  }
-
-  // ==========================================
-  // TOGGLE KAMERA
-  // ==========================================
-  function toggleRealtimeCamera() {
-    if (cameraStarting || liveWebcamStream) {
-      stopRealtimeCamera();
-    } else {
-      startRealtimeCamera();
-    }
-  }
-
-  // ==========================================
-  // EVENT LISTENER
-  // ==========================================
-  const btnToggleCamera = document.getElementById('btnToggleCamera');
-
-  if (btnToggleCamera) {
-    btnToggleCamera.addEventListener('click', event => {
-      event.stopPropagation();
-      toggleRealtimeCamera();
-    });
-  }
-
-  // Tutup sesi saat tab/halaman ditutup jika kamera masih aktif
-  window.addEventListener('beforeunload', () => {
-    if (liveWebcamStream) {
-      navigator.sendBeacon('/api/session/stop');
-    }
-  });
-
-  const cameraViewport = document.getElementById('cameraStreamViewport');
-
-  if (cameraViewport) {
-    cameraViewport.addEventListener('click', () => {
-      if (!liveWebcamStream && !cameraStarting) {
+    function toggleRealtimeCamera() {
+      if (cameraStarting || liveWebcamStream) {
+        stopRealtimeCamera(true);
+      } else {
         startRealtimeCamera();
       }
+    }
+
+    document.getElementById('btnToggleCamera')?.addEventListener('click', toggleRealtimeCamera);
+    document.getElementById('cameraStreamViewport')?.addEventListener('click', () => {
+      if (!liveWebcamStream && !cameraStarting) startRealtimeCamera();
     });
-  }
+    document.getElementById('btnRefreshCamera')?.addEventListener('click', loadCameraDevices);
+    navigator.mediaDevices?.addEventListener?.('devicechange', loadCameraDevices);
 
-  const btnRefreshCamera = document.getElementById('btnRefreshCamera');
-
-  if (btnRefreshCamera) {
-    btnRefreshCamera.addEventListener('click', loadCameraDevices);
-  }
-
-  // Deteksi ulang jika perangkat USB dilepas atau dipasang
-  navigator.mediaDevices?.addEventListener?.(
-    'devicechange',
-    loadCameraDevices
-  );
-
-  // Jalankan setelah halaman siap
-  loadCameraDevices();
-
-
-  // ========================================================
-  // KIRIM GAMBAR KE MODEL (dipakai jepret & upload)
-  // ========================================================
-  async function sendImageToModel(blob, filename) {
-    const btnAnalyze = document.getElementById('btnAnalyzeCamera');
-    const detStatus = document.getElementById('liveObjDetectionStatus');
-    const requestId = ++predictionRequestId;
-    if (predictionController) predictionController.abort();
-    const controller = new AbortController();
-    predictionController = controller;
-
-    btnAnalyze.disabled = true;
-    btnAnalyze.textContent = 'Mengirim...';
-    if (detStatus) detStatus.textContent = 'Mengirim gambar ke model...';
-
-    try {
-      showImagePreview(blob);
-      resetModelResult();
-
-      const formData = new FormData();
-      formData.append('image', blob, filename);
-
-      let response;
-      try {
-        response = await fetch(PREDICT_URL, {
-          method: 'POST',
-          body: formData,
-          signal: controller.signal
-        });
-      } catch (error) {
-        if (error.name === 'AbortError') return;
-        showApiDisconnectedAlert();
-        throw new Error('API tidak terhubung. Pastikan server API berjalan.');
-      }
-
-      let payload;
-      try {
-        payload = await response.json();
-      } catch {
-        throw new Error('Respons API bukan JSON yang valid.');
-      }
-
-      if (requestId !== predictionRequestId) return;
-
-      if ([502, 503, 504].includes(response.status)) {
-        showApiDisconnectedAlert();
-        throw new Error('API tidak terhubung atau sedang tidak tersedia.');
-      }
-
-      if (!response.ok) {
-        const apiDetail = payload.detail?.message || payload.message || payload.error;
-        throw new Error(apiDetail || `API gagal (${response.status}).`);
-      }
-
-      if (
-        !payload ||
-        typeof payload !== 'object' ||
-        payload.status !== 'success' ||
-        typeof payload.prediction !== 'string' ||
-        !Number.isFinite(payload.confidence) ||
-        payload.confidence < 0 ||
-        payload.confidence > 1 ||
-        !payload.probabilities ||
-        typeof payload.probabilities !== 'object' ||
-        Array.isArray(payload.probabilities) ||
-        Object.keys(payload.probabilities).length === 0 ||
-        !Object.hasOwn(payload.probabilities, payload.prediction) ||
-        !Object.values(payload.probabilities).every(
-          probability => Number.isFinite(probability) && probability >= 0 && probability <= 1
-        )
-      ) {
-        throw new Error('Format hasil API tidak sesuai: dibutuhkan prediction, confidence, dan probabilities.');
-      }
-
-      if (requestId !== predictionRequestId) return;
-      renderCameraResult(payload);
-      if (detStatus && requestId === predictionRequestId) {
-        detStatus.textContent = 'Analisis selesai. Rekomendasi telah diperbarui.';
-      }
-
-      // Alert animasi keren gaya iPhone Dynamic Island dari atas saat model berhasil memproses
-      const shortId = (payload.saved_record && payload.saved_record.id) ? payload.saved_record.id.substring(0, 8) : null;
-      const grade = payload.grade || 'Sehat';
-      const conf = payload.confidence !== undefined
-        ? (payload.confidence <= 1 ? (payload.confidence * 100).toFixed(1) : payload.confidence.toFixed(1))
-        : '-';
-      const sessionNum = payload.sesi_info?.nomor_sesi;
-      showIPhoneDynamicIsland(payload, shortId, grade, conf, sessionNum);
-    } catch (error) {
-      if (requestId !== predictionRequestId) return;
-      console.error('Klasifikasi gagal:', error);
-      if (detStatus) detStatus.textContent = `Gagal: ${error.message}`;
-    } finally {
-      if (requestId === predictionRequestId) {
-        predictionController = null;
-        btnAnalyze.disabled = false;
-        btnAnalyze.textContent = BTN_ANALYZE_LABEL;
-      }
-    }
-  }
-
-  function resetModelResult() {
-    document.getElementById('diagnosisName').textContent = 'Menunggu hasil API...';
-    document.getElementById('diagnosisStatus').textContent = 'Gambar sedang diproses oleh API CNN.';
-    document.getElementById('recommendationTitle').textContent = 'Menunggu hasil API';
-    document.getElementById('recommendationText').textContent =
-      'Panduan aplikasi akan ditampilkan setelah prediksi API diterima.';
-    document.getElementById('servoTarget').textContent = 'Tidak dikirim oleh API';
-    document.getElementById('latestDetectionId').textContent = '#API';
-  }
-
-  // ========================================================
-  // JEPRET DARI WEBCAM
-  // ========================================================
-  async function analyzeCameraFrame() {
-    const video = document.getElementById('webcamRealtimeVideo');
-    const detStatus = document.getElementById('liveObjDetectionStatus');
-
-    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth) {
-      if (detStatus) detStatus.textContent = 'Kamera belum aktif. Klik Buka Kamera dan izinkan akses webcam.';
-      return;
-    }
-
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-
-    const frame = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-    if (!frame) {
-      if (detStatus) detStatus.textContent = 'Frame kamera tidak dapat disiapkan. Coba lagi.';
-      return;
-    }
-
-    await sendImageToModel(frame, 'camera-frame.jpg');
-  }
-
-  const btnAnalyzeCamera = document.getElementById('btnAnalyzeCamera');
-  if (btnAnalyzeCamera) {
-    btnAnalyzeCamera.addEventListener('click', analyzeCameraFrame);
-  }
-
-  // ========================================================
-  // UPLOAD GAMBAR
-  // ========================================================
-  const uploadInput = document.getElementById('uploadImageInput');
-  const btnUploadImage = document.getElementById('btnUploadImage');
-
-  if (btnUploadImage && uploadInput) {
-    btnUploadImage.addEventListener('click', () => {
-      // Validasi: Harus menyalakan kamera terlebih dahulu sebelum memasukkan file
-      if (!liveWebcamStream) {
-        if (window.Swal?.fire) {
-          window.Swal.fire({
-            icon: 'warning',
-            title: 'Kamera Belum Aktif',
-            text: 'Silakan nyalakan kamera terlebih dahulu sebelum memasukkan gambar.',
-            confirmButtonText: 'Buka Kamera Sekarang',
-            showCancelButton: true,
-            cancelButtonText: 'Batal',
-            confirmButtonColor: '#2D6A4F',
-            cancelButtonColor: '#94A3B8'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              startRealtimeCamera();
-            }
-          });
-        } else {
-          alert('Kamera harus dinyalakan terlebih dahulu sebelum memasukkan gambar.');
-        }
-        return;
-      }
-      uploadInput.click();
-    });
-
-    uploadInput.addEventListener('change', async () => {
-      if (!liveWebcamStream) {
-        uploadInput.value = '';
-        if (window.Swal?.fire) {
-          window.Swal.fire({
-            icon: 'warning',
-            title: 'Kamera Belum Aktif',
-            text: 'Silakan nyalakan kamera terlebih dahulu sebelum memasukkan gambar.',
-            confirmButtonText: 'Mengerti',
-            confirmButtonColor: '#2D6A4F'
-          });
-        }
-        return;
-      }
-      const file = uploadInput.files[0];
+    // ========================================================
+    // PENGIRIMAN GAMBAR KE MODEL & DATABASE
+    // ========================================================
+    async function sendImageToModel(blob, filename) {
+      const btnAnalyze = document.getElementById('btnAnalyzeCamera');
       const detStatus = document.getElementById('liveObjDetectionStatus');
-      uploadInput.value = ''; // agar file yang sama bisa dipilih lagi
-      if (!file) return;
 
-      if (!file.type.startsWith('image/')) {
-        if (detStatus) detStatus.textContent = 'File harus berupa gambar.';
+      if (sessionState === 'idle') {
+        const msg = 'Tidak ada sesi aktif. Buka kamera dan klik "Mulai Sesi" sebelum melakukan grading.';
+        if (detStatus) detStatus.textContent = msg;
+        if (window.Swal) {
+          Swal.fire({ icon: 'warning', title: 'Sesi Belum Dimulai', text: msg, confirmButtonColor: '#2D6A4F' });
+        } else {
+          alert(msg);
+        }
         return;
       }
-      if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
-        if (detStatus) detStatus.textContent = `Ukuran gambar maksimal ${MAX_UPLOAD_MB} MB.`;
+
+      // Kunci target sesi saat gambar diambil
+      const capturedSessionId = (sessionState === 'active' && activeSessionData) ? activeSessionData.id : '';
+      const capturedPendingId = (sessionState === 'pending' && pendingSessionToken) ? pendingSessionToken : '';
+      const detectionId = (crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'det-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+
+      const controller = new AbortController();
+      activePredictionControllers.add(controller);
+      inFlightPredictionCount++;
+
+      if (btnAnalyze) {
+        btnAnalyze.disabled = true;
+        btnAnalyze.textContent = 'Mengirim...';
+      }
+      if (detStatus) detStatus.textContent = 'Mengirim gambar ke model AI...';
+
+      try {
+        showImagePreview(blob);
+        resetModelResult();
+
+        const formData = new FormData();
+        formData.append('image', blob, filename);
+        if (capturedSessionId) formData.append('sesi_id', capturedSessionId);
+        if (capturedPendingId) formData.append('pending_session_id', capturedPendingId);
+        formData.append('detection_id', detectionId);
+
+        let response;
+        try {
+          response = await fetch(PREDICT_URL, {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal
+          });
+        } catch (networkError) {
+          if (networkError.name === 'AbortError') {
+            console.log('[PREDIKSI] Permintaan dibatalkan.');
+            return;
+          }
+          throw new Error('API CNN tidak dapat dihubungi. Pastikan server Flask/ResNet berjalan.');
+        }
+
+        let payload;
+        try {
+          payload = await response.json();
+        } catch {
+          throw new Error('Respons API bukan JSON yang valid.');
+        }
+
+        if (!response.ok) {
+          const errorMsg = payload.error || payload.message || `Gagal (${response.status})`;
+          throw new Error(errorMsg);
+        }
+
+        // Promosikan pending session menjadi active session setelah inspeksi pertama berhasil disimpan!
+        if (payload.db_saved && sessionState === 'pending' && payload.sesi_info && payload.sesi_info.id) {
+          sessionState = 'active';
+          activeSessionData = payload.sesi_info;
+          pendingSessionToken = null;
+          updateSessionUI();
+        }
+
+        renderCameraResult(payload);
+        if (detStatus) detStatus.textContent = 'Analisis selesai. Hasil telah dicatat.';
+
+        if (payload.db_saved) {
+          const gradeText = payload.grade || payload.prediction || 'Sehat';
+          showIPhoneDynamicIsland(payload, detectionId.slice(0, 8), gradeText, payload.confidence);
+
+          window.dispatchEvent(new CustomEvent('gradingPredictionSaved', {
+            detail: {
+              grade: gradeText,
+              prediction: payload.prediction,
+              detectionId: detectionId
+            }
+          }));
+        }
+
+      } catch (err) {
+        console.error('Klasifikasi gagal:', err);
+        if (detStatus) detStatus.textContent = `Gagal: ${err.message}`;
+      } finally {
+        activePredictionControllers.delete(controller);
+        inFlightPredictionCount = Math.max(0, inFlightPredictionCount - 1);
+        if (btnAnalyze) {
+          btnAnalyze.disabled = false;
+          btnAnalyze.textContent = BTN_ANALYZE_LABEL;
+        }
+      }
+    }
+
+    function resetModelResult() {
+      const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+      setEl('diagnosisName', 'Menganalisis gambar...');
+      setEl('diagnosisStatus', 'Gambar sedang diproses oleh model CNN & PCV.');
+      setEl('recommendationTitle', 'Menunggu hasil');
+      setEl('recommendationText', 'Panduan penanganan akan ditampilkan setelah hasil diterima.');
+      setEl('servoTarget', 'Memproses...');
+      setEl('latestDetectionId', '#API');
+    }
+
+    // ========================================================
+    // JEPRET DARI WEBCAM
+    // ========================================================
+    async function analyzeCameraFrame() {
+      const detStatus = document.getElementById('liveObjDetectionStatus');
+      if (!isCameraReady()) {
+        if (detStatus) detStatus.textContent = getCameraNotReadyReason();
         return;
       }
 
-      await sendImageToModel(file, file.name);
-    });
-  }
+      const video = document.getElementById('webcamRealtimeVideo');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
 
-  // ========================================================
-  // TAMPILKAN HASIL DARI MODEL
-  // ========================================================
-  function renderCameraResult(result) {
-    document.getElementById('latestResultImagePreview').alt =
-      `Gambar yang dianalisis: ${result.prediction}`;
+      const frame = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
+      if (!frame) return;
 
-    if (result.saved_record && result.saved_record.id) {
-      document.getElementById('latestDetectionId').textContent = '#' + result.saved_record.id.substring(0, 8);
-    } else {
-      document.getElementById('latestDetectionId').textContent = '#API';
+      await sendImageToModel(frame, 'camera-frame.jpg');
     }
-    const recommendation = RECOMMENDATIONS[formatPredictionLabel(result.prediction)] || RECOMMENDATIONS.default;
-    document.getElementById('diagnosisName').textContent = result.prediction;
-    if (result.pcv_result && result.pcv_result.spot_percentage !== undefined) {
-      document.getElementById('diagnosisStatus').textContent =
-        `Analisis PCV: Luas Bercak ${result.pcv_result.spot_percentage}% · Grade: ${result.grade || '-'}`;
-    } else {
-      document.getElementById('diagnosisStatus').textContent = 'Prediksi persis dari API model';
-    }
-    document.getElementById('resultDiagnosis').dataset.status = recommendation.status_kind;
-    document.getElementById('recommendationTitle').textContent = recommendation.title;
-    document.getElementById('recommendationText').textContent = recommendation.text;
-    const detectionTime = new Date();
-    document.getElementById('resultTime').textContent =
-      `${detectionTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WIB`;
-    document.getElementById('resultDate').textContent =
-      detectionTime.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'Asia/Jakarta'
+
+    document.getElementById('btnAnalyzeCamera')?.addEventListener('click', analyzeCameraFrame);
+
+    // ========================================================
+    // UPLOAD GAMBAR (SAH UNTUK INSPEKSI SESI AKTIF / PENDING)
+    // ========================================================
+    const uploadInput = document.getElementById('uploadImageInput');
+    const btnUploadImage = document.getElementById('btnUploadImage');
+
+    if (btnUploadImage && uploadInput) {
+      btnUploadImage.addEventListener('click', () => {
+        if (sessionState === 'idle') {
+          const msg = 'Buka kamera dan klik "Mulai Sesi" terlebih dahulu sebelum mengunggah gambar.';
+          if (window.Swal) {
+            Swal.fire({ icon: 'warning', title: 'Sesi Belum Dimulai', text: msg, confirmButtonColor: '#2D6A4F' });
+          } else {
+            alert(msg);
+          }
+          return;
+        }
+        uploadInput.click();
       });
-    document.getElementById('servoTarget').textContent =
-      result.servo_target || 'Tidak dikirim oleh API';
-  }
 
-  function formatPredictionLabel(label) {
-    if (!label) return '-';
-    return {
-      Bacterial_Blotch: 'Bacterial Blotch',
-      Cobweb_Disease: 'Cobweb Disease',
-      Dry_Bubble: 'Dry Bubble',
-      Wet_Bubble: 'Wet Bubble',
-      Healthy: 'Healthy'
-    }[label] || label.replace(/_/g, ' ');
-  }
+      uploadInput.addEventListener('change', async () => {
+        const file = uploadInput.files[0];
+        const detStatus = document.getElementById('liveObjDetectionStatus');
+        uploadInput.value = '';
+        if (!file) return;
 
-  // ========================================================
-  // NOTIFIKASI IPHONE DYNAMIC ISLAND (SLIDE DARI ATAS)
-  // ========================================================
-  function showIPhoneDynamicIsland(payload, shortId, grade, conf, sessionNum) {
-    // Hapus notif lama jika masih aktif
-    const existing = document.getElementById('iphoneDynamicIsland');
-    if (existing) {
-      existing.remove();
+        if (!file.type.startsWith('image/')) {
+          if (detStatus) detStatus.textContent = 'File harus berupa gambar.';
+          return;
+        }
+        if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+          if (detStatus) detStatus.textContent = `Ukuran gambar maksimal ${MAX_UPLOAD_MB} MB.`;
+          return;
+        }
+
+        await sendImageToModel(file, file.name);
+      });
     }
 
-    const diagnosis = formatPredictionLabel(payload?.prediction || 'Jamur Terdeteksi');
-    const displayGrade = grade || payload?.grade || 'Sehat';
-    const displayConf = conf || (payload?.confidence !== undefined
-      ? (payload.confidence <= 1 ? (payload.confidence * 100).toFixed(1) : payload.confidence.toFixed(1))
-      : '-');
-    const displayId = shortId || (payload?.saved_record?.id ? payload.saved_record.id.substring(0, 8) : null);
-    const displaySession = sessionNum || payload?.sesi_info?.nomor_sesi;
-    const servoTarget = payload?.servo_target || 'Box Sortir';
+    // ========================================================
+    // TAMPILKAN HASIL DARI MODEL
+    // ========================================================
+    function renderCameraResult(result) {
+      const preview = document.getElementById('latestResultImagePreview');
+      if (preview) preview.alt = `Gambar: ${result.prediction}`;
 
-    // Skema warna khas iOS & disesuaikan untuk tema White Frosted Glass:
-    let color = '#16A34A'; // Hijau stroke
-    let textColor = '#15803D';
-    let bgColor = 'rgba(34, 197, 94, 0.12)';
-    let borderColor = 'rgba(34, 197, 94, 0.35)';
-    let glowColor = 'rgba(34, 197, 94, 0.22)';
-    let gradeBadgeText = displayGrade;
+      const detIdEl = document.getElementById('latestDetectionId');
+      if (detIdEl) {
+        detIdEl.textContent = (result.saved_record && result.saved_record.id)
+          ? '#' + String(result.saved_record.id).substring(0, 8)
+          : '#SELESAI';
+      }
 
-    const lowerGrade = displayGrade.toLowerCase();
-    if (lowerGrade.includes('sehat')) {
-      color = '#16A34A';
-      textColor = '#15803D';
-      bgColor = 'rgba(34, 197, 94, 0.12)';
-      borderColor = 'rgba(34, 197, 94, 0.35)';
-      glowColor = 'rgba(34, 197, 94, 0.22)';
-      gradeBadgeText = 'Sehat';
-    } else if (lowerGrade.includes('tidak cacat') || lowerGrade.includes('bb aman')) {
-      color = '#0284C7';
-      textColor = '#0369A1';
-      bgColor = 'rgba(14, 165, 233, 0.12)';
-      borderColor = 'rgba(14, 165, 233, 0.35)';
-      glowColor = 'rgba(14, 165, 233, 0.22)';
-      gradeBadgeText = 'BB Aman';
-    } else if (lowerGrade.includes('cacat')) {
-      color = '#7C3AED';
-      textColor = '#6D28D9';
-      bgColor = 'rgba(124, 58, 237, 0.12)';
-      borderColor = 'rgba(124, 58, 237, 0.35)';
-      glowColor = 'rgba(124, 58, 237, 0.22)';
-      gradeBadgeText = 'BB Cacat';
-    } else if (lowerGrade.includes('tidak layak') || lowerGrade.includes('reject')) {
-      color = '#DC2626';
-      textColor = '#B91C1C';
-      bgColor = 'rgba(239, 68, 68, 0.12)';
-      borderColor = 'rgba(239, 68, 68, 0.35)';
-      glowColor = 'rgba(239, 68, 68, 0.22)';
-      gradeBadgeText = 'Tidak Layak';
+      const recommendation = RECOMMENDATIONS[formatPredictionLabel(result.prediction)] || RECOMMENDATIONS.default;
+      document.getElementById('diagnosisName').textContent = formatPredictionLabel(result.prediction);
+
+      if (result.pcv_result && result.pcv_result.spot_percentage !== undefined) {
+        document.getElementById('diagnosisStatus').textContent =
+          `Analisis PCV: Luas Bercak ${result.pcv_result.spot_percentage}% · Grade: ${result.grade || '-'}`;
+      } else {
+        document.getElementById('diagnosisStatus').textContent = `Klasifikasi AI: ${result.grade || result.prediction}`;
+      }
+
+      document.getElementById('resultDiagnosis').dataset.status = recommendation.status_kind;
+      document.getElementById('recommendationTitle').textContent = recommendation.title;
+      document.getElementById('recommendationText').textContent = recommendation.text;
+
+      const detectionTime = new Date();
+      document.getElementById('resultTime').textContent =
+        `${detectionTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WIB`;
+      document.getElementById('resultDate').textContent =
+        detectionTime.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
+      document.getElementById('servoTarget').textContent = result.servo_target || 'Selesai';
     }
 
-    const island = document.createElement('div');
-    island.id = 'iphoneDynamicIsland';
-    island.className = 'ios-notification-banner';
-    island.setAttribute('role', 'alert');
-    island.innerHTML = `
+    function formatPredictionLabel(label) {
+      if (!label) return '-';
+      return {
+        Bacterial_Blotch: 'Bacterial Blotch',
+        Cobweb_Disease: 'Cobweb Disease',
+        Dry_Bubble: 'Dry Bubble',
+        Wet_Bubble: 'Wet Bubble',
+        Healthy: 'Healthy'
+      }[label] || label.replace(/_/g, ' ');
+    }
+
+    function showIPhoneDynamicIsland(data, shortId, grade) {
+      const old = document.getElementById('iphoneDynamicIsland');
+      if (old) old.remove();
+
+      const island = document.createElement('div');
+      island.id = 'iphoneDynamicIsland';
+      island.className = 'ios-notification-banner';
+      island.innerHTML = `
       <div class="ios-banner-header">
         <div class="ios-header-left">
-          <div class="ios-app-icon" style="background: linear-gradient(135deg, #007AFF 0%, #0056B3 100%);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-          </div>
-          <span class="ios-header-name">Informasi Grading</span>
+          <div class="ios-app-icon" style="background:#2D6A4F;color:#fff;">🍄</div>
+          <span class="ios-header-name">Mushroom Grading</span>
         </div>
-        <div class="ios-header-right">
-          <span class="ios-header-time">baru saja</span>
-          <button class="ios-close-btn" title="Tutup" aria-label="Tutup">✕</button>
-        </div>
+        <button class="ios-close-btn" onclick="document.getElementById('iphoneDynamicIsland')?.remove()">✕</button>
       </div>
       <div class="ios-banner-body">
         <div class="ios-body-title">
-          <span class="ios-diagnosis-text">${diagnosis}</span>
-          <span class="ios-body-badge" style="background:${bgColor}; color:${textColor}; border: 1px solid ${borderColor};">
-            ${gradeBadgeText}
-          </span>
+          <span class="ios-diagnosis-text">${grade}</span>
         </div>
-        <div class="ios-body-text">
-          Akurasi: <strong>${displayConf}%</strong> &nbsp;·&nbsp; ${servoTarget}${displaySession ? ` &nbsp;·&nbsp; Sesi #${displaySession}` : ''}
-          ${displayId ? `<div class="ios-body-cloud"><span>☁️</span> Tersimpan ke database <strong>#${displayId}</strong> ✓</div>` : ''}
-        </div>
+        <div class="ios-body-cloud"><span>☁️</span> Tersimpan ke Supabase Database ✓</div>
       </div>
     `;
+      document.body.appendChild(island);
+      setTimeout(() => { island?.remove(); }, 4000);
+    }
 
-    document.body.appendChild(island);
+    // ========================================================
+    // AUTO-CAPTURE BERBASIS GERAKAN & STABILISASI
+    // ========================================================
+    let autoCaptureActive = false;
+    let autoCaptureInterval = null;
+    let autoCaptureCanvas = null;
+    let autoCaptureCtx = null;
+    let prevFrameData = null;
+    let objectDetectedFrames = 0;
+    let autoCaptureCountdownVal = 0;
+    let autoCaptureCountdownTimer = null;
+    let isAnalyzing = false;
+    let cooldownActive = false;
 
-    // Animasi Dismiss (geser & menciut ke atas khas iOS banner)
-    const dismissIsland = () => {
-      if (!island.classList.contains('dismissing')) {
-        island.classList.add('dismissing');
-        setTimeout(() => {
-          if (island.parentNode) island.parentNode.removeChild(island);
-        }, 360);
+    const MOTION_THRESHOLD = 30;
+    const MOTION_RATIO_MIN = 0.05;
+    const MOTION_RATIO_MAX = 0.85;
+    const DETECT_CONFIRM_FRAMES = 5;
+    const COOLDOWN_AFTER_CAPTURE = 4;
+    const FRAME_INTERVAL_MS = 200;
+
+    function toggleAutoCapture() {
+      if (autoCaptureActive) stopAutoCapture();
+      else startAutoCapture();
+    }
+
+    document.getElementById('btnToggleAutoCapture')?.addEventListener('click', toggleAutoCapture);
+
+    function startAutoCapture() {
+      if (!isCameraReady()) {
+        if (window.Swal) {
+          Swal.fire({ icon: 'warning', title: 'Kamera Belum Siap', text: getCameraNotReadyReason(), confirmButtonColor: '#2D6A4F' });
+        }
+        return;
       }
-    };
 
-    island.addEventListener('click', dismissIsland);
-    const closeBtn = island.querySelector('.ios-close-btn');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dismissIsland();
-      });
-    }
-
-    // Auto dismiss setelah 5 detik
-    setTimeout(dismissIsland, 5000);
-  }
-
-  // Kompatibilitas alias fungsi lama
-  function showDatabaseSavedToast(shortId, grade, conf, sessionNum) {
-    showIPhoneDynamicIsland({ grade, confidence: conf, saved_record: { id: shortId }, sesi_info: { nomor_sesi: sessionNum } }, shortId, grade, conf, sessionNum);
-  }
-
-  // ========================================================
-  // AUTO-CAPTURE: DETEKSI OBJEK OTOMATIS
-  // ========================================================
-  let autoCaptureActive = false;
-  let autoCaptureInterval = null;
-  let autoCaptureCanvas = null;
-  let autoCaptureCtx = null;
-  let prevFrameData = null;
-  let objectDetectedFrames = 0;
-  let autoCaptureCountdownVal = 0;
-  let autoCaptureCountdownTimer = null;
-  let isAnalyzing = false;
-  let cooldownActive = false;
-
-  // Sensitivitas: semakin kecil = lebih sensitif
-  const MOTION_THRESHOLD = 30;        // beda pixel per channel dianggap bergerak
-  const MOTION_RATIO_MIN = 0.04;      // minimal 4% area berubah → ada objek
-  const MOTION_RATIO_MAX = 0.90;      // abaikan jika >90% (tangan lewat cepat)
-  const DETECT_CONFIRM_FRAMES = 5;    // berapa frame berturut-turut harus ada objek
-  const COOLDOWN_AFTER_CAPTURE = 4;   // detik cooldown setelah jepret, agar tidak spam
-  const FRAME_INTERVAL_MS = 200;      // cek setiap 200ms
-
-  function startAutoCapture() {
-    if (!liveWebcamStream) {
-      if (window.Swal?.fire) {
-        window.Swal.fire({
-          icon: 'warning',
-          title: 'Kamera Belum Aktif',
-          text: 'Nyalakan kamera terlebih dahulu sebelum mengaktifkan Auto-Capture.',
-          confirmButtonText: 'Buka Kamera',
-          showCancelButton: true,
-          cancelButtonText: 'Batal',
-          confirmButtonColor: '#2D6A4F',
-          cancelButtonColor: '#94A3B8'
-        }).then(r => { if (r.isConfirmed) startRealtimeCamera(); });
+      if (sessionState === 'idle') {
+        if (window.Swal) {
+          Swal.fire({ icon: 'warning', title: 'Sesi Belum Dimulai', text: 'Silakan klik "Mulai Sesi" terlebih dahulu.', confirmButtonColor: '#2D6A4F' });
+        }
+        return;
       }
-      return;
+
+      autoCaptureActive = true;
+      prevFrameData = null;
+      objectDetectedFrames = 0;
+      cooldownActive = false;
+
+      if (!autoCaptureCanvas) {
+        autoCaptureCanvas = document.createElement('canvas');
+        autoCaptureCtx = autoCaptureCanvas.getContext('2d');
+      }
+
+      const bar = document.getElementById('autoCaptureBar');
+      if (bar) bar.style.display = 'flex';
+      const msg = document.getElementById('autoCaptureStatusMsg');
+      if (msg) msg.textContent = '— Mendeteksi objek jamur...';
+      document.getElementById('autoCaptureToggleText').textContent = 'On';
+      document.getElementById('btnToggleAutoCapture')?.classList.add('active');
+
+      const detStatus = document.getElementById('liveObjDetectionStatus');
+      if (detStatus) detStatus.textContent = 'Auto-Capture aktif — mendeteksi objek jamur...';
+
+      if (autoCaptureInterval) clearInterval(autoCaptureInterval);
+      autoCaptureInterval = setInterval(runAutoCaptureTick, FRAME_INTERVAL_MS);
     }
 
-    autoCaptureActive = true;
-    prevFrameData = null;
-    objectDetectedFrames = 0;
-    cooldownActive = false;
-
-    // Setup canvas sekali
-    if (!autoCaptureCanvas) {
-      autoCaptureCanvas = document.createElement('canvas');
-      autoCaptureCtx = autoCaptureCanvas.getContext('2d');
+    function pauseAutoCaptureDueToCamera() {
+      if (autoCaptureInterval) clearInterval(autoCaptureInterval);
+      autoCaptureInterval = null;
+      const msg = document.getElementById('autoCaptureStatusMsg');
+      if (msg) msg.textContent = '— Kamera terputus, deteksi dijeda...';
     }
 
-    // Update UI
-    const bar = document.getElementById('autoCaptureBar');
-    if (bar) bar.style.display = 'flex';
+    function stopAutoCapture() {
+      autoCaptureActive = false;
+      if (autoCaptureInterval) { clearInterval(autoCaptureInterval); autoCaptureInterval = null; }
+      if (autoCaptureCountdownTimer) { clearInterval(autoCaptureCountdownTimer); autoCaptureCountdownTimer = null; }
+      prevFrameData = null;
+      objectDetectedFrames = 0;
+      cooldownActive = false;
 
-    const detStatus = document.getElementById('liveObjDetectionStatus');
-    if (detStatus) detStatus.textContent = '🔍 Auto-Capture aktif — mendeteksi objek di depan kamera...';
+      const bar = document.getElementById('autoCaptureBar');
+      const countdown = document.getElementById('autoCaptureCountdown');
+      if (bar) bar.style.display = 'none';
+      if (countdown) countdown.textContent = '';
+      const toggleText = document.getElementById('autoCaptureToggleText');
+      if (toggleText) toggleText.textContent = 'Off';
+      document.getElementById('btnToggleAutoCapture')?.classList.remove('active');
 
-    autoCaptureInterval = setInterval(runAutoCaptureTick, FRAME_INTERVAL_MS);
-  }
+      const detStatus = document.getElementById('liveObjDetectionStatus');
+      if (detStatus && isCameraReady()) {
+        detStatus.textContent = 'Auto-Capture dimatikan. Anda dapat menjepret manual.';
+      }
+    }
+    window.stopAutoCapture = stopAutoCapture;
 
-  function stopAutoCapture() {
-    autoCaptureActive = false;
-    if (autoCaptureInterval) { clearInterval(autoCaptureInterval); autoCaptureInterval = null; }
-    if (autoCaptureCountdownTimer) { clearInterval(autoCaptureCountdownTimer); autoCaptureCountdownTimer = null; }
-    prevFrameData = null;
-    objectDetectedFrames = 0;
-    cooldownActive = false;
+    function runAutoCaptureTick() {
+      if (!autoCaptureActive || !isCameraReady() || cooldownActive || isAnalyzing) return;
 
-    const bar = document.getElementById('autoCaptureBar');
-    const countdown = document.getElementById('autoCaptureCountdown');
-    if (bar) bar.style.display = 'none';
-    if (countdown) countdown.textContent = '';
+      const video = document.getElementById('webcamRealtimeVideo');
+      const W = 160, H = 120;
+      autoCaptureCanvas.width = W;
+      autoCaptureCanvas.height = H;
+      autoCaptureCtx.drawImage(video, 0, 0, W, H);
+      const currentFrame = autoCaptureCtx.getImageData(0, 0, W, H).data;
 
-    const detStatus = document.getElementById('liveObjDetectionStatus');
-    if (detStatus) detStatus.textContent = 'Auto-Capture dihentikan. Klik tombol untuk memulai kembali.';
-  }
+      if (!prevFrameData) {
+        prevFrameData = currentFrame.slice();
+        return;
+      }
 
-  function runAutoCaptureTick() {
-    if (!autoCaptureActive || !liveWebcamStream || cooldownActive || isAnalyzing) return;
-
-    const video = document.getElementById('webcamRealtimeVideo');
-    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth) return;
-
-    // Gunakan resolusi kecil untuk perbandingan frame (lebih cepat)
-    const W = 160, H = 120;
-    autoCaptureCanvas.width = W;
-    autoCaptureCanvas.height = H;
-    autoCaptureCtx.drawImage(video, 0, 0, W, H);
-    const currentFrame = autoCaptureCtx.getImageData(0, 0, W, H).data;
-
-    if (!prevFrameData) {
+      let changedPixels = 0;
+      const totalPixels = W * H;
+      for (let i = 0; i < currentFrame.length; i += 4) {
+        const dr = Math.abs(currentFrame[i] - prevFrameData[i]);
+        const dg = Math.abs(currentFrame[i + 1] - prevFrameData[i + 1]);
+        const db = Math.abs(currentFrame[i + 2] - prevFrameData[i + 2]);
+        if ((dr + dg + db) / 3 > MOTION_THRESHOLD) changedPixels++;
+      }
       prevFrameData = currentFrame.slice();
-      return;
-    }
 
-    // Hitung perbedaan pixel
-    let changedPixels = 0;
-    const totalPixels = W * H;
-    for (let i = 0; i < currentFrame.length; i += 4) {
-      const dr = Math.abs(currentFrame[i]   - prevFrameData[i]);
-      const dg = Math.abs(currentFrame[i+1] - prevFrameData[i+1]);
-      const db = Math.abs(currentFrame[i+2] - prevFrameData[i+2]);
-      if ((dr + dg + db) / 3 > MOTION_THRESHOLD) changedPixels++;
-    }
-    prevFrameData = currentFrame.slice();
+      const motionRatio = changedPixels / totalPixels;
+      const objectPresent = motionRatio >= MOTION_RATIO_MIN && motionRatio <= MOTION_RATIO_MAX;
 
-    const motionRatio = changedPixels / totalPixels;
-    const objectPresent = motionRatio >= MOTION_RATIO_MIN && motionRatio <= MOTION_RATIO_MAX;
+      const detStatus = document.getElementById('liveObjDetectionStatus');
+      const countdownEl = document.getElementById('autoCaptureCountdown');
 
-    // Update status bar
-    const detStatus = document.getElementById('liveObjDetectionStatus');
-    const countdownEl = document.getElementById('autoCaptureCountdown');
+      if (objectPresent) {
+        objectDetectedFrames++;
+        if (objectDetectedFrames >= DETECT_CONFIRM_FRAMES) {
+          objectDetectedFrames = 0;
+          isAnalyzing = true;
+          cooldownActive = true;
+          if (detStatus) detStatus.textContent = '📸 Objek stabil terdeteksi — memproses...';
 
-    if (objectPresent) {
-      objectDetectedFrames++;
-      const pct = Math.round(motionRatio * 100);
-      if (detStatus) detStatus.textContent = `🟢 Objek terdeteksi (gerakan: ${pct}%) — konfirmasi ${objectDetectedFrames}/${DETECT_CONFIRM_FRAMES}...`;
+          const fullCanvas = document.createElement('canvas');
+          fullCanvas.width = video.videoWidth;
+          fullCanvas.height = video.videoHeight;
+          fullCanvas.getContext('2d').drawImage(video, 0, 0);
 
-      if (objectDetectedFrames >= DETECT_CONFIRM_FRAMES) {
-        // TRIGGER JEPRET OTOMATIS!
-        objectDetectedFrames = 0;
-        isAnalyzing = true;
-        cooldownActive = true;
-        if (detStatus) detStatus.textContent = '📸 Objek terkonfirmasi — menjepret otomatis...';
-
-        // Ambil frame beresolusi penuh
-        const fullCanvas = document.createElement('canvas');
-        fullCanvas.width = video.videoWidth;
-        fullCanvas.height = video.videoHeight;
-        fullCanvas.getContext('2d').drawImage(video, 0, 0);
-        fullCanvas.toBlob(async (frame) => {
-          if (frame) {
-            await sendImageToModel(frame, 'auto-capture.jpg');
-          }
-          isAnalyzing = false;
-
-          // Cooldown: tunggu N detik sebelum deteksi lagi
-          autoCaptureCountdownVal = COOLDOWN_AFTER_CAPTURE;
-          if (countdownEl) countdownEl.textContent = `Cooldown ${autoCaptureCountdownVal}s`;
-          if (autoCaptureCountdownTimer) clearInterval(autoCaptureCountdownTimer);
-          autoCaptureCountdownTimer = setInterval(() => {
-            autoCaptureCountdownVal--;
-            if (countdownEl) countdownEl.textContent = autoCaptureCountdownVal > 0 ? `Cooldown ${autoCaptureCountdownVal}s` : '';
-            if (autoCaptureCountdownVal <= 0) {
-              clearInterval(autoCaptureCountdownTimer);
-              autoCaptureCountdownTimer = null;
-              cooldownActive = false;
-              prevFrameData = null; // reset baseline
-              if (detStatus && autoCaptureActive) detStatus.textContent = '🔍 Auto-Capture aktif — mendeteksi objek di depan kamera...';
+          fullCanvas.toBlob(async (frameBlob) => {
+            try {
+              if (frameBlob && autoCaptureActive) {
+                await sendImageToModel(frameBlob, 'auto-capture.jpg');
+              }
+            } finally {
+              isAnalyzing = false;
             }
-          }, 1000);
-        }, 'image/jpeg', 0.9);
-      }
-    } else {
-      if (objectDetectedFrames > 0) objectDetectedFrames = Math.max(0, objectDetectedFrames - 1);
-      if (detStatus && autoCaptureActive && !cooldownActive && !isAnalyzing) {
-        detStatus.textContent = '🔍 Auto-Capture aktif — menunggu objek di depan kamera...';
+
+            if (!autoCaptureActive) return;
+
+            autoCaptureCountdownVal = COOLDOWN_AFTER_CAPTURE;
+            if (countdownEl) countdownEl.textContent = `Cooldown ${autoCaptureCountdownVal}s`;
+            if (autoCaptureCountdownTimer) clearInterval(autoCaptureCountdownTimer);
+            autoCaptureCountdownTimer = setInterval(() => {
+              autoCaptureCountdownVal--;
+              if (countdownEl) countdownEl.textContent = autoCaptureCountdownVal > 0 ? `Cooldown ${autoCaptureCountdownVal}s` : '';
+              if (autoCaptureCountdownVal <= 0) {
+                clearInterval(autoCaptureCountdownTimer);
+                autoCaptureCountdownTimer = null;
+                cooldownActive = false;
+                prevFrameData = null;
+                if (detStatus && autoCaptureActive) detStatus.textContent = 'Auto-Capture aktif — mendeteksi objek jamur...';
+              }
+            }, 1000);
+          }, 'image/jpeg', 0.9);
+        }
+      } else {
+        if (objectDetectedFrames > 0) objectDetectedFrames--;
       }
     }
-  }
 
-  // Hentikan auto-capture jika kamera dimatikan
-  const _origStopCamera = stopRealtimeCamera;
-  window._origStopCamera = _origStopCamera;
-
-  // Patch btnToggleCamera: hentikan auto-capture otomatis saat kamera dimatikan
-  document.getElementById('btnToggleCamera')?.addEventListener('click', () => {
-    if (autoCaptureActive && liveWebcamStream) {
-      setTimeout(() => { if (autoCaptureActive && !liveWebcamStream) stopAutoCapture(); }, 300);
-    }
-  }, true);
-
-  // Inject CSS untuk animasi pulse hijau auto-capture & notifikasi Apple Dynamic Island
-  if (!document.getElementById('toastAnimStyle')) {
-    const style = document.createElement('style');
-    style.id = 'toastAnimStyle';
-    style.textContent = `
-      #iphoneDynamicIsland.ios-notification-banner {
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 999999;
-        display: flex;
-        flex-direction: column;
-        background: rgba(255, 255, 255, 0.90);
-        backdrop-filter: blur(28px) saturate(190%);
-        -webkit-backdrop-filter: blur(28px) saturate(190%);
-        border: 1.2px solid rgba(255, 255, 255, 0.95);
-        border-radius: 18px;
-        padding: 10px 16px 12px 16px;
-        min-width: 310px;
-        width: min(92vw, 390px);
-        box-shadow: 
-          0 16px 38px -4px rgba(140, 100, 60, 0.16),
-          0 4px 14px rgba(0, 0, 0, 0.05),
-          inset 0 1px 2px rgba(255, 255, 255, 1),
-          inset 0 -1px 2px rgba(210, 175, 130, 0.1);
-        color: #0F172A;
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-        cursor: pointer;
-        user-select: none;
-        animation: dynamicIslandDrop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-        overflow: hidden;
-      }
-      #iphoneDynamicIsland.ios-notification-banner:hover {
-        transform: translateX(-50%) scale(1.015);
-        box-shadow: 
-          0 20px 44px -4px rgba(140, 100, 60, 0.22),
-          0 6px 18px rgba(0, 0, 0, 0.08),
-          inset 0 1.5px 2px rgba(255, 255, 255, 1);
-      }
-      #iphoneDynamicIsland.ios-notification-banner.dismissing {
-        animation: dynamicIslandDismiss 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        pointer-events: none;
-      }
-      .ios-banner-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 7px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      }
-      .ios-header-left {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-      }
-      .ios-app-icon {
-        width: 20px;
-        height: 20px;
-        border-radius: 5px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(0, 122, 255, 0.32);
-        flex-shrink: 0;
-      }
-      .ios-header-name {
-        font-size: 0.74rem;
-        font-weight: 600;
-        color: #475569;
-        letter-spacing: 0.01em;
-      }
-      .ios-header-right {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .ios-header-time {
-        font-size: 0.70rem;
-        color: #94A3B8;
-        font-weight: 400;
-      }
-      .ios-close-btn {
-        background: none;
-        border: none;
-        color: #94A3B8;
-        font-size: 13px;
-        cursor: pointer;
-        padding: 0 2px;
-        line-height: 1;
-        transition: color 0.2s ease, transform 0.2s ease;
-      }
-      .ios-close-btn:hover {
-        color: #0F172A;
-        transform: scale(1.15);
-      }
-      .ios-banner-body {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-      }
-      .ios-body-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        line-height: 1.3;
-      }
-      .ios-diagnosis-text {
-        font-size: 0.92rem;
-        font-weight: 700;
-        color: #0F172A;
-        letter-spacing: -0.01em;
-      }
-      .ios-body-badge {
-        font-size: 0.68rem;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 8px;
-        letter-spacing: 0.02em;
-        white-space: nowrap;
-      }
-      .ios-body-text {
-        font-size: 0.80rem;
-        color: #334155;
-        line-height: 1.45;
-      }
-      .ios-body-cloud {
-        font-size: 0.75rem;
-        color: #0284C7;
-        margin-top: 3px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-weight: 500;
-      }
-      @keyframes dynamicIslandDrop {
-        0% {
-          opacity: 0;
-          transform: translate(-50%, -40px) scale(0.8);
-          filter: blur(8px);
-        }
-        65% {
-          opacity: 1;
-          transform: translate(-50%, 4px) scale(1.02);
-          filter: blur(0px);
-        }
-        100% {
-          opacity: 1;
-          transform: translate(-50%, 0) scale(1);
-          filter: blur(0px);
-        }
-      }
-      @keyframes dynamicIslandDismiss {
-        0% {
-          opacity: 1;
-          transform: translate(-50%, 0) scale(1);
-          filter: blur(0px);
-        }
-        100% {
-          opacity: 0;
-          transform: translate(-50%, -36px) scale(0.8);
-          filter: blur(8px);
-        }
-      }
-      @keyframes toastSlideIn {
-        from { opacity: 0; transform: translateY(20px) scale(0.95); }
-        to   { opacity: 1; transform: translateY(0) scale(1); }
-      }
-      @keyframes toastSlideOut {
-        from { opacity: 1; transform: translateY(0) scale(1); }
-        to   { opacity: 0; transform: translateY(16px) scale(0.95); }
-      }
-      @keyframes pulseGreen {
-        0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(74,222,128,0.6); }
-        50% { opacity: 0.8; transform: scale(1.15); box-shadow: 0 0 0 5px rgba(74,222,128,0); }
-      }
-    `;
-    document.head.appendChild(style);
-  }
+    // Inisialisasi awal saat halaman siap
+    loadCameraDevices();
+    checkActiveSession();
+  })();
 </script>
 {% endblock %}

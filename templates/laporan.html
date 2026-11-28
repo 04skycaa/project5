@@ -1215,10 +1215,15 @@
   const initialStatsEl = document.getElementById('initialStatsJson');
   const initialStats = initialStatsEl ? JSON.parse(initialStatsEl.textContent || '{}') : {};
 
-  document.addEventListener('DOMContentLoaded', () => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAll(initialStats);
+      initClock();
+    });
+  } else {
     renderAll(initialStats);
     initClock();
-  });
+  }
 
   // ═══════════════════════════════════════════════════════
   //  CUSTOM FROSTED GLASS DROPDOWN CONTROLLER
