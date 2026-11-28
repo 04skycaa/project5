@@ -590,12 +590,27 @@ body {
 
 /* ── iOS Notification Banner (Global) ── */
 @keyframes iosNotifSlideDown {
-  0%   { transform: translateX(-50%) translateY(-120%); opacity: 0; }
-  100% { transform: translateX(-50%) translateY(0);     opacity: 1; }
+  0% {
+    transform: translateX(-50%) translateY(-120%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
 }
+
 @keyframes iosNotifSlideUp {
-  0%   { transform: translateX(-50%) translateY(0);     opacity: 1; }
-  100% { transform: translateX(-50%) translateY(-120%); opacity: 0; }
+  0% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(-120%);
+    opacity: 0;
+  }
 }
 
 .ios-notif-banner {
@@ -3359,4 +3374,58 @@ body {
   .filter-pills {
     flex-wrap: wrap;
   }
+}
+
+/* ===== Panel realtime sesi + rekomendasi LLM ===== */
+.session-live-panel {
+  gap: 10px;
+}
+
+.slp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.slp-total {
+  color: var(--ios-label);
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.session-live-panel .dist-label {
+  width: 118px;
+}
+
+.session-live-panel .dist-val {
+  width: auto;
+  min-width: 74px;
+}
+
+.slp-llm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(52, 199, 89, 0.2);
+}
+
+.slp-llm[hidden],
+.btn-camera-toggle[hidden] {
+  display: none;
+}
+
+.slp-llm-text {
+  white-space: pre-line;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 0.68rem;
+}
+
+.slp-note {
+  color: var(--ios-tertiary-label);
+  font-size: 0.54rem;
 }

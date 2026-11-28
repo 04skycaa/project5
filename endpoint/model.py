@@ -301,59 +301,68 @@ def save_inspection(
                 _processed_detections.clear()
             _processed_detections.add(detection_id)
 
-    session_response = client.table("sesi") \
-        .select("id, waktu_selesai") \
-        .eq("id", sesi_id) \
-        .limit(1) \
-        .execute()
-    if not session_response.data:
-        raise ValueError(f"Sesi dengan ID {sesi_id} tidak ditemukan.")
-    if session_response.data[0].get("waktu_selesai") is not None:
-        raise ValueError(
-            f"Sesi {sesi_id} sudah ditutup "
-            f"({session_response.data[0]['waktu_selesai']}). Tidak dapat menambahkan inspeksi."
-        )
-
-    nama_kategori = map_to_detail_kategori(ai_class, grade)
-    if not nama_kategori:
-        return {
-            "sesi_id": sesi_id,
-            "saved": False,
-            "message": "Hasil analisis tidak masuk ke dalam 6 kategori resmi database (tidak dihitung).",
-            "grade": grade,
-            "ai_class": ai_class,
-        }
-
-    kategori_id = get_detail_kategori_map().get(nama_kategori)
-    if not kategori_id:
-        raise ValueError(f"kategori_id untuk '{nama_kategori}' tidak ditemukan di database.")
-
-    with _inspection_lock:
-        existing = client.table("inspeksi") \
-            .select("jumlah") \
-            .eq("sesi_id", sesi_id) \
-            .eq("kategori_id", kategori_id) \
+    try:
+        session_response = client.table("sesi") \
+            .select("id, waktu_selesai") \
+            .eq("id", sesi_id) \
             .limit(1) \
             .execute()
-        if existing.data:
-            current_count = int(existing.data[0].get("jumlah", 0) or 0)
-            update_response = client.table("inspeksi") \
-                .update({"jumlah": current_count + 1}) \
+        if not session_response.data:
+            raise ValueError(f"Sesi dengan ID {sesi_id} tidak ditemukan.")
+        if session_response.data[0].get("waktu_selesai") is not None:
+            raise ValueError(
+                f"Sesi {sesi_id} sudah ditutup "
+                f"({session_response.data[0]['waktu_selesai']}). Tidak dapat menambahkan inspeksi."
+            )
+
+        nama_kategori = map_to_detail_kategori(ai_class, grade)
+        if not nama_kategori:
+            if detection_id:
+                with _processed_detections_lock:
+                    _processed_detections.discard(detection_id)
+            return {
+                "sesi_id": sesi_id,
+                "saved": False,
+                "message": "Hasil analisis tidak masuk ke dalam 6 kategori resmi database (tidak dihitung).",
+                "grade": grade,
+                "ai_class": ai_class,
+            }
+
+        kategori_id = get_detail_kategori_map().get(nama_kategori)
+        if not kategori_id:
+            raise ValueError(f"kategori_id untuk '{nama_kategori}' tidak ditemukan di database.")
+
+        with _inspection_lock:
+            existing = client.table("inspeksi") \
+                .select("jumlah") \
                 .eq("sesi_id", sesi_id) \
                 .eq("kategori_id", kategori_id) \
+                .limit(1) \
                 .execute()
-            if not update_response.data:
-                raise RuntimeError(f"Gagal memperbarui jumlah inspeksi untuk kategori {nama_kategori}.")
-            saved_data = update_response.data[0]
-        else:
-            insert_response = client.table("inspeksi").insert({
-                "sesi_id": sesi_id,
-                "kategori_id": kategori_id,
-                "jumlah": 1,
-            }).execute()
-            if not insert_response.data:
-                raise RuntimeError(f"Gagal menambahkan baris inspeksi baru untuk kategori {nama_kategori}.")
-            saved_data = insert_response.data[0]
+            if existing.data:
+                current_count = int(existing.data[0].get("jumlah", 0) or 0)
+                update_response = client.table("inspeksi") \
+                    .update({"jumlah": current_count + 1}) \
+                    .eq("sesi_id", sesi_id) \
+                    .eq("kategori_id", kategori_id) \
+                    .execute()
+                if not update_response.data:
+                    raise RuntimeError(f"Gagal memperbarui jumlah inspeksi untuk kategori {nama_kategori}.")
+                saved_data = update_response.data[0]
+            else:
+                insert_response = client.table("inspeksi").insert({
+                    "sesi_id": sesi_id,
+                    "kategori_id": kategori_id,
+                    "jumlah": 1,
+                }).execute()
+                if not insert_response.data:
+                    raise RuntimeError(f"Gagal menambahkan baris inspeksi baru untuk kategori {nama_kategori}.")
+                saved_data = insert_response.data[0]
+    except Exception:
+        if detection_id:
+            with _processed_detections_lock:
+                _processed_detections.discard(detection_id)
+        raise
 
     saved_data["nama_kategori"] = nama_kategori
     saved_data["grade"] = grade

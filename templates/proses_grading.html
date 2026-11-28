@@ -2,58 +2,6 @@
 {% set active_page = 'proses' %}
 {% block title %}Proses Grading • Mushroom Grading System{% endblock %}
 
-{% set recommendation_texts = {
-'Healthy': {
-'diagnosis': 'Jamur sehat',
-'diagnosis_note': 'Tidak terindikasi penyakit',
-'status_kind': 'healthy',
-'title': 'Pertahankan kondisi sehat',
-'text': 'Kondisi jamur terlihat baik. Pertahankan lingkungan tumbuh yang stabil.'
-},
-'Bacterial Blotch': {
-'diagnosis': 'Bacterial Blotch',
-'diagnosis_note': 'Penyakit terindikasi',
-'status_kind': 'disease',
-'title': 'Kendalikan kelembapan permukaan',
-'text': 'Lakukan penanganan pada area terdampak untuk mengurangi risiko penyebaran.'
-},
-'Dry Bubble': {
-'diagnosis': 'Dry Bubble',
-'diagnosis_note': 'Penyakit terindikasi',
-'status_kind': 'disease',
-'title': 'Tangani area yang terdampak',
-'text': 'Segera bersihkan bagian terdampak dan perhatikan kebersihan area kerja.'
-},
-'Wet Bubble': {
-'diagnosis': 'Wet Bubble',
-'diagnosis_note': 'Penyakit terindikasi',
-'status_kind': 'disease',
-'title': 'Isolasi dan bersihkan area',
-'text': 'Batasi kontak dengan bagian terdampak dan lakukan pembersihan menyeluruh.'
-},
-'Cobweb': {
-'diagnosis': 'Cobweb',
-'diagnosis_note': 'Penyakit terindikasi',
-'status_kind': 'disease',
-'title': 'Tingkatkan kebersihan dan ventilasi',
-'text': 'Periksa area tumbuh dan jaga sirkulasi udara tetap baik.'
-},
-'Cobweb Disease': {
-'diagnosis': 'Cobweb',
-'diagnosis_note': 'Penyakit terindikasi',
-'status_kind': 'disease',
-'title': 'Tingkatkan kebersihan dan ventilasi',
-'text': 'Periksa area tumbuh dan jaga sirkulasi udara tetap baik.'
-},
-'default': {
-'diagnosis': 'Perlu pemeriksaan',
-'diagnosis_note': 'Konfirmasi hasil secara manual',
-'status_kind': 'review',
-'title': 'Periksa kondisi jamur',
-'text': 'Periksa kondisi jamur secara langsung sebelum menentukan penanganan.'
-}
-} %}
-
 {% block content %}
 <!-- Top Header -->
 <section class="top-header">
@@ -73,8 +21,7 @@
 </section>
 
 <!-- Kamera dan hasil deteksi -->
-<section class="proses-mid-grid" id="gradingPage" data-recommendations="{{ recommendation_texts|tojson|forceescape }}">
-  <!-- Live Camera & Session Card -->
+<section class="proses-mid-grid" id="gradingPage"> <!-- Live Camera & Session Card -->
   <div class="glass-card-subtle live-camera-card">
     <div class="card-title-row camera-title-row" style="flex-wrap: wrap; gap: 8px;">
       <div style="display:flex; align-items:center; gap:8px;">
@@ -215,21 +162,23 @@
         </div>
       </div>
 
-      <div class="grading-recommendation" aria-live="polite">
-        <div class="recommendation-main">
-          <div class="recommendation-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M12 3a7 7 0 0 0-4 12.74V19h8v-3.26A7 7 0 0 0 12 3Z"></path>
-              <path d="M9 22h6M9 16h6"></path>
-              <path d="m9.5 9.5 1.5 1.5 3.5-3.5"></path>
-            </svg>
-          </div>
+      <div class="grading-recommendation session-live-panel" aria-live="polite">
+        <div class="slp-head">
           <div class="recommendation-copy">
-            <span class="recommendation-kicker">PANDUAN APLIKASI • BUKAN KELUARAN API</span>
-            <span class="rec-title" id="recommendationTitle">Menunggu gambar</span>
-            <p class="rec-desc" id="recommendationText">Panduan aplikasi akan ditampilkan setelah prediksi API diterima.
-            </p>
+            <span class="recommendation-kicker">REALTIME SESI • DATA DARI DATABASE</span>
+            <span class="rec-title" id="sessionLiveTitle">Belum ada sesi</span>
           </div>
+          <strong class="slp-total" id="sessionLiveTotal">0 jamur</strong>
+        </div>
+
+        <div class="dist-breakdown-list" id="sessionLiveRows"></div>
+
+        <div class="slp-llm" id="llmBox" hidden>
+          <span class="recommendation-kicker">REKOMENDASI PENANGANAN • LLM</span>
+          <span class="rec-title" id="llmTargets"></span>
+          <p class="rec-desc slp-llm-text" id="llmText"></p>
+          <span class="slp-note">Saran awal dari AI. Konfirmasi ke penyuluh/ahli budidaya sebelum bertindak.</span>
+          <button class="btn-camera-toggle" id="btnRetryLlm" type="button" hidden>↻ Coba lagi</button>
         </div>
       </div>
 
@@ -277,7 +226,7 @@
     const BTN_ANALYZE_LABEL = '📸 Jepret & Klasifikasi';
     const gradingPageEl = document.getElementById('gradingPage');
     if (!gradingPageEl) return;
-    const RECOMMENDATIONS = JSON.parse(gradingPageEl.dataset.recommendations || '{}');
+
 
     let latestResultImageUrl = null;
 
@@ -286,6 +235,18 @@
     let pendingSessionToken = null;
     let activeSessionData = null; // { id, nomor_sesi, tanggal, ... }
     let sessionEnding = false;
+    // Panel realtime & LLM
+    let lastFinishedSession = null;
+    let liveStatsRequestId = 0;
+    let llmRequestId = 0;
+    const LIVE_CLASSES = [
+      { name: 'Healthy', label: 'Healthy', color: '#4ADE80' },
+      { name: 'Bacterial Blotch Tidak Cacat', label: 'BB Tidak Cacat', color: '#3B82F6' },
+      { name: 'Bacterial Blotch Cacat', label: 'BB Cacat', color: '#7C3AED' },
+      { name: 'Dry Bubble', label: 'Dry Bubble', color: '#F59E0B' },
+      { name: 'Cobweb Disease', label: 'Cobweb', color: '#EC4899' },
+      { name: 'Wet Bubble', label: 'Wet Bubble', color: '#EF4444' }
+    ];
 
     let liveWebcamStream = null;
     let cameraStarting = false;
@@ -432,6 +393,7 @@
       }
 
       syncSessionButtons();
+      syncLivePanel();
 
       // Siarkan state sesi ke komponen global (sidebar indicator di halaman lain)
       window.dispatchEvent(new CustomEvent('gradingSessionChange', {
@@ -460,7 +422,8 @@
         console.warn('Gagal cek sesi aktif:', e);
       } finally {
         updateSessionUI();
-        if (sessionState !== 'idle') {
+        if (sessionState === 'active') refreshLiveStats();
+        if (sessionState !== 'idle' && isCameraReady()) {
           startAutoCapture();
         }
       }
@@ -493,7 +456,9 @@
         ? crypto.randomUUID()
         : 'pend-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
 
+      resetLivePanel();
       updateSessionUI();
+
       // Auto-Capture otomatis aktif saat sesi dimulai
       startAutoCapture();
     }
@@ -549,11 +514,17 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
+          const finishedSession = activeSessionData;
           sessionState = 'idle';
           activeSessionData = null;
           pendingSessionToken = null;
           if (autoCaptureActive) stopAutoCapture();
           updateSessionUI();
+          if (finishedSession) {
+            lastFinishedSession = finishedSession;
+            syncLivePanel();
+            loadFinalSummary(finishedSession);
+          }
           const detStatus = document.getElementById('liveObjDetectionStatus');
           if (automatic) {
             if (detStatus) detStatus.textContent = `${cameraStatus} Sesi inspeksi diakhiri otomatis.`;
@@ -860,16 +831,13 @@
         }
       }));
       if (sessionState !== 'idle') {
-        void handleEndSession(true, msg);
+        if (detStatus) detStatus.textContent = `${msg} Sesi tetap berjalan; sambungkan kembali kamera atau upload gambar.`;
       }
     }
 
     function toggleRealtimeCamera() {
       if (cameraStarting || liveWebcamStream) {
         stopRealtimeCamera(true);
-        if (sessionState !== 'idle') {
-          void handleEndSession(true, 'Kamera dimatikan.');
-        }
       } else {
         startRealtimeCamera();
       }
@@ -960,12 +928,13 @@
           activeSessionData = payload.sesi_info;
           pendingSessionToken = null;
           updateSessionUI();
-        if (sessionState !== 'idle') {
-          startAutoCapture();
-        }
+          if (sessionState !== 'idle') {
+            startAutoCapture();
+          }
         }
 
         renderCameraResult(payload);
+        if (payload.db_saved) refreshLiveStats();
         if (detStatus) detStatus.textContent = 'Analisis selesai. Hasil telah dicatat.';
 
         if (payload.db_saved) {
@@ -1001,8 +970,6 @@
       const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
       setEl('diagnosisName', 'Menganalisis gambar...');
       setEl('diagnosisStatus', 'Gambar sedang diproses oleh model CNN & PCV.');
-      setEl('recommendationTitle', 'Menunggu hasil');
-      setEl('recommendationText', 'Panduan penanganan akan ditampilkan setelah hasil diterima.');
       setEl('servoTarget', 'Memproses...');
       setEl('latestDetectionId', '#API');
     }
@@ -1084,7 +1051,7 @@
           : '#SELESAI';
       }
 
-      const recommendation = RECOMMENDATIONS[formatPredictionLabel(result.prediction)] || RECOMMENDATIONS.default;
+      const statusKind = diagnosisStatusKind(formatPredictionLabel(result.prediction));
       document.getElementById('diagnosisName').textContent = formatPredictionLabel(result.prediction);
 
       if (result.pcv_result && result.pcv_result.spot_percentage !== undefined) {
@@ -1094,9 +1061,7 @@
         document.getElementById('diagnosisStatus').textContent = `Klasifikasi AI: ${result.grade || result.prediction}`;
       }
 
-      document.getElementById('resultDiagnosis').dataset.status = recommendation.status_kind;
-      document.getElementById('recommendationTitle').textContent = recommendation.title;
-      document.getElementById('recommendationText').textContent = recommendation.text;
+      document.getElementById('resultDiagnosis').dataset.status = statusKind;
 
       const detectionTime = new Date();
       document.getElementById('resultTime').textContent =
@@ -1287,6 +1252,109 @@
         if (objectDetectedFrames > 0) objectDetectedFrames--;
       }
     }
+
+    // ========================================================
+    // PANEL REALTIME SESI + REKOMENDASI LLM
+    // ========================================================
+    function diagnosisStatusKind(label) {
+      if (label === 'Healthy') return 'healthy';
+      if (['Bacterial Blotch', 'Dry Bubble', 'Wet Bubble', 'Cobweb Disease', 'Cobweb'].includes(label)) return 'disease';
+      return 'review';
+    }
+
+    function renderLiveRows(stats) {
+      const rowsEl = document.getElementById('sessionLiveRows');
+      const totalEl = document.getElementById('sessionLiveTotal');
+      if (!rowsEl) return;
+      const byName = {};
+      ((stats && stats.rows) || []).forEach(r => { byName[r.nama] = r; });
+      rowsEl.innerHTML = LIVE_CLASSES.map(c => {
+        const r = byName[c.name] || {};
+        const jumlah = Number(r.jumlah) || 0;
+        const persen = Number(r.persen) || 0;
+        return `<div class="dist-row">
+          <span class="dist-label"><span class="legend-color-dot" style="background:${c.color}"></span>${c.label}</span>
+          <div class="dist-bar-wrap"><div class="dist-bar" style="width:${persen}%;background:${c.color}"></div></div>
+          <span class="dist-val">${jumlah} · ${persen}%</span>
+        </div>`;
+      }).join('');
+      if (totalEl) totalEl.textContent = `${Number(stats && stats.total) || 0} jamur`;
+    }
+
+    function syncLivePanel() {
+      const title = document.getElementById('sessionLiveTitle');
+      if (!title) return;
+      if (sessionState === 'active' && activeSessionData) {
+        title.textContent = `Sesi #${activeSessionData.nomor_sesi} berjalan`;
+      } else if (sessionState === 'pending') {
+        title.textContent = 'Sesi siap, menunggu inspeksi pertama';
+      } else if (lastFinishedSession) {
+        title.textContent = `Sesi #${lastFinishedSession.nomor_sesi} selesai`;
+      } else {
+        title.textContent = 'Belum ada sesi';
+      }
+    }
+
+    function resetLivePanel() {
+      lastFinishedSession = null;
+      llmRequestId++;
+      const box = document.getElementById('llmBox');
+      if (box) box.hidden = true;
+      renderLiveRows(null);
+    }
+
+    async function refreshLiveStats() {
+      const sid = activeSessionData && activeSessionData.id;
+      if (!sid) return;
+      const reqId = ++liveStatsRequestId;
+      try {
+        const res = await fetch(`/api/session/${sid}/stats`);
+        const data = await res.json();
+        if (reqId !== liveStatsRequestId) return;
+        if (res.ok && data.success) renderLiveRows(data.stats);
+      } catch (e) {
+        console.warn('Gagal memuat statistik sesi:', e);
+      }
+    }
+
+    async function loadFinalSummary(session) {
+      const box = document.getElementById('llmBox');
+      const text = document.getElementById('llmText');
+      const targets = document.getElementById('llmTargets');
+      const retry = document.getElementById('btnRetryLlm');
+      if (!box || !text) return;
+
+      const reqId = ++llmRequestId;
+      box.hidden = false;
+      retry.hidden = true;
+      targets.textContent = '';
+      text.textContent = 'Menyusun rekomendasi penanganan…';
+
+      try {
+        const res = await fetch(`/api/session/${session.id}/recommendation`, { method: 'POST' });
+        const data = await res.json();
+        if (reqId !== llmRequestId) return;
+        if (!res.ok || !data.success) throw new Error(data.message || 'Gagal membuat rekomendasi.');
+
+        renderLiveRows(data.stats);
+        if (data.status === 'no_disease') {
+          text.textContent = 'Tidak ada penyakit terdeteksi pada sesi ini, jadi tidak ada rekomendasi penanganan.';
+        } else {
+          targets.textContent = 'Fokus: ' + (data.targets || []).join(' + ');
+          text.textContent = data.text;
+        }
+      } catch (err) {
+        if (reqId !== llmRequestId) return;
+        text.textContent = `Rekomendasi belum tersedia: ${err.message}`;
+        retry.hidden = false;
+      }
+    }
+
+    document.getElementById('btnRetryLlm')?.addEventListener('click', () => {
+      if (lastFinishedSession) loadFinalSummary(lastFinishedSession);
+    });
+
+    renderLiveRows(null);
 
     // Inisialisasi awal saat halaman siap
     loadCameraDevices();

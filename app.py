@@ -11,6 +11,13 @@ from endpoint.model import (
     get_supabase,
     model_api,
 )
+from services.rekomendasi import (
+    SesiTidakValid,
+    build_stats,
+    generate_recommendation,
+    get_session_counts,
+)
+
 
 try:
     import openpyxl
@@ -855,7 +862,30 @@ def api_session_active():
         'session': active
     })
 
+@app.route('/api/session/<sesi_id>/stats', methods=['GET'])
+def api_session_stats(sesi_id):
+    """Jumlah dan persen per kelas untuk satu sesi (sumber panel realtime)."""
+    try:
+        return jsonify({'success': True, 'stats': build_stats(get_session_counts(sesi_id))})
+    except Exception as e:
+        app.logger.error(f"Gagal mengambil statistik sesi: {e}")
+        return jsonify({'success': False, 'message': 'Gagal mengambil statistik sesi.'}), 500
 
+
+@app.route('/api/session/<sesi_id>/recommendation', methods=['POST'])
+def api_session_recommendation(sesi_id):
+    """Rekomendasi LLM untuk sesi yang sudah selesai (dibuat saat diminta, tidak disimpan)."""
+    try:
+        return jsonify({'success': True, **generate_recommendation(sesi_id)})
+    except SesiTidakValid as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+    except RuntimeError as e:
+        app.logger.error(f"Rekomendasi gagal: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 502
+    except Exception as e:
+        app.logger.error(f"Rekomendasi error tak terduga: {e}")
+        return jsonify({'success': False, 'message': 'Gagal membuat rekomendasi.'}), 500
+        
 @app.route('/api/stats')
 def api_stats():
     return jsonify(get_live_stats())
