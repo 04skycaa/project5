@@ -48,9 +48,9 @@
       </div>
 
       <!-- Live Global Grading Status Pill in Sidebar (Untuk pemantauan dari halaman mana pun) -->
-      <div id="sidebarGradingIndicator" style="margin: 0 12px 14px 12px; padding: 8px 12px; border-radius: 12px; background: rgba(148, 163, 184, 0.12); border: 1.2px solid rgba(148, 163, 184, 0.25); display: flex; align-items: center; gap: 8px; font-size: 11.5px; transition: all 0.3s ease;">
+      <div id="sidebarGradingIndicator" class="sidebar-grading-indicator" style="background: rgba(148, 163, 184, 0.12); border: 1.2px solid rgba(148, 163, 184, 0.25);">
         <span id="sidebarStatusDot" class="pulse-dot" style="background: #94A3B8; width:8px; height:8px; flex-shrink:0;"></span>
-        <div style="min-width:0; flex:1;">
+        <div class="sb-fade" style="min-width:0; flex:1;">
           <div style="font-size:10px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:0.04em;">Status Grading</div>
           <div id="sidebarStatusText" style="font-weight:600; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Sesi Nonaktif</div>
         </div>
@@ -172,7 +172,7 @@
   </nav>
 
   <!-- Container Khusus Notifikasi di Luar Halaman Grading -->
-  <div id="globalToastContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 999999; display: flex; flex-direction: column; gap: 8px; pointer-events: none;"></div>
+  <div id="globalToastContainer" style="position: fixed; top: 0; left: 0; width: 100%; z-index: 999999; display: flex; flex-direction: column; align-items: center; pointer-events: none;"></div>
 
   <!-- Detail Inspection Modal -->
   <div class="modal-overlay" id="detailModal">
@@ -280,12 +280,50 @@
         }
       });
 
-      // 2. Notifikasi Prediksi HANYA saat di luar halaman grading
+      // 2. iOS-style Notification Banner — muncul di halaman manapun
+      // Fungsi global: window.showIOSNotification({ title, text, icon, iconBg, duration })
+      window.showIOSNotification = function(opts) {
+        const { title = 'Notifikasi', text = '', icon = 'ℹ️', iconBg = '#2563EB', duration = 4500 } = opts || {};
+        // Hapus notifikasi lama jika ada
+        document.querySelectorAll('.ios-notif-banner').forEach(el => {
+          el.classList.add('removing');
+          setTimeout(() => el.remove(), 350);
+        });
+
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+
+        const banner = document.createElement('div');
+        banner.className = 'ios-notif-banner';
+        banner.innerHTML = `
+          <div class="ios-notif-header">
+            <div class="ios-notif-app-icon" style="background:${iconBg};color:#fff;">${icon}</div>
+            <span class="ios-notif-app-name">Mushroom Grading</span>
+            <span class="ios-notif-time">${timeStr}</span>
+          </div>
+          <div class="ios-notif-body">
+            <div class="ios-notif-title">${title}</div>
+            <div class="ios-notif-text">${text}</div>
+          </div>
+        `;
+
+        banner.addEventListener('click', () => {
+          banner.classList.add('removing');
+          setTimeout(() => banner.remove(), 350);
+        });
+
+        document.body.appendChild(banner);
+        setTimeout(() => {
+          if (banner.parentNode) {
+            banner.classList.add('removing');
+            setTimeout(() => banner.remove(), 350);
+          }
+        }, duration);
+      };
+
       const shownNotificationIds = new Set();
       window.addEventListener('gradingPredictionSaved', (e) => {
-        if (currentPageName === 'proses') return;
-
-        const { grade, detectionId } = e.detail || {};
+        const { grade, prediction, confidence, detectionId, servo_target } = e.detail || {};
         if (!grade) return;
         if (detectionId) {
           if (shownNotificationIds.has(detectionId)) return;
@@ -293,41 +331,21 @@
           shownNotificationIds.add(detectionId);
         }
 
-        const container = document.getElementById('globalToastContainer');
-        if (!container) return;
+        const gradeLabels = {
+          'SEHAT': 'Jamur Sehat ✅',
+          'BB_TIDAK_CACAT': 'BB Tidak Cacat 🛡️',
+          'BB_CACAT': 'BB Cacat ⚠️',
+          'TIDAK_LAYAK': 'Tidak Layak ❌'
+        };
+        const gradeLabel = gradeLabels[grade] || grade;
+        const confStr = confidence ? ` (${Number(confidence).toFixed(1)}%)` : '';
 
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-          pointer-events: auto;
-          background: rgba(255, 255, 255, 0.94);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1.5px solid rgba(45, 106, 79, 0.3);
-          border-left: 5px solid #2D6A4F;
-          border-radius: 14px;
-          padding: 12px 18px;
-          min-width: 260px;
-          max-width: 340px;
-          box-shadow: 0 10px 25px -5px rgba(0,0,0,0.12), 0 4px 10px rgba(0,0,0,0.04);
-          font-family: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          animation: toastSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-          cursor: pointer;
-        `;
-        toast.innerHTML = `
-          <div style="font-size:20px; line-height:1;">🍄</div>
-          <div style="flex:1; min-width:0;">
-            <div style="font-size:10px; font-weight:700; color:#2D6A4F; text-transform:uppercase; letter-spacing:0.04em;">Grading Terdeteksi</div>
-            <div style="font-size:13px; font-weight:700; color:#0F172A; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${grade}</div>
-          </div>
-          <button type="button" style="border:none;background:none;color:#94A3B8;cursor:pointer;font-size:14px;">✕</button>
-        `;
-
-        toast.addEventListener('click', () => toast.remove());
-        container.appendChild(toast);
-        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4500);
+        window.showIOSNotification({
+          title: gradeLabel,
+          text: `Prediksi: ${prediction || '-'}${confStr} → ${servo_target || '-'}`,
+          icon: 'ℹ️',
+          iconBg: '#2563EB'
+        });
       });
 
       function updateActiveNavLinks(targetPage) {

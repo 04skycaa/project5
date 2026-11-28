@@ -3,15 +3,13 @@ import csv
 import io
 from datetime import datetime, timezone, timedelta
 from flask import Flask, render_template, jsonify, request, Response
-from endpoint.model import model_api
-from services.supabase_service import (
-    fetch_latest_inspections,
-    calculate_database_stats,
-    start_new_session,
-    stop_active_session,
-    get_active_session,
-    fetch_history_by_days,
-    fetch_laporan_stats
+from endpoint.model import (
+    DETAIL_KATEGORI_NAMES,
+    WIB,
+    _session_lock,
+    get_current_wib_date_str,
+    get_supabase,
+    model_api,
 )
 
 try:
@@ -31,6 +29,502 @@ app.config['MODEL_API_URL'] = os.getenv(
     'http://127.0.0.1:5001/predict'
 )
 app.register_blueprint(model_api)
+
+
+def get_active_session():
+    """Mengambil sesi yang sedang aktif (waktu_selesai IS NULL)."""
+    client = get_supabase()
+    if client is None:
+        return None
+
+    try:
+        response = client.table("sesi") \
+            .select("id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai") \
+            .is_("waktu_selesai", "null") \
+            .order("waktu_mulai", desc=True) \
+            .limit(1) \
+            .execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"[ERROR] Gagal mengambil sesi aktif: {e}")
+        return None
+
+
+def start_new_session():
+    """Menutup sesi lama lalu membuat sesi baru untuk tanggal WIB saat ini."""
+    with _session_lock:
+        client = get_supabase()
+        if client is None:
+            return None
+
+        today_str = get_current_wib_date_str()
+        now_iso = datetime.now(timezone.utc).isoformat()
+        try:
+            client.table("sesi") \
+                .update({"waktu_selesai": now_iso}) \
+                .is_("waktu_selesai", "null") \
+                .execute()
+
+            existing_today = client.table("sesi") \
+                .select("nomor_sesi") \
+                .eq("tanggal", today_str) \
+                .order("nomor_sesi", desc=True) \
+                .limit(1) \
+                .execute()
+            next_number = 1
+            if existing_today.data:
+                next_number = int(existing_today.data[0].get("nomor_sesi", 0)) + 1
+
+            response = client.table("sesi").insert({
+                "tanggal": today_str,
+                "nomor_sesi": next_number,
+                "waktu_mulai": now_iso,
+                "waktu_selesai": None,
+            }).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            print(f"[ERROR] Gagal membuat sesi baru: {e}")
+            return None
+
+
+def stop_active_session(target_sesi_id: str = None):
+    """Menghentikan sesi aktif, hanya sesi tujuan jika ID diberikan."""
+    with _session_lock:
+        client = get_supabase()
+        if client is None:
+            return None
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        try:
+            query = client.table("sesi").update({"waktu_selesai": now_iso})
+            if target_sesi_id:
+                query = query.eq("id", target_sesi_id).is_("waktu_selesai", "null")
+            else:
+                query = query.is_("waktu_selesai", "null")
+            response = query.select(
+                "id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai"
+            ).execute()
+            if response.data:
+                return response.data[0]
+            print("[ERROR] Tidak ada sesi aktif yang berhasil dihentikan.")
+            return None
+        except Exception as e:
+            print(f"[ERROR] Gagal menghentikan sesi: {e}")
+            return None
+
+
+def fetch_latest_inspections(limit: int = 100, dari: str = None, sampai: str = None):
+    """Mengambil riwayat inspeksi dari relasi sesi dan detail_kategori."""
+    client = get_supabase()
+    if client is None:
+        return []
+
+    try:
+        query = client.table("sesi") \
+            .select(
+                "id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai, "
+                "inspeksi(sesi_id, kategori_id, jumlah, detail_kategori(id, nama_kategori))"
+            )
+        if dari:
+            query = query.gte("tanggal", dari)
+        if sampai:
+            query = query.lte("tanggal", sampai)
+        response = query.order("tanggal", desc=True) \
+            .order("nomor_sesi", desc=True) \
+            .limit(limit) \
+            .execute()
+
+        flattened = []
+        for session in response.data or []:
+            for item in session.get("inspeksi") or []:
+                category = item.get("detail_kategori") or {}
+                category_name = category.get("nama_kategori", "Healthy")
+                flattened.append({
+                    "id": f"{session['id'][:8]}-{item['kategori_id'][:4]}",
+                    "full_id": f"{session['id']}:{item['kategori_id']}",
+                    "sesi_id": session["id"],
+                    "kategori_id": item["kategori_id"],
+                    "kategori": category_name,
+                    "grade": category_name,
+                    "jumlah": item.get("jumlah", 1),
+                    "sesi": session,
+                })
+        return flattened
+    except Exception as e:
+        print(f"[ERROR] Gagal mengambil data inspeksi: {e}")
+        return []
+
+
+def calculate_database_stats():
+    """Menghitung statistik agregat dari tabel inspeksi dan sesi."""
+    client = get_supabase()
+    if client is None:
+        return _empty_stats()
+
+    try:
+        inspection_response = client.table("inspeksi") \
+            .select("sesi_id, kategori_id, jumlah, detail_kategori(nama_kategori)") \
+            .execute()
+        rows = inspection_response.data or []
+        session_response = client.table("sesi").select("id").execute()
+        total_sessions = len(session_response.data or [])
+    except Exception as e:
+        print(f"[ERROR] Gagal menghitung statistik database: {e}")
+        return _empty_stats()
+
+    total = sum(int(row.get("jumlah", 0) or 0) for row in rows)
+    if total == 0:
+        stats = _empty_stats()
+        stats["total_sesi"] = total_sessions
+        return stats
+
+    healthy = bb_defect = bb_safe = reject = 0
+    for row in rows:
+        category = row.get("detail_kategori") or {}
+        category_name = category.get("nama_kategori", "").strip()
+        quantity = int(row.get("jumlah", 0) or 0)
+        if category_name == "Healthy":
+            healthy += quantity
+        elif category_name == "Bacterial Blotch Tidak Cacat":
+            bb_safe += quantity
+        elif category_name == "Bacterial Blotch Cacat":
+            bb_defect += quantity
+        elif category_name in ("Dry Bubble", "Cobweb Disease", "Wet Bubble"):
+            reject += quantity
+
+    healthy_pct = round(healthy / total * 100, 1)
+    bb_defect_pct = round(bb_defect / total * 100, 1)
+    bb_safe_pct = round(bb_safe / total * 100, 1)
+    reject_pct = round(reject / total * 100, 1)
+    return {
+        "total_jamur": total,
+        "jamur_sehat": healthy,
+        "bb_total": bb_defect + bb_safe,
+        "bb_cacat": bb_defect,
+        "bb_tidak_cacat": bb_safe,
+        "tidak_layak": reject,
+        "total_sesi": total_sessions,
+        "keberhasilan_rate": round((healthy + bb_safe) / total * 100, 1),
+        "rata_rata_hari": round(total / max(1, total_sessions), 1),
+        "reject_rate": reject_pct,
+        "percentages": {
+            "sehat": healthy_pct,
+            "bb_cacat": bb_defect_pct,
+            "bb_tidak_cacat": bb_safe_pct,
+            "tidak_layak": reject_pct,
+        },
+        "is_empty": False,
+        "rows": rows,
+    }
+
+
+def _empty_stats():
+    return {
+        "total_jamur": 0,
+        "jamur_sehat": 0,
+        "bb_total": 0,
+        "bb_cacat": 0,
+        "bb_tidak_cacat": 0,
+        "tidak_layak": 0,
+        "total_sesi": 0,
+        "keberhasilan_rate": 0.0,
+        "rata_rata_hari": 0.0,
+        "reject_rate": 0.0,
+        "percentages": {
+            "sehat": 0.0,
+            "bb_cacat": 0.0,
+            "bb_tidak_cacat": 0.0,
+            "tidak_layak": 0.0,
+        },
+        "is_empty": True,
+        "rows": [],
+    }
+
+
+def fetch_laporan_stats(dari_str: str = "", sampai_str: str = "") -> dict:
+    """Mengambil statistik laporan Supabase untuk rentang tanggal tertentu."""
+    client = get_supabase()
+    grade_colors = {
+        "sehat": "#4ADE80",
+        "bb_tidak_cacat": "#3B82F6",
+        "bb_cacat": "#7C3AED",
+        "tidak_layak": "#EF4444",
+    }
+    category_colors = {
+        "Healthy": "#4ADE80",
+        "Bacterial Blotch Tidak Cacat": "#3B82F6",
+        "Bacterial Blotch Cacat": "#7C3AED",
+        "Dry Bubble": "#F59E0B",
+        "Cobweb Disease": "#EC4899",
+        "Wet Bubble": "#EF4444",
+    }
+    empty = {
+        "dari": dari_str or "",
+        "sampai": sampai_str or "",
+        "total_jamur": 0,
+        "total_sesi": 0,
+        "sehat": 0,
+        "bb_tidak_cacat": 0,
+        "bb_cacat": 0,
+        "tidak_layak": 0,
+        "kat6": {name: 0 for name in DETAIL_KATEGORI_NAMES},
+        "keberhasilan_rate": 0.0,
+        "reject_rate": 0.0,
+        "percentages": {
+            "sehat": 0.0,
+            "bb_tidak_cacat": 0.0,
+            "bb_cacat": 0.0,
+            "tidak_layak": 0.0,
+        },
+        "kat6_pct": {name: 0.0 for name in DETAIL_KATEGORI_NAMES},
+        "per_hari": [],
+        "grade_colors": grade_colors,
+        "kat6_colors": category_colors,
+        "is_empty": True,
+    }
+    if client is None:
+        return empty
+
+    try:
+        query = client.table("sesi") \
+            .select(
+                "id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai, "
+                "inspeksi(sesi_id, kategori_id, jumlah, detail_kategori(id, nama_kategori))"
+            )
+        if dari_str and str(dari_str).strip():
+            query = query.gte("tanggal", dari_str.strip())
+        if sampai_str and str(sampai_str).strip():
+            query = query.lte("tanggal", sampai_str.strip())
+        response = query.order("tanggal", desc=False) \
+            .order("nomor_sesi", desc=False) \
+            .execute()
+        sessions = response.data or []
+    except Exception as e:
+        print(f"[ERROR] fetch_laporan_stats: {e}")
+        return empty
+
+    if not sessions:
+        return {**empty, "dari": dari_str or "", "sampai": sampai_str or ""}
+
+    total_mushrooms = 0
+    healthy = bb_safe = bb_defect = reject = 0
+    categories = {name: 0 for name in DETAIL_KATEGORI_NAMES}
+    days = {}
+    for session in sessions:
+        date_str = session.get("tanggal") or ""
+        if date_str not in days:
+            days[date_str] = {
+                "tanggal": date_str,
+                "tanggal_fmt": "/".join(reversed(date_str.split("-"))) if "-" in date_str else date_str,
+                "sehat": 0,
+                "bb_tidak_cacat": 0,
+                "bb_cacat": 0,
+                "tidak_layak": 0,
+                "total": 0,
+            }
+
+        for item in session.get("inspeksi") or []:
+            quantity = int(item.get("jumlah", 0) or 0)
+            if quantity <= 0:
+                continue
+            category = item.get("detail_kategori") or {}
+            name = category.get("nama_kategori")
+            if name not in DETAIL_KATEGORI_NAMES:
+                continue
+
+            if name == "Healthy":
+                grade = "sehat"
+                healthy += quantity
+            elif name == "Bacterial Blotch Tidak Cacat":
+                grade = "bb_tidak_cacat"
+                bb_safe += quantity
+            elif name == "Bacterial Blotch Cacat":
+                grade = "bb_cacat"
+                bb_defect += quantity
+            else:
+                grade = "tidak_layak"
+                reject += quantity
+            total_mushrooms += quantity
+            categories[name] += quantity
+            days[date_str]["total"] += quantity
+            days[date_str][grade] += quantity
+
+    total_sessions = len(sessions)
+    if total_mushrooms == 0:
+        return {
+            **empty,
+            "dari": dari_str,
+            "sampai": sampai_str,
+            "total_sesi": total_sessions,
+        }
+
+    def percentage(value):
+        return round(value / total_mushrooms * 100, 1)
+
+    return {
+        "dari": dari_str,
+        "sampai": sampai_str,
+        "total_jamur": total_mushrooms,
+        "total_sesi": total_sessions,
+        "sehat": healthy,
+        "bb_tidak_cacat": bb_safe,
+        "bb_cacat": bb_defect,
+        "tidak_layak": reject,
+        "kat6": categories,
+        "keberhasilan_rate": round((healthy + bb_safe) / total_mushrooms * 100, 1),
+        "reject_rate": percentage(reject),
+        "percentages": {
+            "sehat": percentage(healthy),
+            "bb_tidak_cacat": percentage(bb_safe),
+            "bb_cacat": percentage(bb_defect),
+            "tidak_layak": percentage(reject),
+        },
+        "kat6_pct": {name: percentage(value) for name, value in categories.items()},
+        "per_hari": list(days.values()),
+        "grade_colors": grade_colors,
+        "kat6_colors": category_colors,
+        "is_empty": False,
+    }
+
+
+def fetch_history_by_days():
+    """Mengambil riwayat sesi inspeksi, dikelompokkan berdasarkan hari."""
+    client = get_supabase()
+    if client is None:
+        return []
+
+    try:
+        response = client.table("sesi") \
+            .select(
+                "id, tanggal, nomor_sesi, waktu_mulai, waktu_selesai, "
+                "inspeksi(sesi_id, kategori_id, jumlah, detail_kategori(id, nama_kategori))"
+            ) \
+            .order("tanggal", desc=True) \
+            .order("nomor_sesi", desc=True) \
+            .execute()
+        sessions = response.data or []
+    except Exception as e:
+        print(f"[ERROR] Gagal mengambil riwayat sesi: {e}")
+        return []
+
+    category_colors = {
+        "Healthy": "#4ADE80",
+        "Bacterial Blotch Tidak Cacat": "#3B82F6",
+        "Bacterial Blotch Cacat": "#7C3AED",
+        "Dry Bubble": "#F59E0B",
+        "Cobweb Disease": "#EC4899",
+        "Wet Bubble": "#EF4444",
+    }
+    category_badges = {
+        "Healthy": "healthy",
+        "Bacterial Blotch Tidak Cacat": "bb-safe",
+        "Bacterial Blotch Cacat": "bb-defect",
+        "Dry Bubble": "unfit",
+        "Cobweb Disease": "unfit",
+        "Wet Bubble": "unfit",
+    }
+    category_statuses = {
+        "Healthy": "Normal",
+        "Bacterial Blotch Tidak Cacat": "Toleransi",
+        "Bacterial Blotch Cacat": "Cacat",
+        "Dry Bubble": "Reject",
+        "Cobweb Disease": "Reject",
+        "Wet Bubble": "Reject",
+    }
+    days = {}
+    for session in sessions:
+        date_str = session.get("tanggal") or "-"
+        date_parts = date_str.split("-")
+        date_formatted = (
+            f"{date_parts[2]}/{date_parts[1]}/{date_parts[0]}"
+            if len(date_parts) == 3 else date_str
+        )
+        if date_formatted not in days:
+            days[date_formatted] = {
+                "date": date_formatted,
+                "raw_date": date_str,
+                "total_jamur": 0,
+                "total_sesi": 0,
+                "sehat": 0,
+                "bb_safe": 0,
+                "bb_defect": 0,
+                "reject": 0,
+                "sessions_list": [],
+            }
+
+        day = days[date_formatted]
+        day["total_sesi"] += 1
+        start_raw = session.get("waktu_mulai")
+        end_raw = session.get("waktu_selesai")
+        start_time = "-"
+        end_time = "Sedang Berjalan"
+        if start_raw:
+            try:
+                start_time = datetime.fromisoformat(
+                    str(start_raw).replace("Z", "+00:00")
+                ).astimezone(WIB).strftime("%H:%M:%S")
+            except Exception:
+                start_time = str(start_raw)[11:19]
+        if end_raw:
+            try:
+                end_time = datetime.fromisoformat(
+                    str(end_raw).replace("Z", "+00:00")
+                ).astimezone(WIB).strftime("%H:%M:%S")
+            except Exception:
+                end_time = str(end_raw)[11:19]
+        time_range = f"{start_time} - {end_time} WIB" if start_time != "-" else "-"
+
+        inspection_items = session.get("inspeksi") or []
+        session_total = sum(int(item.get("jumlah", 0) or 0) for item in inspection_items)
+        category_counts = {name: 0 for name in DETAIL_KATEGORI_NAMES}
+        for item in inspection_items:
+            category = item.get("detail_kategori") or {}
+            name = category.get("nama_kategori")
+            if name in category_counts:
+                category_counts[name] += int(item.get("jumlah", 0) or 0)
+
+        day["total_jamur"] += session_total
+        day["sehat"] += category_counts["Healthy"]
+        day["bb_safe"] += category_counts["Bacterial Blotch Tidak Cacat"]
+        day["bb_defect"] += category_counts["Bacterial Blotch Cacat"]
+        day["reject"] += sum(
+            category_counts[name] for name in ("Dry Bubble", "Cobweb Disease", "Wet Bubble")
+        )
+        category_rows = []
+        for name in DETAIL_KATEGORI_NAMES:
+            quantity = category_counts[name]
+            category_rows.append({
+                "nama": name,
+                "jumlah": quantity,
+                "persen": round(quantity / session_total * 100, 1) if session_total > 0 else 0.0,
+                "badge": category_badges[name],
+                "status": category_statuses[name],
+                "warna": category_colors[name],
+            })
+
+        number = session.get("nomor_sesi", 1)
+        day["sessions_list"].append({
+            "id": session.get("id"),
+            "session_label": f"Sesi #{number}",
+            "nomor_sesi": number,
+            "tanggal": date_formatted,
+            "waktu_mulai": start_time,
+            "waktu_selesai": end_time,
+            "rentang_sesi": time_range,
+            "total_jamur": session_total,
+            "sehat": category_counts["Healthy"],
+            "bb_safe": category_counts["Bacterial Blotch Tidak Cacat"],
+            "bb_defect": category_counts["Bacterial Blotch Cacat"],
+            "reject": sum(
+                category_counts[name] for name in ("Dry Bubble", "Cobweb Disease", "Wet Bubble")
+            ),
+            "kategori_counts": category_counts,
+            "kategori_rows": category_rows,
+            "chart_labels": DETAIL_KATEGORI_NAMES,
+            "chart_values": [category_counts[name] for name in DETAIL_KATEGORI_NAMES],
+            "chart_colors": [category_colors[name] for name in DETAIL_KATEGORI_NAMES],
+        })
+    return list(days.values())
 
 
 def format_inspections(raw_rows):

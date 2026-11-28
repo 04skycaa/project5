@@ -87,11 +87,11 @@
       <div style="display: flex; gap: 6px; align-items: center; margin-left: auto;">
         <button class="btn-camera-toggle" id="btnStartSession" type="button" disabled
           title="Buka dan pastikan kamera siap terlebih dahulu"
-          style="background: rgba(45, 106, 79, 0.14); border-color: rgba(45, 106, 79, 0.35); color: #1B4332; font-weight:700; opacity: 0.5; cursor: not-allowed;">
+          style="background: rgba(45, 106, 79, 0.14); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(45, 106, 79, 0.35); box-shadow: var(--box-shadow-pill-btn); border-radius: var(--radius-ios-pill); color: #1B4332; font-weight: 800; opacity: 0.78; cursor: not-allowed;">
           ▶ Mulai Sesi
         </button>
         <button class="btn-camera-toggle" id="btnEndSession" type="button"
-          style="background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.35); color: #DC2626; font-weight:700; display:none;">
+          style="background: rgba(239, 68, 68, 0.12); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(239, 68, 68, 0.35); box-shadow: var(--box-shadow-pill-btn); border-radius: var(--radius-ios-pill); color: #DC2626; font-weight: 800; display:none;">
           ⏹ Akhiri Sesi
         </button>
       </div>
@@ -114,10 +114,6 @@
         <span id="btnToggleText">Buka Kamera</span>
       </button>
 
-      <button class="btn-camera-toggle" id="btnToggleAutoCapture" type="button" title="Aktifkan / Hentikan Auto-Capture"
-        style="margin-left:auto;">
-        ⚡ Auto-Capture: <span id="autoCaptureToggleText">Off</span>
-      </button>
     </div>
 
     <!-- Auto-Capture Status Bar -->
@@ -381,7 +377,7 @@
         if (btnStart) {
           btnStart.style.display = 'inline-flex';
           btnStart.disabled = !camReady;
-          btnStart.style.opacity = camReady ? '1' : '0.5';
+          btnStart.style.opacity = camReady ? '1' : '0.72';
           btnStart.style.cursor = camReady ? 'pointer' : 'not-allowed';
           btnStart.title = camReady
             ? 'Mulai sesi inspeksi baru'
@@ -464,6 +460,9 @@
         console.warn('Gagal cek sesi aktif:', e);
       } finally {
         updateSessionUI();
+        if (sessionState !== 'idle') {
+          startAutoCapture();
+        }
       }
     }
 
@@ -495,14 +494,18 @@
         : 'pend-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
 
       updateSessionUI();
+      // Auto-Capture otomatis aktif saat sesi dimulai
+      startAutoCapture();
     }
 
-    async function handleEndSession() {
+    async function handleEndSession(automatic = false, cameraStatus = 'Kamera tidak aktif.') {
       if (sessionEnding || sessionState === 'idle') return;
 
       if (inFlightPredictionCount > 0) {
-        const confirmEnd = confirm(`Masih ada ${inFlightPredictionCount} prediksi yang sedang berjalan. Yakin ingin mengakhiri sesi sekarang?`);
-        if (!confirmEnd) return;
+        if (!automatic) {
+          const confirmEnd = confirm(`Masih ada ${inFlightPredictionCount} prediksi yang sedang berjalan. Yakin ingin mengakhiri sesi sekarang?`);
+          if (!confirmEnd) return;
+        }
         activePredictionControllers.forEach(ctrl => ctrl.abort());
         activePredictionControllers.clear();
         inFlightPredictionCount = 0;
@@ -515,7 +518,10 @@
         activeSessionData = null;
         if (autoCaptureActive) stopAutoCapture();
         updateSessionUI();
-        if (window.Swal) {
+        const detStatus = document.getElementById('liveObjDetectionStatus');
+        if (automatic) {
+          if (detStatus) detStatus.textContent = `${cameraStatus} Sesi tanpa inspeksi dibatalkan.`;
+        } else if (window.Swal) {
           Swal.fire({
             icon: 'info',
             title: 'Sesi Dibatalkan',
@@ -548,7 +554,10 @@
           pendingSessionToken = null;
           if (autoCaptureActive) stopAutoCapture();
           updateSessionUI();
-          if (window.Swal) {
+          const detStatus = document.getElementById('liveObjDetectionStatus');
+          if (automatic) {
+            if (detStatus) detStatus.textContent = `${cameraStatus} Sesi inspeksi diakhiri otomatis.`;
+          } else if (window.Swal) {
             Swal.fire({
               icon: 'success',
               title: 'Sesi Selesai',
@@ -561,6 +570,10 @@
         }
       } catch (err) {
         console.error('Stop sesi gagal:', err);
+        const detStatus = document.getElementById('liveObjDetectionStatus');
+        if (automatic && detStatus) {
+          detStatus.textContent = `${cameraStatus} Sesi gagal diakhiri: ${err.message}`;
+        }
         if (window.Swal) {
           Swal.fire({ icon: 'error', title: 'Gagal Mengakhiri Sesi', text: err.message });
         } else {
@@ -576,7 +589,7 @@
     }
 
     document.getElementById('btnStartSession')?.addEventListener('click', handleStartSession);
-    document.getElementById('btnEndSession')?.addEventListener('click', handleEndSession);
+    document.getElementById('btnEndSession')?.addEventListener('click', () => handleEndSession());
 
     // ========================================================
     // DETEKSI PERANGKAT KAMERA
@@ -748,6 +761,9 @@
         }
 
         updateSessionUI();
+        if (sessionState !== 'idle') {
+          startAutoCapture();
+        }
 
       } catch (error) {
         console.error('Gagal membuka webcam:', error);
@@ -764,7 +780,7 @@
     }
 
     // ========================================================
-    // MENGHENTIKAN KAMERA (TIDAK MENGHENTIKAN SESI)
+    // Stop camera tracks; the caller decides whether to end the session.
     // ========================================================
     function stopRealtimeCamera(updateUI = true) {
       cameraRequestId++;
@@ -830,11 +846,10 @@
         };
         msg = messages[err.name] || err.message || msg;
       } else if (sessionState !== 'idle') {
-        msg = 'Kamera terputus. Sesi tetap dipertahankan, sambungkan kembali kamera.';
+        msg = 'Kamera terputus.';
       }
 
       if (detStatus) detStatus.textContent = msg;
-      if (autoCaptureActive) pauseAutoCaptureDueToCamera();
 
       window.dispatchEvent(new CustomEvent('gradingSessionChange', {
         detail: {
@@ -844,11 +859,17 @@
           error: sessionState !== 'idle' ? 'Kamera terputus' : null
         }
       }));
+      if (sessionState !== 'idle') {
+        void handleEndSession(true, msg);
+      }
     }
 
     function toggleRealtimeCamera() {
       if (cameraStarting || liveWebcamStream) {
         stopRealtimeCamera(true);
+        if (sessionState !== 'idle') {
+          void handleEndSession(true, 'Kamera dimatikan.');
+        }
       } else {
         startRealtimeCamera();
       }
@@ -939,20 +960,26 @@
           activeSessionData = payload.sesi_info;
           pendingSessionToken = null;
           updateSessionUI();
+        if (sessionState !== 'idle') {
+          startAutoCapture();
+        }
         }
 
         renderCameraResult(payload);
         if (detStatus) detStatus.textContent = 'Analisis selesai. Hasil telah dicatat.';
 
         if (payload.db_saved) {
-          const gradeText = payload.grade || payload.prediction || 'Sehat';
-          showIPhoneDynamicIsland(payload, detectionId.slice(0, 8), gradeText, payload.confidence);
+          const gradeText = payload.grade || (payload.prediction
+            ? formatPredictionLabel(payload.prediction)
+            : 'Sehat');
 
           window.dispatchEvent(new CustomEvent('gradingPredictionSaved', {
             detail: {
               grade: gradeText,
-              prediction: payload.prediction,
-              detectionId: detectionId
+              prediction: formatPredictionLabel(payload.prediction),
+              confidence: payload.confidence,
+              servo_target: payload.servo_target,
+              detectionId
             }
           }));
         }
@@ -1081,6 +1108,10 @@
 
     function formatPredictionLabel(label) {
       if (!label) return '-';
+      if (typeof label === 'object') {
+        label = label.class_name || label.disease || label.predicted_class || label.class_code || label.prediction || '-';
+      }
+      label = String(label);
       return {
         Bacterial_Blotch: 'Bacterial Blotch',
         Cobweb_Disease: 'Cobweb Disease',
@@ -1088,32 +1119,6 @@
         Wet_Bubble: 'Wet Bubble',
         Healthy: 'Healthy'
       }[label] || label.replace(/_/g, ' ');
-    }
-
-    function showIPhoneDynamicIsland(data, shortId, grade) {
-      const old = document.getElementById('iphoneDynamicIsland');
-      if (old) old.remove();
-
-      const island = document.createElement('div');
-      island.id = 'iphoneDynamicIsland';
-      island.className = 'ios-notification-banner';
-      island.innerHTML = `
-      <div class="ios-banner-header">
-        <div class="ios-header-left">
-          <div class="ios-app-icon" style="background:#2D6A4F;color:#fff;">🍄</div>
-          <span class="ios-header-name">Mushroom Grading</span>
-        </div>
-        <button class="ios-close-btn" onclick="document.getElementById('iphoneDynamicIsland')?.remove()">✕</button>
-      </div>
-      <div class="ios-banner-body">
-        <div class="ios-body-title">
-          <span class="ios-diagnosis-text">${grade}</span>
-        </div>
-        <div class="ios-body-cloud"><span>☁️</span> Tersimpan ke Supabase Database ✓</div>
-      </div>
-    `;
-      document.body.appendChild(island);
-      setTimeout(() => { island?.remove(); }, 4000);
     }
 
     // ========================================================
@@ -1136,13 +1141,6 @@
     const DETECT_CONFIRM_FRAMES = 5;
     const COOLDOWN_AFTER_CAPTURE = 4;
     const FRAME_INTERVAL_MS = 200;
-
-    function toggleAutoCapture() {
-      if (autoCaptureActive) stopAutoCapture();
-      else startAutoCapture();
-    }
-
-    document.getElementById('btnToggleAutoCapture')?.addEventListener('click', toggleAutoCapture);
 
     function startAutoCapture() {
       if (!isCameraReady()) {
@@ -1173,7 +1171,8 @@
       if (bar) bar.style.display = 'flex';
       const msg = document.getElementById('autoCaptureStatusMsg');
       if (msg) msg.textContent = '— Mendeteksi objek jamur...';
-      document.getElementById('autoCaptureToggleText').textContent = 'On';
+      const toggleText = document.getElementById('autoCaptureToggleText');
+      if (toggleText) toggleText.textContent = 'On';
       document.getElementById('btnToggleAutoCapture')?.classList.add('active');
 
       const detStatus = document.getElementById('liveObjDetectionStatus');
